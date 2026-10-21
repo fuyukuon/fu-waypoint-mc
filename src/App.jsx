@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Copy,
   Check,
-  MapPin,
   Tag,
   Compass,
   Flame,
@@ -31,7 +30,6 @@ import {
   Castle,
   Gem,
   ArrowRightLeft,
-  Smartphone,
   HelpCircle,
   Camera,
   Image as ImageIcon,
@@ -56,10 +54,11 @@ import {
   LayoutGrid,
   ZoomIn,
   ZoomOut,
+  ArrowUpDown,
 } from 'lucide-react';
 
 // ==========================================
-// 0. HỆ THỐNG ÂM THANH & KHO 40 BIỂU TƯỢNG PIXEL MINECRAFT
+// 0. HỆ THỐNG ÂM THANH & KHO 64 BIỂU TƯỢNG PIXEL MINECRAFT
 // ==========================================
 let sharedAudioCtx = null;
 function getAudioCtx() {
@@ -125,12 +124,12 @@ function playMinecraftSound(type = 'click', enabled = true) {
   }
 }
 
-// Danh mục 40 biểu tượng Pixel Minecraft (mỗi pixel rect là [x, y, w, h, hexColor])
+// Danh mục 64 biểu tượng Pixel Minecraft
 const MC_ICON_CATALOG = [
-  // --- NHÓM KHỐI BLOCK (BLOCKS) ---
+  // --- NHÓM 1: KHỐI BLOCK (BLOCKS) ---
   {
     id: 'grass',
-    label: 'Khối Đất Cỏ',
+    label: 'Đất Cỏ',
     category: 'Khối Block',
     bg: '#866043',
     pixels: [
@@ -145,7 +144,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'obsidian',
-    label: 'Cục Obi (Obsidian)',
+    label: 'Cục Obi',
     category: 'Khối Block',
     bg: '#140d1e',
     pixels: [
@@ -161,7 +160,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'crying_obsidian',
-    label: 'Obi Khóc (Crying Obi)',
+    label: 'Obi Khóc',
     category: 'Khối Block',
     bg: '#140d1e',
     pixels: [
@@ -177,7 +176,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'cobblestone',
-    label: 'Đá Cuội / Thành Trì',
+    label: 'Đá Cuội',
     category: 'Khối Block',
     bg: '#4b5563',
     pixels: [
@@ -206,7 +205,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'emerald',
-    label: 'Khối Ngọc Lục Bảo',
+    label: 'Khối Lục Bảo',
     category: 'Khối Block',
     bg: '#065f46',
     pixels: [
@@ -219,7 +218,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'gold_block',
-    label: 'Khối Vàng (Gold)',
+    label: 'Khối Vàng',
     category: 'Khối Block',
     bg: '#b45309',
     pixels: [
@@ -232,7 +231,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'iron_block',
-    label: 'Khối Sắt (Farm Sắt)',
+    label: 'Khối Sắt',
     category: 'Khối Block',
     bg: '#71717a',
     pixels: [
@@ -244,8 +243,35 @@ const MC_ICON_CATALOG = [
     ],
   },
   {
+    id: 'netherite',
+    label: 'Khối Netherite',
+    category: 'Khối Block',
+    bg: '#1c1917',
+    pixels: [
+      [1, 1, 14, 14, '#292524'],
+      [2, 2, 12, 3, '#44403c'],
+      [2, 6, 12, 3, '#3b2f2f'],
+      [2, 10, 12, 4, '#57534e'],
+      [4, 4, 3, 2, '#78716c'],
+      [10, 11, 3, 2, '#a8a29e'],
+    ],
+  },
+  {
+    id: 'copper',
+    label: 'Khối Đồng',
+    category: 'Khối Block',
+    bg: '#7c2d12',
+    pixels: [
+      [1, 1, 14, 14, '#c2410c'],
+      [2, 2, 5, 5, '#ea580c'],
+      [8, 2, 6, 5, '#14b8a6'],
+      [2, 8, 6, 6, '#2dd4bf'],
+      [9, 8, 5, 6, '#fb923c'],
+    ],
+  },
+  {
     id: 'redstone',
-    label: 'Khối Đá Đỏ (Redstone)',
+    label: 'Khối Đá Đỏ',
     category: 'Khối Block',
     bg: '#7f1d1d',
     pixels: [
@@ -258,7 +284,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'amethyst',
-    label: 'Thạch Anh Tím (Geode)',
+    label: 'Thạch Anh Tím',
     category: 'Khối Block',
     bg: '#4c1d95',
     pixels: [
@@ -271,7 +297,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'slime',
-    label: 'Khối Slime (Slime Chunk)',
+    label: 'Khối Slime',
     category: 'Khối Block',
     bg: '#3f6212',
     pixels: [
@@ -282,8 +308,72 @@ const MC_ICON_CATALOG = [
     ],
   },
   {
+    id: 'packed_ice',
+    label: 'Băng Nén',
+    category: 'Khối Block',
+    bg: '#0284c7',
+    pixels: [
+      [1, 1, 14, 14, '#38bdf8'],
+      [2, 2, 5, 12, '#7dd3fc'],
+      [8, 3, 5, 10, '#bae6fd'],
+      [4, 5, 3, 6, '#e0f2fe'],
+    ],
+  },
+  {
+    id: 'cherry',
+    label: 'Gỗ Anh Đào',
+    category: 'Khối Block',
+    bg: '#831843',
+    pixels: [
+      [1, 1, 14, 14, '#f472b6'],
+      [2, 2, 4, 4, '#fbcfe8'],
+      [8, 3, 5, 4, '#f9a8d4'],
+      [3, 8, 6, 5, '#ec4899'],
+      [10, 9, 4, 4, '#fce7f3'],
+    ],
+  },
+  {
+    id: 'moss',
+    label: 'Khối Rêu Lush',
+    category: 'Khối Block',
+    bg: '#14532d',
+    pixels: [
+      [1, 1, 14, 14, '#16a34a'],
+      [2, 2, 5, 4, '#4ade80'],
+      [9, 4, 4, 5, '#22c55e'],
+      [4, 9, 6, 4, '#f472b6'],
+      [5, 10, 2, 2, '#fef08a'],
+    ],
+  },
+  {
+    id: 'sculk',
+    label: 'Khối Sculk',
+    category: 'Khối Block',
+    bg: '#042f2e',
+    pixels: [
+      [1, 1, 14, 14, '#0f172a'],
+      [2, 2, 3, 3, '#2dd4bf'],
+      [10, 3, 3, 3, '#14b8a6'],
+      [6, 7, 4, 4, '#0d9488'],
+      [3, 11, 3, 2, '#5eead4'],
+      [11, 11, 2, 3, '#2dd4bf'],
+    ],
+  },
+  {
+    id: 'mushroom',
+    label: 'Đảo Nấm Đỏ',
+    category: 'Khối Block',
+    bg: '#991b1b',
+    pixels: [
+      [1, 1, 14, 9, '#dc2626'],
+      [3, 2, 3, 3, '#ffffff'],
+      [10, 4, 3, 3, '#ffffff'],
+      [5, 10, 6, 5, '#fde68a'],
+    ],
+  },
+  {
     id: 'nether',
-    label: 'Khối Nham Thạch (Nether)',
+    label: 'Netherrack',
     category: 'Khối Block',
     bg: '#4a1216',
     pixels: [
@@ -296,8 +386,21 @@ const MC_ICON_CATALOG = [
     ],
   },
   {
+    id: 'magma_block',
+    label: 'Khối Magma',
+    category: 'Khối Block',
+    bg: '#450a0a',
+    pixels: [
+      [1, 1, 14, 14, '#7f1d1d'],
+      [2, 2, 5, 3, '#f97316'],
+      [8, 4, 6, 3, '#facc15'],
+      [3, 8, 6, 4, '#ea580c'],
+      [10, 10, 4, 3, '#fef08a'],
+    ],
+  },
+  {
     id: 'nether_brick',
-    label: 'Gạch Pháo Đài Nether',
+    label: 'Gạch Nether',
     category: 'Khối Block',
     bg: '#2a0a10',
     pixels: [
@@ -311,7 +414,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'end',
-    label: 'Khối Đá End (Purpur)',
+    label: 'Đá End Purpur',
     category: 'Khối Block',
     bg: '#d9d2a9',
     pixels: [
@@ -323,10 +426,10 @@ const MC_ICON_CATALOG = [
     ],
   },
 
-  // --- NHÓM KHO ĐỒ & CÔNG TRÌNH (BASE / STORAGE / UTILITY) ---
+  // --- NHÓM 2: KHO & TIỆN ÍCH (STORAGE & UTILITY) ---
   {
     id: 'chest',
-    label: 'Rương Đồ (Kho Đồ)',
+    label: 'Rương Đồ',
     category: 'Kho & Tiện Ích',
     bg: '#78350f',
     pixels: [
@@ -366,6 +469,18 @@ const MC_ICON_CATALOG = [
     ],
   },
   {
+    id: 'vault',
+    label: 'Rương Vault',
+    category: 'Kho & Tiện Ích',
+    bg: '#134e4a',
+    pixels: [
+      [1, 1, 14, 14, '#0f766e'],
+      [2, 2, 12, 4, '#ea580c'],
+      [5, 6, 6, 6, '#facc15'],
+      [7, 7, 2, 4, '#09090b'],
+    ],
+  },
+  {
     id: 'crafting',
     label: 'Bàn Chế Tạo',
     category: 'Kho & Tiện Ích',
@@ -382,7 +497,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'furnace',
-    label: 'Lò Nung Tự Động',
+    label: 'Lò Nung',
     category: 'Kho & Tiện Ích',
     bg: '#3f3f46',
     pixels: [
@@ -408,8 +523,37 @@ const MC_ICON_CATALOG = [
     ],
   },
   {
+    id: 'bookshelf',
+    label: 'Kệ Sách',
+    category: 'Kho & Tiện Ích',
+    bg: '#78350f',
+    pixels: [
+      [1, 1, 14, 3, '#b45309'],
+      [2, 4, 3, 4, '#dc2626'],
+      [5, 4, 3, 4, '#22c55e'],
+      [8, 4, 3, 4, '#3b82f6'],
+      [11, 4, 3, 4, '#eab308'],
+      [1, 8, 14, 2, '#b45309'],
+      [2, 10, 4, 4, '#a855f7'],
+      [7, 10, 3, 4, '#f97316'],
+      [11, 10, 3, 4, '#06b6d4'],
+    ],
+  },
+  {
+    id: 'brewing',
+    label: 'Giàn Pha Thuốc',
+    category: 'Kho & Tiện Ích',
+    bg: '#1e1b4b',
+    pixels: [
+      [7, 2, 2, 10, '#facc15'],
+      [2, 12, 12, 3, '#71717a'],
+      [3, 7, 3, 4, '#ec4899'],
+      [10, 7, 3, 4, '#a855f7'],
+    ],
+  },
+  {
     id: 'anvil',
-    label: 'Cái Đe Rèn (Anvil)',
+    label: 'Cái Đe Rèn',
     category: 'Kho & Tiện Ích',
     bg: '#18181b',
     pixels: [
@@ -421,7 +565,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'beacon',
-    label: 'Đèn Hiệu (Beacon)',
+    label: 'Đèn Beacon',
     category: 'Kho & Tiện Ích',
     bg: '#083344',
     pixels: [
@@ -433,7 +577,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'bed',
-    label: 'Giường Ngủ (Spawn)',
+    label: 'Giường Ngủ',
     category: 'Kho & Tiện Ích',
     bg: '#1e293b',
     pixels: [
@@ -445,8 +589,56 @@ const MC_ICON_CATALOG = [
     ],
   },
   {
+    id: 'jukebox',
+    label: 'Hộp Nhạc',
+    category: 'Kho & Tiện Ích',
+    bg: '#451a03',
+    pixels: [
+      [1, 1, 14, 14, '#78350f'],
+      [3, 3, 10, 10, '#92400e'],
+      [4, 4, 8, 2, '#18181b'],
+      [6, 4, 4, 1, '#22d3ee'],
+    ],
+  },
+  {
+    id: 'campfire',
+    label: 'Lửa Trại',
+    category: 'Kho & Tiện Ích',
+    bg: '#1c1917',
+    pixels: [
+      [2, 11, 12, 3, '#78350f'],
+      [4, 5, 8, 6, '#f97316'],
+      [6, 3, 4, 6, '#fde047'],
+    ],
+  },
+  {
+    id: 'lantern',
+    label: 'Đèn Lồng',
+    category: 'Kho & Tiện Ích',
+    bg: '#0f172a',
+    pixels: [
+      [6, 1, 4, 2, '#52525b'],
+      [4, 3, 8, 10, '#3f3f46'],
+      [5, 5, 6, 6, '#facc15'],
+      [6, 6, 4, 4, '#fef08a'],
+    ],
+  },
+  {
+    id: 'rail',
+    label: 'Đường Ray',
+    category: 'Kho & Tiện Ích',
+    bg: '#27272a',
+    pixels: [
+      [3, 1, 2, 14, '#a1a1aa'],
+      [11, 1, 2, 14, '#a1a1aa'],
+      [2, 3, 12, 2, '#92400e'],
+      [2, 7, 12, 2, '#ef4444'],
+      [2, 11, 12, 2, '#92400e'],
+    ],
+  },
+  {
     id: 'wheat',
-    label: 'Ruộng Lúa / Nông Trại',
+    label: 'Nông Trại Lúa',
     category: 'Kho & Tiện Ích',
     bg: '#422006',
     pixels: [
@@ -459,7 +651,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'portal',
-    label: 'Cổng Dịch Chuyển Nether',
+    label: 'Cổng Nether',
     category: 'Kho & Tiện Ích',
     bg: '#1e1b4b',
     pixels: [
@@ -471,7 +663,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'end_portal',
-    label: 'Khung Cổng End (Mắt End)',
+    label: 'Khung Cổng End',
     category: 'Kho & Tiện Ích',
     bg: '#d9d2a9',
     pixels: [
@@ -484,7 +676,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'lodestone',
-    label: 'Đá Từ Tính (Lodestone)',
+    label: 'Đá Từ Tính',
     category: 'Kho & Tiện Ích',
     bg: '#3f3f46',
     pixels: [
@@ -498,7 +690,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'tnt',
-    label: 'Khối Thuốc Nổ (TNT)',
+    label: 'Khối TNT',
     category: 'Kho & Tiện Ích',
     bg: '#991b1b',
     pixels: [
@@ -512,7 +704,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'command',
-    label: 'Khối Lệnh (Command Block)',
+    label: 'Command Block',
     category: 'Kho & Tiện Ích',
     bg: '#c77d48',
     pixels: [
@@ -525,10 +717,10 @@ const MC_ICON_CATALOG = [
     ],
   },
 
-  // --- NHÓM DÂN LÀNG & QUÁI VẬT (MOBS / VILLAGER / BOSS) ---
+  // --- NHÓM 3: DÂN LÀNG & MOB (MOBS / VILLAGER / BOSS) ---
   {
     id: 'villager',
-    label: 'Dân Làng (Villager)',
+    label: 'Dân Làng',
     category: 'Dân Làng & Mob',
     bg: '#78350f',
     pixels: [
@@ -544,7 +736,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'iron_golem',
-    label: 'Người Sắt (Iron Golem)',
+    label: 'Iron Golem',
     category: 'Dân Làng & Mob',
     bg: '#a1a1aa',
     pixels: [
@@ -558,7 +750,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'creeper',
-    label: 'Mặt Creeper',
+    label: 'Creeper',
     category: 'Dân Làng & Mob',
     bg: '#15803d',
     pixels: [
@@ -573,7 +765,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'skeleton',
-    label: 'Đầu Lâu Skeleton',
+    label: 'Skeleton',
     category: 'Dân Làng & Mob',
     bg: '#71717a',
     pixels: [
@@ -586,7 +778,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'wither',
-    label: 'Đầu Lâu Wither',
+    label: 'Wither Skull',
     category: 'Dân Làng & Mob',
     bg: '#18181b',
     pixels: [
@@ -600,7 +792,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'spawner',
-    label: 'Lồng Quái (Mob Spawner)',
+    label: 'Lồng Spawner',
     category: 'Dân Làng & Mob',
     bg: '#0f172a',
     pixels: [
@@ -614,8 +806,21 @@ const MC_ICON_CATALOG = [
     ],
   },
   {
+    id: 'trial_spawner',
+    label: 'Trial Spawner',
+    category: 'Dân Làng & Mob',
+    bg: '#134e4a',
+    pixels: [
+      [1, 1, 14, 14, '#0f172a'],
+      [1, 1, 14, 3, '#c2410c'],
+      [1, 12, 14, 3, '#0d9488'],
+      [5, 5, 6, 6, '#38bdf8'],
+      [6, 6, 4, 4, '#bae6fd'],
+    ],
+  },
+  {
     id: 'warden',
-    label: 'Warden (Ancient City)',
+    label: 'Warden',
     category: 'Dân Làng & Mob',
     bg: '#042f2e',
     pixels: [
@@ -641,7 +846,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'dragon',
-    label: 'Rồng Ender (Ender Dragon)',
+    label: 'Rồng Ender',
     category: 'Dân Làng & Mob',
     bg: '#09090b',
     pixels: [
@@ -655,7 +860,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'blaze',
-    label: 'Quái Blaze (Nether)',
+    label: 'Quái Blaze',
     category: 'Dân Làng & Mob',
     bg: '#7c2d12',
     pixels: [
@@ -669,7 +874,7 @@ const MC_ICON_CATALOG = [
   },
   {
     id: 'piglin',
-    label: 'Piglin Đổi Vàng',
+    label: 'Piglin',
     category: 'Dân Làng & Mob',
     bg: '#78350f',
     pixels: [
@@ -681,6 +886,112 @@ const MC_ICON_CATALOG = [
       [6, 8, 4, 3, '#d97757'],
       [4, 9, 1, 3, '#fef08a'],
       [11, 9, 1, 3, '#fef08a'],
+    ],
+  },
+  {
+    id: 'axolotl',
+    label: 'Kỳ Nhông Axolotl',
+    category: 'Dân Làng & Mob',
+    bg: '#831843',
+    pixels: [
+      [3, 4, 10, 8, '#f9a8d4'],
+      [1, 3, 2, 3, '#ec4899'],
+      [13, 3, 2, 3, '#ec4899'],
+      [4, 6, 2, 2, '#18181b'],
+      [10, 6, 2, 2, '#18181b'],
+      [6, 9, 4, 1, '#db2777'],
+    ],
+  },
+
+  // --- NHÓM 4: VẬT PHẨM & TRANG BỊ (ITEMS & GEAR) ---
+  {
+    id: 'pickaxe_diamond',
+    label: 'Cúp Kim Cương',
+    category: 'Vật Phẩm',
+    bg: '#18181b',
+    pixels: [
+      [3, 2, 9, 2, '#22d3ee'],
+      [10, 3, 3, 4, '#06b6d4'],
+      [9, 5, 2, 2, '#92400e'],
+      [7, 7, 2, 2, '#92400e'],
+      [5, 9, 2, 2, '#78350f'],
+      [3, 11, 2, 2, '#78350f'],
+    ],
+  },
+  {
+    id: 'sword_diamond',
+    label: 'Kiếm Kim Cương',
+    category: 'Vật Phẩm',
+    bg: '#18181b',
+    pixels: [
+      [10, 2, 3, 3, '#67e8f9'],
+      [8, 4, 3, 3, '#22d3ee'],
+      [6, 6, 3, 3, '#06b6d4'],
+      [4, 8, 4, 2, '#0e7490'],
+      [3, 11, 3, 3, '#92400e'],
+    ],
+  },
+  {
+    id: 'elytra',
+    label: 'Cánh Elytra',
+    category: 'Vật Phẩm',
+    bg: '#1e1b4b',
+    pixels: [
+      [2, 2, 5, 11, '#9ca3af'],
+      [9, 2, 5, 11, '#9ca3af'],
+      [3, 3, 3, 8, '#d1d5db'],
+      [10, 3, 3, 8, '#d1d5db'],
+      [6, 2, 4, 3, '#4b5563'],
+    ],
+  },
+  {
+    id: 'totem',
+    label: 'Totem Bất Tử',
+    category: 'Vật Phẩm',
+    bg: '#422006',
+    pixels: [
+      [4, 2, 8, 12, '#facc15'],
+      [2, 6, 12, 4, '#eab308'],
+      [5, 4, 2, 2, '#10b981'],
+      [9, 4, 2, 2, '#10b981'],
+      [6, 9, 4, 4, '#ca8a04'],
+    ],
+  },
+  {
+    id: 'trident',
+    label: 'Đinh Ba Trident',
+    category: 'Vật Phẩm',
+    bg: '#083344',
+    pixels: [
+      [3, 2, 2, 5, '#ecfeff'],
+      [7, 1, 2, 6, '#ecfeff'],
+      [11, 2, 2, 5, '#ecfeff'],
+      [3, 6, 10, 2, '#2dd4bf'],
+      [7, 8, 2, 7, '#0d9488'],
+    ],
+  },
+  {
+    id: 'apple_gold',
+    label: 'Táo Vàng Enchant',
+    category: 'Vật Phẩm',
+    bg: '#3b0764',
+    pixels: [
+      [7, 1, 2, 3, '#92400e'],
+      [3, 4, 10, 9, '#facc15'],
+      [4, 5, 4, 4, '#fef08a'],
+      [5, 13, 6, 2, '#eab308'],
+    ],
+  },
+  {
+    id: 'ender_pearl',
+    label: 'Ngọc Ender',
+    category: 'Vật Phẩm',
+    bg: '#042f2e',
+    pixels: [
+      [3, 3, 10, 10, '#0d9488'],
+      [4, 4, 8, 8, '#14b8a6'],
+      [5, 5, 4, 4, '#5eead4'],
+      [6, 6, 2, 2, '#ccfbf1'],
     ],
   },
 ];
@@ -727,15 +1038,13 @@ function VoxelBlockIcon({ type = 'grass', customImage = null, className = 'w-6 h
 }
 
 // ==========================================
-// 1. CẤU HÌNH MÀU SẮC & PHÂN LUỒNG MINECRAFT BLOCK
+// 1. CẤU HÌNH CHIỀU KHÔNG GIAN & NHÃN TAG
 // ==========================================
 const DIMENSION_CONFIG = {
   overworld: {
     id: 'overworld',
     label: 'Overworld',
-    viLabel: 'Thế giới thực',
     border: 'mc-card-overworld',
-    glow: '',
     badge: 'mc-badge-overworld',
     activeTab: 'mc-btn-emerald text-[#061a08] font-black',
     accentBar: 'mc-turf-overworld',
@@ -745,9 +1054,7 @@ const DIMENSION_CONFIG = {
   nether: {
     id: 'nether',
     label: 'Nether',
-    viLabel: 'Địa ngục',
     border: 'mc-card-nether',
-    glow: '',
     badge: 'mc-badge-nether',
     activeTab: 'mc-btn-redstone text-white font-black',
     accentBar: 'mc-turf-nether',
@@ -757,9 +1064,7 @@ const DIMENSION_CONFIG = {
   end: {
     id: 'end',
     label: 'The End',
-    viLabel: 'Cổng End',
     border: 'mc-card-end',
-    glow: '',
     badge: 'mc-badge-end',
     activeTab: 'mc-btn-purpur text-white font-black',
     accentBar: 'mc-turf-end',
@@ -770,67 +1075,67 @@ const DIMENSION_CONFIG = {
 
 const TAG_CONFIG = {
   Base: {
-    label: '[Base] Căn cứ',
+    label: 'Base (Căn cứ)',
     color: 'bg-[#132a3e] text-[#55ffff] border-2 border-[#00aaaa]',
     defaultIcon: 'grass',
     icon: Home,
   },
   Farm: {
-    label: '[Farm] Máy sản xuất',
+    label: 'Farm (Máy farm)',
     color: 'bg-[#332409] text-[#ffaa00] border-2 border-[#aa6600]',
     defaultIcon: 'wheat',
     icon: Wheat,
   },
   Storage: {
-    label: '[Storage] Kho để đồ',
+    label: 'Storage (Kho đồ)',
     color: 'bg-[#36200b] text-[#fde047] border-2 border-[#d97706]',
     defaultIcon: 'chest',
     icon: Layers,
   },
   Villager: {
-    label: '[Villager] Khu dân làng',
+    label: 'Villager (Dân làng)',
     color: 'bg-[#143322] text-[#55ff55] border-2 border-[#22c55e]',
     defaultIcon: 'villager',
     icon: Home,
   },
   Spawner: {
-    label: '[Spawner] Lồng quái',
+    label: 'Spawner (Lồng quái)',
     color: 'bg-[#381117] text-[#ff5555] border-2 border-[#aa0000]',
     defaultIcon: 'spawner',
     icon: Skull,
   },
   Ore: {
-    label: '[Ore] Mỏ khoáng sản',
+    label: 'Ore (Khoáng sản)',
     color: 'bg-[#0e3238] text-[#55ffff] border-2 border-[#22a8b8]',
     defaultIcon: 'diamond_ore',
     icon: Gem,
   },
   Danger: {
-    label: '[Danger] Nguy hiểm',
+    label: 'Danger (Nguy hiểm)',
     color: 'bg-[#450d0d] text-[#ff5555] border-2 border-[#ff2222]',
     defaultIcon: 'warden',
     icon: AlertTriangle,
   },
   Mine: {
-    label: '[Mine] Hầm mỏ',
+    label: 'Mine (Hầm mỏ)',
     color: 'bg-[#122e28] text-[#55ff55] border-2 border-[#1f8a70]',
-    defaultIcon: 'cobblestone',
+    defaultIcon: 'pickaxe_diamond',
     icon: Pickaxe,
   },
   Portal: {
-    label: '[Portal] Cổng dịch chuyển',
+    label: 'Portal (Cổng dịch chuyển)',
     color: 'bg-[#2a123d] text-[#ff55ff] border-2 border-[#9333ea]',
     defaultIcon: 'obsidian',
     icon: ArrowRightLeft,
   },
   Structure: {
-    label: '[Structure] Công trình/Làng',
+    label: 'Structure (Công trình)',
     color: 'bg-[#1b1f3b] text-[#8899ff] border-2 border-[#4f5bd5]',
     defaultIcon: 'lodestone',
     icon: Castle,
   },
   Loot: {
-    label: '[Loot] Kho báu',
+    label: 'Loot (Kho báu)',
     color: 'bg-[#382e08] text-[#ffff55] border-2 border-[#c29b0c]',
     defaultIcon: 'shulker',
     icon: Sparkles,
@@ -839,7 +1144,7 @@ const TAG_CONFIG = {
 
 const INITIAL_WORLDS = [
   { id: 'world-1', name: 'Survival Solo' },
-  { id: 'world-2', name: 'Server SMP với hội bạn' },
+  { id: 'world-2', name: 'Server SMP' },
   { id: 'world-3', name: "Mochi's Hardcore" },
 ];
 
@@ -888,21 +1193,20 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-1',
     worldId: 'world-1',
     parentId: null,
-    name: 'Làng Xưởng Sắt & Căn Cứ Chính',
+    name: 'Căn Cứ Chính & Làng Xưởng Sắt',
     x: 240,
     y: 72,
     z: -480,
     dimension: 'overworld',
     tag: 'Base',
     icon: 'grass',
-    notes: 'Căn cứ trung tâm! Bấm "Mở Khu Vực" bên dưới để xem 4 điểm con: Kho đồ, Khu dân làng Mending, Máy Farm Sắt & Cổng Nether.',
+    notes: 'Tầng hầm có kho đồ tự động, khu dân làng và cổng Nether.',
     screenshots: [SAMPLE_SCREENSHOT_VILLAGE],
     pinned: true,
     locked: true,
     deletedAt: null,
     createdAt: 1710000001000,
   },
-  // --- CÁC TỌA ĐỘ CON BÊN TRONG CĂN CỨ CHÍNH (wp-1) ---
   {
     id: 'wp-1-sub-1',
     worldId: 'world-1',
@@ -914,7 +1218,7 @@ const INITIAL_WAYPOINTS = [
     dimension: 'overworld',
     tag: 'Storage',
     icon: 'chest',
-    notes: 'Tầng hầm B1 ngay dưới nhà chính — Phân loại 64 loại vật phẩm bằng Redstone.',
+    notes: 'Tầng hầm B1 — Phân loại vật phẩm tự động.',
     screenshots: [],
     pinned: true,
     locked: true,
@@ -925,14 +1229,14 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-1-sub-2',
     worldId: 'world-1',
     parentId: 'wp-1',
-    name: 'Trại Trao Đổi Dân Làng (Sách Mending)',
+    name: 'Khu Trao Đổi Dân Làng (Mending)',
     x: 268,
     y: 72,
     z: -492,
     dimension: 'overworld',
     tag: 'Villager',
     icon: 'villager',
-    notes: 'Đã chữa khỏi Zombie Villager: 1 Emerald = Sách Mending, Unbreaking III, Fortune III.',
+    notes: '1 Emerald = Sách Mending, Unbreaking III, Fortune III.',
     screenshots: [],
     pinned: true,
     locked: true,
@@ -943,14 +1247,14 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-1-sub-3',
     worldId: 'world-1',
     parentId: 'wp-1',
-    name: 'Máy Farm Sắt (Iron Golem Tầng Cao)',
+    name: 'Máy Farm Sắt (Tầng Cao)',
     x: 215,
     y: 96,
     z: -465,
     dimension: 'overworld',
     tag: 'Farm',
     icon: 'iron_block',
-    notes: 'Treo trên không cách mặt đất 24 block, ống dẫn sắt chảy thẳng về kho đồ.',
+    notes: 'Ống dẫn sắt nối thẳng về kho đồ.',
     screenshots: [],
     pinned: false,
     locked: false,
@@ -961,33 +1265,32 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-1-sub-4',
     worldId: 'world-1',
     parentId: 'wp-1',
-    name: 'Cổng Hắc Diện Thạch (Nether Portal Base)',
+    name: 'Cổng Nether Tầng Hầm',
     x: 238,
     y: 56,
     z: -488,
     dimension: 'overworld',
     tag: 'Portal',
     icon: 'obsidian',
-    notes: 'Cổng Obi dẫn thẳng sang đường băng Nether Hub.',
+    notes: 'Nối thẳng ra đường băng Nether Hub.',
     screenshots: [],
     pinned: false,
     locked: true,
     deletedAt: null,
     createdAt: 1710000001400,
   },
-  // --- CÁC TỌA ĐỘ CẤP NGOÀI KHÁC ---
   {
     id: 'wp-2',
     worldId: 'world-1',
     parentId: null,
-    name: 'Cổng Đền Sa Mạc & Mỏ Vàng Lộ Thiên',
+    name: 'Đền Sa Mạc & Mỏ Vàng',
     x: 860,
     y: null,
     z: -1120,
     dimension: 'overworld',
     tag: 'Ore',
     icon: 'gold_block',
-    notes: 'Đã phá tấm áp lực TNT dưới hầm đền. Quanh đền có nhiều mỏ quặng đồng và vàng.',
+    notes: 'Đã phá bẫy TNT dưới hầm đền.',
     screenshots: [SAMPLE_SCREENSHOT_TEMPLE],
     pinned: false,
     locked: false,
@@ -998,14 +1301,14 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-3',
     worldId: 'world-1',
     parentId: null,
-    name: 'Lồng Spawner Bộ Xương (Farm XP)',
+    name: 'Spawner Skeleton (Farm XP)',
     x: 512,
     y: -18,
     z: -320,
     dimension: 'overworld',
     tag: 'Spawner',
     icon: 'skeleton',
-    notes: 'Đào xuống từ gốc cây sồi lớn, nhớ mang theo kiếm Looting III.',
+    notes: 'Đào xuống từ gốc cây sồi lớn.',
     screenshots: [],
     pinned: false,
     locked: false,
@@ -1016,14 +1319,14 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-4',
     worldId: 'world-1',
     parentId: null,
-    name: 'Trạm Cao Tốc Băng Nether Hub (Trục Bắc)',
+    name: 'Trạm Cao Tốc Băng Nether Hub',
     x: -145,
     y: 68,
     z: 310,
     dimension: 'nether',
     tag: 'Portal',
     icon: 'crying_obsidian',
-    notes: 'Đường thuyền băng xanh nối thẳng tới Pháo đài Blaze và Cổng End.',
+    notes: 'Đường thuyền băng nối Pháo đài Blaze và Cổng End.',
     screenshots: [],
     pinned: true,
     locked: true,
@@ -1034,14 +1337,14 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-4-sub-1',
     worldId: 'world-1',
     parentId: 'wp-4',
-    name: 'Lồng Spawner Blaze (Trong Pháo Đài)',
+    name: 'Lồng Spawner Blaze',
     x: -112,
     y: 74,
     z: 348,
     dimension: 'nether',
     tag: 'Spawner',
     icon: 'blaze',
-    notes: 'Đã bao kín bằng gạch Nether chống Ghast bắn.',
+    notes: 'Đã bao kín bằng gạch Nether.',
     screenshots: [],
     pinned: false,
     locked: true,
@@ -1052,14 +1355,14 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-5',
     worldId: 'world-1',
     parentId: null,
-    name: 'Thành Phố Cổ Đại Warden (Ancient City)',
+    name: 'Ancient City (Khu Warden)',
     x: -920,
     y: -51,
     z: 640,
     dimension: 'overworld',
     tag: 'Danger',
     icon: 'warden',
-    notes: 'Cực kỳ nguy hiểm! Nhớ mang nhiều khối Len (Wool) và Sneak liên tục.',
+    notes: 'Nhớ mang theo nhiều khối Len (Wool).',
     screenshots: [],
     pinned: false,
     locked: true,
@@ -1070,14 +1373,14 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-6',
     worldId: 'world-1',
     parentId: null,
-    name: 'End City Có Tàu Bay (Lấy Cánh Elytra)',
+    name: 'End City Có Tàu Bay (Elytra)',
     x: 1840,
     y: 95,
     z: -1290,
     dimension: 'end',
     tag: 'Loot',
-    icon: 'dragon',
-    notes: 'Còn nhiều vỏ Shulker chưa lấy hết ở tòa tháp cao nhất.',
+    icon: 'elytra',
+    notes: 'Còn nhiều Shulker ở tòa tháp cao nhất.',
     screenshots: [],
     pinned: false,
     locked: false,
@@ -1088,14 +1391,14 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-7',
     worldId: 'world-2',
     parentId: null,
-    name: 'Khu Chợ Trung Tâm Server SMP',
+    name: 'Khu Chợ Trung Tâm SMP',
     x: 0,
     y: 80,
     z: 0,
     dimension: 'overworld',
     tag: 'Base',
     icon: 'emerald',
-    notes: 'Nơi giao dịch Kim cương và Netherite của cả hội bạn.',
+    notes: 'Khu giao dịch chung của cả server.',
     screenshots: [],
     pinned: true,
     locked: true,
@@ -1106,14 +1409,14 @@ const INITIAL_WAYPOINTS = [
     id: 'wp-8',
     worldId: 'world-3',
     parentId: null,
-    name: 'Căn Cứ Ngầm Chống Creeper (Hardcore)',
+    name: 'Căn Cứ Ngầm Hardcore',
     x: -340,
     y: 63,
     z: 190,
     dimension: 'overworld',
     tag: 'Base',
     icon: 'obsidian',
-    notes: 'Thế giới Hardcore 1 mạng duy nhất — luôn cầm Totem of Undying ở tay phụ!',
+    notes: 'Luôn cầm Totem ở tay phụ.',
     screenshots: [],
     pinned: true,
     locked: true,
@@ -1125,40 +1428,37 @@ const INITIAL_WAYPOINTS = [
 const OCR_PRESETS = [
   {
     id: 'pc-f3',
-    label: 'Ảnh chụp PC (Ấn F3)',
-    desc: 'Minecraft Java 1.21 — Màn hình Debug F3',
+    label: 'Mẫu F3 (PC)',
     rawLine: 'XYZ: -428.350 / 12.00000 / 795.612 [minecraft:overworld]',
     x: -428,
     y: 12,
     z: 796,
     dimension: 'overworld',
-    suggestedName: 'Mỏ Kim Cương Tầng Sâu (Quét từ F3)',
+    suggestedName: 'Mỏ Kim Cương Tầng Sâu',
     suggestedTag: 'Ore',
     suggestedIcon: 'diamond_ore',
   },
   {
     id: 'mcpe-hud',
-    label: 'Ảnh chụp Android (MCPE)',
-    desc: 'Bedrock Edition — Góc trên bên trái màn hình',
+    label: 'Mẫu MCPE (Android)',
     rawLine: 'Position: 120, 68, -500',
     x: 120,
     y: 68,
     z: -500,
     dimension: 'overworld',
-    suggestedName: 'Làng Sa Mạc (Quét từ MCPE)',
+    suggestedName: 'Làng Sa Mạc',
     suggestedTag: 'Villager',
     suggestedIcon: 'villager',
   },
   {
     id: 'nether-fort',
-    label: 'Ảnh chụp Pháo Đài Nether',
-    desc: 'Quét dòng tọa độ trong Địa Ngục',
+    label: 'Mẫu Nether',
     rawLine: 'Block: -88 74 -215 [minecraft:the_nether]',
     x: -88,
     y: 74,
     z: -215,
     dimension: 'nether',
-    suggestedName: 'Lồng Spawner Blaze (Quét OCR)',
+    suggestedName: 'Pháo Đài Blaze',
     suggestedTag: 'Spawner',
     suggestedIcon: 'blaze',
   },
@@ -1195,7 +1495,7 @@ function getLinkedPortalCoords(x, z, dimension) {
       targetDim: 'Nether',
       x: Math.round(Number(x) / 8),
       z: Math.round(Number(z) / 8),
-      ratioText: '÷ 8 sang Nether Hub',
+      ratioText: '÷8',
     };
   }
   if (dimension === 'nether') {
@@ -1203,7 +1503,7 @@ function getLinkedPortalCoords(x, z, dimension) {
       targetDim: 'Overworld',
       x: Math.round(Number(x) * 8),
       z: Math.round(Number(z) * 8),
-      ratioText: '× 8 ra Overworld',
+      ratioText: '×8',
     };
   }
   return null;
@@ -1255,53 +1555,8 @@ function compressImageFile(file, maxWidth = 520, quality = 0.72) {
   });
 }
 
-function downloadRenderedAppIcon(iconId, customImgSrc, format = 'png', onDone = () => {}) {
-  const size = 256;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
-
-  const triggerDownload = () => {
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = format === 'ico' ? 'icon.ico' : 'icon.png';
-      a.click();
-      URL.revokeObjectURL(url);
-      onDone();
-    }, 'image/png');
-  };
-
-  if (customImgSrc) {
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, size, size);
-      triggerDownload();
-    };
-    img.src = customImgSrc;
-    return;
-  }
-
-  const item = MC_ICON_MAP[iconId] || MC_ICON_MAP.grass;
-  const scale = size / 16;
-  ctx.fillStyle = item.bg;
-  ctx.fillRect(0, 0, size, size);
-  item.pixels.forEach(([x, y, w, h, fill]) => {
-    ctx.fillStyle = fill;
-    ctx.fillRect(x * scale, y * scale, w * scale, h * scale);
-  });
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = scale * 1.2;
-  ctx.strokeRect(0, 0, size, size);
-  triggerDownload();
-}
-
 // ==========================================
-// 3. COMPONENT THẺ TỌA ĐỘ KHỐI BLOCK (WaypointCard - Hỗ trợ Tọa độ Con & Đổi Icon)
+// 3. COMPONENT THẺ TỌA ĐỘ (WaypointCard - Tối ưu chống tràn chữ cho Android & Windows)
 // ==========================================
 function WaypointCard({
   waypoint,
@@ -1328,7 +1583,7 @@ function WaypointCard({
   const DimensionIcon = dimStyle.icon;
 
   const tagStyle = TAG_CONFIG[waypoint.tag] || {
-    label: `[${waypoint.tag || 'Khác'}]`,
+    label: waypoint.tag || 'Khác',
     color: 'bg-[#262830] text-slate-200 border-2 border-[#454954]',
     defaultIcon: 'grass',
     icon: Tag,
@@ -1402,44 +1657,56 @@ function WaypointCard({
     }
   };
 
+  const handleCopyPortal = async () => {
+    if (!portalLink) return;
+    const text = `${portalLink.x} ${hasY ? waypoint.y : ''} ${portalLink.z}`.replace(/\s+/g, ' ').trim();
+    try {
+      await copyToClipboard(text);
+      onNotify(`Đã copy tọa độ ${portalLink.targetDim}: ${text}`, 'orb');
+    } catch {
+      // ignore
+    }
+  };
+
   const screenshots = Array.isArray(waypoint.screenshots) ? waypoint.screenshots : [];
 
   return (
     <div
-      className={`group relative rounded-none p-4 sm:p-5 text-slate-100 transition-transform duration-150 hover:-translate-y-1 flex flex-col justify-between mc-card ${dimStyle.border} ${
+      className={`group relative w-full min-w-0 max-w-full overflow-hidden rounded-none p-3.5 sm:p-4 text-slate-100 transition-transform duration-150 sm:hover:-translate-y-0.5 flex flex-col justify-between mc-card ${dimStyle.border} ${
         activatedBlock ? 'mc-block-flash' : ''
       }`}
     >
-      <div className={`absolute top-0 left-0 right-0 h-3 ${dimStyle.accentBar}`} />
+      <div className={`absolute top-0 left-0 right-0 h-2.5 ${dimStyle.accentBar}`} />
 
       <span className="mc-corner mc-corner-tl" />
       <span className="mc-corner mc-corner-tr" />
       <span className="mc-corner mc-corner-bl" />
       <span className="mc-corner mc-corner-br" />
 
-      <div className="pt-1.5">
-        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-          <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="pt-1.5 min-w-0">
+        {/* Hàng 1: Badge Chiều không gian + Tag + Cụm nút công cụ nhỏ gọn */}
+        <div className="flex items-center justify-between gap-1.5 mb-2.5 flex-wrap">
+          <div className="flex items-center gap-1 min-w-0 flex-wrap">
             <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none text-xs font-bold uppercase tracking-wider ${dimStyle.badge}`}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${dimStyle.badge}`}
             >
-              <DimensionIcon className="w-3.5 h-3.5" />
-              {dimStyle.label}
+              <DimensionIcon className="w-3 h-3 shrink-0" />
+              <span className="truncate">{dimStyle.label}</span>
             </span>
 
             <span
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-none text-xs font-bold ${tagStyle.color}`}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold ${tagStyle.color}`}
             >
-              <TagIcon className="w-3 h-3" />
-              [{waypoint.tag}]
+              <TagIcon className="w-3 h-3 shrink-0" />
+              <span className="truncate">{waypoint.tag}</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={() => onSelectForDistance(waypoint)}
-              title="Đo khoảng cách từ điểm này tới điểm khác"
+              title="Đo khoảng cách"
               className="mc-btn mc-btn-stone p-1.5 text-slate-200 hover:text-[#ffff55] cursor-pointer"
             >
               <Ruler className="w-3.5 h-3.5" />
@@ -1448,7 +1715,7 @@ function WaypointCard({
             <button
               type="button"
               onClick={() => onTogglePin(waypoint.id)}
-              title={waypoint.pinned ? 'Bỏ ghim ưu tiên' : 'Ghim lên đầu danh sách'}
+              title={waypoint.pinned ? 'Bỏ ghim' : 'Ghim lên đầu'}
               className={`mc-btn p-1.5 cursor-pointer ${
                 waypoint.pinned
                   ? 'mc-btn-gold text-[#1f1400]'
@@ -1461,11 +1728,7 @@ function WaypointCard({
             <button
               type="button"
               onClick={() => onToggleLock(waypoint.id)}
-              title={
-                waypoint.locked
-                  ? 'Đang KHÓA chống xóa nhầm (Bấm để mở khóa)'
-                  : 'Bấm để KHÓA bảo vệ tọa độ này'
-              }
+              title={waypoint.locked ? 'Đang khóa bảo vệ' : 'Mở khóa'}
               className={`mc-btn p-1.5 cursor-pointer ${
                 waypoint.locked
                   ? 'mc-btn-diamond text-[#03191e]'
@@ -1482,7 +1745,7 @@ function WaypointCard({
             <button
               type="button"
               onClick={() => onEdit(waypoint)}
-              title="Chỉnh sửa tọa độ, đổi biểu tượng & ảnh đính kèm"
+              title="Chỉnh sửa"
               className="mc-btn mc-btn-stone p-1.5 text-slate-200 hover:text-[#55ff55] cursor-pointer"
             >
               <Edit3 className="w-3.5 h-3.5" />
@@ -1492,11 +1755,7 @@ function WaypointCard({
               type="button"
               onClick={() => onSoftDelete(waypoint)}
               disabled={waypoint.locked}
-              title={
-                waypoint.locked
-                  ? 'Tọa độ đang được khóa bảo vệ! Hãy mở khóa nếu muốn xóa.'
-                  : 'Chuyển vào Thùng rác (Có thể khôi phục)'
-              }
+              title={waypoint.locked ? 'Đang khóa bảo vệ' : 'Xóa vào thùng rác'}
               className={`mc-btn p-1.5 ${
                 waypoint.locked
                   ? 'mc-btn-disabled text-zinc-600 cursor-not-allowed'
@@ -1508,61 +1767,59 @@ function WaypointCard({
           </div>
         </div>
 
+        {/* Nếu là tọa độ con: hiển thị gọn khoảng cách tới địa điểm cha */}
         {parentWaypoint && parentOffset && (
-          <div className="mb-2.5 px-2.5 py-1.5 bg-[#121c14] border-2 border-[#22c55e]/60 flex items-center justify-between gap-2 text-[11px] font-mono text-[#86efac]">
-            <span className="truncate flex items-center gap-1 font-bold">
-              <CornerDownRight className="w-3.5 h-3.5 text-[#55ff55] shrink-0" />
-              Thuộc: {parentWaypoint.name}
+          <div className="mb-2 px-2 py-1 bg-[#121c14] border border-[#22c55e]/60 flex items-center justify-between gap-2 text-[11px] font-mono text-[#86efac] min-w-0">
+            <span className="truncate flex items-center gap-1 font-bold min-w-0">
+              <CornerDownRight className="w-3 h-3 text-[#55ff55] shrink-0" />
+              <span className="truncate">{parentWaypoint.name}</span>
             </span>
             <span className="shrink-0 text-[#ffff55] font-bold">
-              Cách tâm {parentOffset.blocks}m
+              {parentOffset.blocks}m
               {parentOffset.dy !== null
-                ? ` • ΔY: ${parentOffset.dy > 0 ? `+${parentOffset.dy}` : parentOffset.dy}`
+                ? ` • ΔY:${parentOffset.dy > 0 ? `+${parentOffset.dy}` : parentOffset.dy}`
                 : ''}
             </span>
           </div>
         )}
 
-        <div className="flex items-start justify-between gap-3 mb-3.5">
+        {/* Hàng 2: Icon + Tên địa điểm + Cụm nút Copy / Share */}
+        <div className="flex items-start justify-between gap-2.5 mb-3 min-w-0">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 min-w-0">
               <button
                 type="button"
                 onClick={() => onQuickChangeIcon(waypoint)}
-                title={`Biểu tượng: ${iconMeta.label} (Bấm để đổi biểu tượng khác)`}
+                title={`Đổi biểu tượng (${iconMeta.label})`}
                 className="mc-btn mc-btn-stone p-1.5 shrink-0 cursor-pointer"
               >
                 <VoxelBlockIcon type={resolvedIcon} className="w-6 h-6" />
               </button>
 
-              <div className="min-w-0 flex-1">
-                <h3
-                  onClick={() => childWaypoints.length > 0 && onEnterFolder(waypoint.id)}
-                  className={`text-base sm:text-lg font-extrabold text-white truncate leading-snug mc-text-shadow ${
-                    childWaypoints.length > 0 ? 'cursor-pointer hover:text-[#55ff55]' : ''
-                  }`}
-                >
-                  {waypoint.name}
-                </h3>
-                <span className="text-[10px] text-zinc-400 font-mono block">
-                  Icon: {iconMeta.label}
-                </span>
-              </div>
+              <h3
+                onClick={() => childWaypoints.length > 0 && onEnterFolder(waypoint.id)}
+                title={waypoint.name}
+                className={`text-sm sm:text-base font-extrabold text-white line-clamp-2 break-words leading-snug mc-text-shadow min-w-0 ${
+                  childWaypoints.length > 0 ? 'cursor-pointer hover:text-[#55ff55]' : ''
+                }`}
+              >
+                {waypoint.name}
+              </h3>
             </div>
 
             {waypoint.notes && (
-              <p className="text-xs text-[#d7d2c8] mt-2 line-clamp-2 leading-relaxed mc-slot px-2.5 py-2 font-mono">
-                📖 {waypoint.notes}
+              <p className="text-xs text-[#d7d2c8] mt-2 line-clamp-2 break-words leading-relaxed mc-slot px-2.5 py-1.5 font-mono">
+                {waypoint.notes}
               </p>
             )}
           </div>
 
-          <div className="flex flex-col gap-2 shrink-0">
+          <div className="flex flex-col gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => handleCopy()}
               title={`Copy: ${getCopyString()}`}
-              className={`mc-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-wider cursor-pointer ${
+              className={`mc-btn inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-black uppercase cursor-pointer ${
                 copied
                   ? 'mc-btn-emerald text-[#041a06]'
                   : 'mc-btn-stone text-white'
@@ -1572,7 +1829,7 @@ function WaypointCard({
               {copied ? (
                 <>
                   <Check className="w-3.5 h-3.5 stroke-[3]" />
-                  <span>Đã Copy</span>
+                  <span>Đã lưu</span>
                 </>
               ) : (
                 <>
@@ -1585,8 +1842,8 @@ function WaypointCard({
             <button
               type="button"
               onClick={() => handleCopy('chat')}
-              title="Copy định dạng chuẩn để dán vào Zalo / Discord cho bạn bè"
-              className="mc-btn mc-btn-lapis inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[11px] font-bold text-white cursor-pointer"
+              title="Copy định dạng tin nhắn"
+              className="mc-btn mc-btn-lapis inline-flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-bold text-white cursor-pointer"
             >
               <Share2 className="w-3 h-3" />
               <span>Share</span>
@@ -1594,57 +1851,56 @@ function WaypointCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mc-slot p-2.5 font-mono">
-          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-x py-1.5 px-2">
-            <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#ff5555] mc-text-shadow">
-              X (Đông/Tây)
+        {/* Hàng 3: 3 Ô tọa độ X, Y, Z gọn gàng không tràn màn hình */}
+        <div className="grid grid-cols-3 gap-1.5 mc-slot p-2 font-mono">
+          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-x py-1 px-1.5 min-w-0">
+            <span className="text-[10px] uppercase font-extrabold text-[#ff5555] mc-text-shadow">
+              X
             </span>
-            <span className="text-sm sm:text-base font-black text-white mt-0.5 mc-text-shadow">
+            <span className="text-xs sm:text-sm font-black text-white truncate max-w-full mc-text-shadow">
               {waypoint.x}
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-y py-1.5 px-2">
-            <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#55ff55] mc-text-shadow">
-              Y (Độ cao)
+          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-y py-1 px-1.5 min-w-0">
+            <span className="text-[10px] uppercase font-extrabold text-[#55ff55] mc-text-shadow">
+              Y
             </span>
             <span
-              className={`text-sm sm:text-base font-black mt-0.5 mc-text-shadow ${
+              className={`text-xs sm:text-sm font-black truncate max-w-full mc-text-shadow ${
                 hasY ? 'text-white' : 'text-zinc-500'
               }`}
-              title={hasY ? `Độ cao Y = ${waypoint.y}` : 'Không bắt buộc (Chỉ cần X, Z)'}
             >
               {displayY}
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-z py-1.5 px-2">
-            <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#55ffff] mc-text-shadow">
-              Z (Bắc/Nam)
+          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-z py-1 px-1.5 min-w-0">
+            <span className="text-[10px] uppercase font-extrabold text-[#55ffff] mc-text-shadow">
+              Z
             </span>
-            <span className="text-sm sm:text-base font-black text-white mt-0.5 mc-text-shadow">
+            <span className="text-xs sm:text-sm font-black text-white truncate max-w-full mc-text-shadow">
               {waypoint.z}
             </span>
           </div>
         </div>
 
-        {/* KHU VỰC PHÂN TẦNG (TỌA ĐỘ CON BÊN TRONG ĐỊA ĐIỂM NÀY) */}
-        <div className="mt-3 pt-2.5 border-t-2 border-black/60">
-          <div className="flex items-center justify-between gap-1.5 flex-wrap">
-            <div className="flex items-center gap-1.5">
+        {/* Hàng 3.2: KHU VỰC TỌA ĐỘ CON */}
+        <div className="mt-2.5 pt-2 border-t-2 border-black/60">
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1 min-w-0">
               <button
                 type="button"
                 onClick={() => onEnterFolder(waypoint.id)}
-                title="Mở không gian riêng của địa điểm này để quản lý các tọa độ con bên trong"
-                className={`mc-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-black cursor-pointer ${
+                className={`mc-btn inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-black cursor-pointer truncate ${
                   childWaypoints.length > 0
                     ? 'mc-btn-gold text-[#1f1300]'
                     : 'mc-btn-stone text-zinc-200'
                 }`}
               >
-                <FolderOpen className="w-3.5 h-3.5" />
-                <span>
-                  Mở Khu Vực ({childWaypoints.length} điểm con)
+                <FolderOpen className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">
+                  Khu vực ({childWaypoints.length})
                 </span>
               </button>
 
@@ -1652,8 +1908,8 @@ function WaypointCard({
                 <button
                   type="button"
                   onClick={() => setShowInlineChildren(!showInlineChildren)}
-                  title="Xem nhanh danh sách tọa độ con ngay trên thẻ"
-                  className="mc-btn mc-btn-stone px-2 py-1.5 text-xs font-bold text-[#55ffff] cursor-pointer"
+                  title="Xem nhanh các điểm con"
+                  className="mc-btn mc-btn-stone px-2 py-1 text-xs font-bold text-[#55ffff] cursor-pointer shrink-0"
                 >
                   {showInlineChildren ? (
                     <ChevronUp className="w-3.5 h-3.5" />
@@ -1667,28 +1923,27 @@ function WaypointCard({
             <button
               type="button"
               onClick={() => onCreateChild(waypoint)}
-              title={`Tạo thêm tọa độ con (Farm, Kho đồ, Dân làng...) nằm trong "${waypoint.name}"`}
-              className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#041a06] cursor-pointer"
+              className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black text-[#041a06] cursor-pointer shrink-0"
             >
-              <FolderPlus className="w-3.5 h-3.5" />
-              <span>+ Điểm Con</span>
+              <FolderPlus className="w-3.5 h-3.5 shrink-0" />
+              <span>+ Điểm con</span>
             </button>
           </div>
 
           {showInlineChildren && childWaypoints.length > 0 && (
-            <div className="mt-2.5 space-y-1.5 mc-slot p-2 max-h-48 overflow-y-auto">
+            <div className="mt-2 space-y-1.5 mc-slot p-2 max-h-44 overflow-y-auto">
               {childWaypoints.map((child) => {
                 const cIcon = child.icon || TAG_CONFIG[child.tag]?.defaultIcon || 'chest';
                 return (
                   <div
                     key={child.id}
-                    className="flex items-center justify-between gap-2 bg-[#1a1924] border border-zinc-700/80 px-2.5 py-1.5 text-xs"
+                    className="flex items-center justify-between gap-2 bg-[#1a1924] border border-zinc-700/80 px-2 py-1.5 text-xs min-w-0"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <VoxelBlockIcon type={cIcon} className="w-4 h-4" />
                       <div className="min-w-0">
                         <div className="font-bold text-white truncate">{child.name}</div>
-                        <div className="text-[10px] font-mono text-zinc-400">
+                        <div className="text-[10px] font-mono text-zinc-400 truncate">
                           X:{child.x} {child.y !== null ? `Y:${child.y}` : ''} Z:{child.z}
                         </div>
                       </div>
@@ -1697,15 +1952,13 @@ function WaypointCard({
                       <button
                         type="button"
                         onClick={() => handleCopy(null, child)}
-                        title="Copy nhanh tọa độ điểm con này"
-                        className="mc-btn mc-btn-stone px-2 py-1 text-[10px] font-bold text-[#55ffff] cursor-pointer"
+                        className="mc-btn mc-btn-stone px-2 py-0.5 text-[10px] font-bold text-[#55ffff] cursor-pointer"
                       >
                         Copy
                       </button>
                       <button
                         type="button"
                         onClick={() => onEdit(child)}
-                        title="Sửa điểm con"
                         className="mc-btn mc-btn-stone p-1 text-zinc-300 cursor-pointer"
                       >
                         <Edit3 className="w-3 h-3" />
@@ -1719,7 +1972,7 @@ function WaypointCard({
         </div>
 
         {screenshots.length > 0 && (
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
             {screenshots.slice(0, 2).map((src, idx) => (
               <button
                 key={idx}
@@ -1729,7 +1982,7 @@ function WaypointCard({
               >
                 <img
                   src={src}
-                  alt={`${waypoint.name} ảnh ${idx + 1}`}
+                  alt={`${waypoint.name} ${idx + 1}`}
                   className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200 max-w-full"
                 />
                 <span className="absolute bottom-1 right-1 bg-black/85 border border-zinc-600 text-[10px] text-[#55ffff] px-1.5 py-0.5 font-mono font-bold flex items-center gap-1">
@@ -1742,29 +1995,36 @@ function WaypointCard({
         )}
       </div>
 
-      <div className="mt-3.5 pt-2.5 border-t-2 border-black/70 flex items-center justify-between gap-2 flex-wrap text-[11px] text-zinc-300 font-mono">
+      {/* Hàng 4: Quy đổi cổng Nether 1 chạm + Khoảng cách / Chunk */}
+      <div className="mt-3 pt-2 border-t-2 border-black/70 flex items-center justify-between gap-1.5 flex-wrap text-[11px] text-zinc-300 font-mono min-w-0">
         {portalLink ? (
-          <span
-            title={`Tọa độ tương ứng ở ${portalLink.targetDim} (${portalLink.ratioText})`}
-            className="inline-flex items-center gap-1 text-[#ff88ff] bg-[#241033] px-2 py-0.5 border-2 border-[#7e22ce] font-bold"
+          <button
+            type="button"
+            onClick={handleCopyPortal}
+            title={`Bấm để copy tọa độ cổng bên ${portalLink.targetDim}`}
+            className="inline-flex items-center gap-1 text-[#ff88ff] bg-[#241033] hover:bg-[#321547] px-2 py-0.5 border border-[#7e22ce] font-bold truncate max-w-full cursor-pointer"
           >
-            <ArrowRightLeft className="w-3 h-3 text-[#d8b4fe]" />
-            {portalLink.targetDim}: X={portalLink.x}, Z={portalLink.z}
-          </span>
+            <ArrowRightLeft className="w-3 h-3 text-[#d8b4fe] shrink-0" />
+            <span className="truncate">
+              {portalLink.targetDim}: {portalLink.x}, {portalLink.z}
+            </span>
+          </button>
         ) : (
-          <span className="text-zinc-400 font-bold">
-            Chunk: [{chunkX}, {chunkZ}]
+          <span className="text-zinc-400 font-bold truncate">
+            Chunk [{chunkX}, {chunkZ}]
           </span>
         )}
 
         {distanceInfo ? (
-          <span className="inline-flex items-center gap-1 text-[#55ffff] bg-[#0d2833] px-2 py-0.5 border-2 border-[#00aaaa] font-bold">
-            <Navigation className="w-3 h-3 text-[#55ffff]" />
-            Cách {distanceInfo.blocks} blocks ({distanceInfo.compass})
+          <span className="inline-flex items-center gap-1 text-[#55ffff] bg-[#0d2833] px-2 py-0.5 border border-[#00aaaa] font-bold truncate max-w-full">
+            <Navigation className="w-3 h-3 text-[#55ffff] shrink-0" />
+            <span className="truncate">
+              {distanceInfo.blocks}m ({distanceInfo.compass})
+            </span>
           </span>
         ) : (
-          <span className="text-zinc-400 font-bold">
-            Chunk: [{chunkX}, {chunkZ}]
+          <span className="text-zinc-400 font-bold truncate">
+            Chunk [{chunkX}, {chunkZ}]
           </span>
         )}
       </div>
@@ -1798,16 +2058,16 @@ function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
 
   const toPercent = (val) => {
     const r = bounds.range || 500;
-    return Math.min(95, Math.max(5, ((Number(val) + r) / (2 * r)) * 100));
+    return Math.min(94, Math.max(6, ((Number(val) + r) / (2 * r)) * 100));
   };
 
   return (
-    <div className="mc-panel p-4 mb-6">
+    <div className="mc-panel p-3.5 sm:p-4 mb-5 w-full max-w-full overflow-hidden">
       <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <MapIcon className="w-5 h-5 text-[#55ff55]" />
-          <h3 className="text-sm sm:text-base font-black text-white mc-text-shadow">
-            Bản Đồ Radar Tọa Độ 2D (Trục X / Z • Phạm vi ±{bounds.range} blocks)
+        <div className="flex items-center gap-2 min-w-0">
+          <MapIcon className="w-4 h-4 text-[#55ff55] shrink-0" />
+          <h3 className="text-xs sm:text-sm font-black text-white truncate mc-text-shadow">
+            Radar 2D (±{bounds.range}m)
           </h3>
         </div>
         <div className="flex items-center gap-1.5">
@@ -1816,20 +2076,20 @@ function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
             onClick={() => setZoom((z) => Math.min(4, +(z + 0.5).toFixed(1)))}
             className="mc-btn mc-btn-stone px-2.5 py-1 text-xs font-bold text-white inline-flex items-center gap-1 cursor-pointer"
           >
-            <ZoomIn className="w-3.5 h-3.5 text-[#55ff55]" /> Phóng to
+            <ZoomIn className="w-3.5 h-3.5 text-[#55ff55]" />
           </button>
           <button
             type="button"
             onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.5).toFixed(1)))}
             className="mc-btn mc-btn-stone px-2.5 py-1 text-xs font-bold text-white inline-flex items-center gap-1 cursor-pointer"
           >
-            <ZoomOut className="w-3.5 h-3.5 text-[#ffaa00]" /> Thu nhỏ
+            <ZoomOut className="w-3.5 h-3.5 text-[#ffaa00]" />
           </button>
         </div>
       </div>
 
       <div
-        className="relative w-full h-80 sm:h-96 mc-slot overflow-hidden"
+        className="relative w-full h-72 sm:h-96 mc-slot overflow-hidden"
         style={{
           backgroundImage:
             'linear-gradient(to right, rgba(85,255,85,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(85,255,85,0.07) 1px, transparent 1px)',
@@ -1839,16 +2099,16 @@ function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-emerald-500/30 pointer-events-none" />
         <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-emerald-500/30 pointer-events-none" />
 
-        <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-[#55ffff] bg-black/75 px-1.5 py-0.5 border border-zinc-700">
+        <span className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-[#55ffff] bg-black/80 px-1.5 py-0.5 border border-zinc-700">
           BẮC (-Z)
         </span>
-        <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-[#55ffff] bg-black/75 px-1.5 py-0.5 border border-zinc-700">
+        <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-[#55ffff] bg-black/80 px-1.5 py-0.5 border border-zinc-700">
           NAM (+Z)
         </span>
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-[#ff5555] bg-black/75 px-1.5 py-0.5 border border-zinc-700">
+        <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-[#ff5555] bg-black/80 px-1.5 py-0.5 border border-zinc-700">
           TÂY (-X)
         </span>
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-[#ff5555] bg-black/75 px-1.5 py-0.5 border border-zinc-700">
+        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-[#ff5555] bg-black/80 px-1.5 py-0.5 border border-zinc-700">
           ĐÔNG (+X)
         </span>
 
@@ -1864,12 +2124,12 @@ function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
               onMouseLeave={() => setHoveredWp(null)}
               onClick={() => onSelectWaypoint(wp)}
               style={{ left: `${left}%`, top: `${top}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 group/pin cursor-pointer focus:outline-none z-10 hover:z-30 hover:scale-125 transition-transform"
+              className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer focus:outline-none z-10 hover:z-30 hover:scale-125 transition-transform"
             >
               <div className="p-0.5 bg-black border-2 border-[#55ff55] shadow-lg">
                 <VoxelBlockIcon type={iconId} className="w-5 h-5" />
               </div>
-              <span className="mt-0.5 block bg-black/90 text-[10px] font-mono font-bold text-white px-1 border border-zinc-700 whitespace-nowrap max-w-[110px] truncate">
+              <span className="mt-0.5 block bg-black/90 text-[9px] font-mono font-bold text-white px-1 border border-zinc-700 whitespace-nowrap max-w-[90px] truncate">
                 {wp.name}
               </span>
             </button>
@@ -1877,12 +2137,11 @@ function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
         })}
 
         {hoveredWp && (
-          <div className="absolute bottom-3 left-3 z-40 mc-panel px-3 py-2 text-xs font-mono">
-            <div className="font-extrabold text-[#55ff55]">{hoveredWp.name}</div>
+          <div className="absolute bottom-2 left-2 right-2 sm:right-auto z-40 mc-panel px-2.5 py-1.5 text-xs font-mono">
+            <div className="font-extrabold text-[#55ff55] truncate">{hoveredWp.name}</div>
             <div className="text-white">
-              X: {hoveredWp.x} | Y: {hoveredWp.y ?? '~'} | Z: {hoveredWp.z}
+              X:{hoveredWp.x} | Y:{hoveredWp.y ?? '~'} | Z:{hoveredWp.z}
             </div>
-            <div className="text-[10px] text-zinc-400">Bấm vào điểm để chỉnh sửa</div>
           </div>
         )}
       </div>
@@ -1891,13 +2150,12 @@ function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
 }
 
 // ==========================================
-// 4. ỨNG DỤNG CHÍNH (fu WAYPOINT)
+// 4. ỨNG DỤNG CHÍNH (fu WAYPOINT v2.1.2)
 // ==========================================
 export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [particles, setParticles] = useState([]);
 
-  // Cấu hình Biểu Tượng App (App Icon & Favicon)
   const [appIconConfig, setAppIconConfig] = useState(() => {
     try {
       const saved = localStorage.getItem('fu_waypoint_app_icon_v3');
@@ -2017,28 +2275,31 @@ export default function App() {
       }
 
       const rect = btn.getBoundingClientRect();
-      const originX = e.clientX || rect.left + rect.width / 2;
-      const originY = e.clientY || rect.top + rect.height / 2;
+      const rawX = e.clientX || rect.left + rect.width / 2;
+      const rawY = e.clientY || rect.top + rect.height / 2;
+      const safeMaxX = typeof window !== 'undefined' ? window.innerWidth - 28 : rawX;
+      const originX = Math.max(20, Math.min(safeMaxX, rawX));
+      const originY = Math.max(20, rawY);
 
       const batchId = Date.now() + Math.random();
-      const newParticles = Array.from({ length: 10 }, (_, idx) => {
-        const angle = (Math.PI * 2 * idx) / 10 + (Math.random() - 0.5) * 0.5;
-        const dist = 22 + Math.random() * 34;
+      const newParticles = Array.from({ length: 8 }, (_, idx) => {
+        const angle = (Math.PI * 2 * idx) / 8 + (Math.random() - 0.5) * 0.4;
+        const dist = 16 + Math.random() * 24;
         return {
           id: `${batchId}-${idx}`,
           x: originX,
           y: originY,
           dx: Math.round(Math.cos(angle) * dist),
-          dy: Math.round(Math.sin(angle) * dist - 10),
-          size: 5 + Math.floor(Math.random() * 5),
+          dy: Math.round(Math.sin(angle) * dist - 8),
+          size: 4 + Math.floor(Math.random() * 4),
           color: palette[idx % palette.length],
         };
       });
 
-      setParticles((prev) => [...prev.slice(-30), ...newParticles]);
+      setParticles((prev) => [...prev.slice(-24), ...newParticles]);
       setTimeout(() => {
         setParticles((prev) => prev.filter((p) => !p.id.startsWith(`${batchId}-`)));
-      }, 520);
+      }, 460);
     };
 
     window.addEventListener('click', handleGlobalButtonClick, true);
@@ -2049,6 +2310,7 @@ export default function App() {
   const [activeTag, setActiveTag] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copyMode, setCopyMode] = useState('chat');
+  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'name' | 'children'
   const [viewTrash, setViewTrash] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   const [currentParentId, setCurrentParentId] = useState(null);
@@ -2131,7 +2393,7 @@ export default function App() {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? '' : prev));
-    }, 3200);
+    }, 2800);
   };
 
   useEffect(() => {
@@ -2142,7 +2404,7 @@ export default function App() {
       ) {
         e.preventDefault();
         setIsMiniOverlayOpen((prev) => !prev);
-        showToast('Đã bật/tắt cửa sổ Command Block nhập nhanh (Ctrl + Shift + S)', 'orb');
+        showToast('Đã bật/tắt khung nhập nhanh', 'orb');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -2180,7 +2442,7 @@ export default function App() {
         dimension: detectedDim,
       }));
       showToast(
-        `Đã tự tách tọa độ: X=${parsedX}${parsedY !== '' ? `, Y=${parsedY}` : ''}, Z=${parsedZ}`,
+        `Đã tách tọa độ: X=${parsedX}${parsedY !== '' ? `, Y=${parsedY}` : ''}, Z=${parsedZ}`,
         'orb'
       );
     }
@@ -2191,7 +2453,7 @@ export default function App() {
     if (!file) return;
 
     setIsScanningOcr(true);
-    setOcrStatusText('Đang phân tích ảnh chụp màn hình & quét dòng tọa độ XYZ...');
+    setOcrStatusText('Đang đọc tọa độ từ ảnh...');
 
     try {
       const compressedDataUrl = await compressImageFile(file);
@@ -2219,7 +2481,7 @@ export default function App() {
 
         setFormData((prev) => ({
           ...prev,
-          name: prev.name || `Điểm quét từ ảnh (${file.name.slice(0, 15)})`,
+          name: prev.name || `Điểm quét (${file.name.slice(0, 12)})`,
           x: String(extracted.x),
           y: String(extracted.y),
           z: String(extracted.z),
@@ -2228,20 +2490,18 @@ export default function App() {
         }));
 
         setIsScanningOcr(false);
-        setOcrStatusText(
-          `✅ Đã quét thành công từ ảnh: X=${extracted.x}, Y=${extracted.y}, Z=${extracted.z} và tự động đính kèm ảnh!`
-        );
-        showToast(`OCR thành công: X:${extracted.x} Y:${extracted.y} Z:${extracted.z}`, 'orb');
-      }, 900);
+        setOcrStatusText(`Đã lấy: X=${extracted.x}, Y=${extracted.y}, Z=${extracted.z}`);
+        showToast(`OCR: X:${extracted.x} Y:${extracted.y} Z:${extracted.z}`, 'orb');
+      }, 750);
     } catch {
       setIsScanningOcr(false);
-      setOcrStatusText('Không thể đọc file ảnh, vui lòng thử lại.');
+      setOcrStatusText('Không thể đọc file ảnh.');
     }
   };
 
   const applyOcrPreset = (preset) => {
     setIsScanningOcr(true);
-    setOcrStatusText(`Đang quét dòng "${preset.rawLine}"...`);
+    setOcrStatusText(`Đang đọc "${preset.rawLine}"...`);
     setTimeout(() => {
       setFormData((prev) => ({
         ...prev,
@@ -2255,9 +2515,9 @@ export default function App() {
       }));
       setSmartPasteInput(preset.rawLine);
       setIsScanningOcr(false);
-      setOcrStatusText(`✅ Đã trích xuất: ${preset.rawLine}`);
-      showToast(`Đã điền tọa độ từ ${preset.label}!`, 'orb');
-    }, 450);
+      setOcrStatusText(`Đã điền: ${preset.rawLine}`);
+      showToast(`Đã áp dụng ${preset.label}`, 'orb');
+    }, 350);
   };
 
   const handleAddScreenshot = async (e) => {
@@ -2266,7 +2526,7 @@ export default function App() {
 
     const currentPhotos = formData.screenshots || [];
     if (currentPhotos.length >= 2) {
-      showToast('Mỗi tọa độ chỉ đính kèm tối đa 2 bức ảnh đại diện!');
+      showToast('Tối đa 2 ảnh cho mỗi địa điểm.');
       return;
     }
 
@@ -2279,9 +2539,9 @@ export default function App() {
         ...prev,
         screenshots: [...(prev.screenshots || []), ...compressedList].slice(0, 2),
       }));
-      showToast(`Đã đính kèm ${compressedList.length} ảnh chụp màn hình!`, 'orb');
+      showToast(`Đã đính kèm ${compressedList.length} ảnh`, 'orb');
     } catch {
-      showToast('Không thể tải ảnh, hãy thử ảnh khác.');
+      showToast('Không thể tải ảnh.');
     }
   };
 
@@ -2369,7 +2629,7 @@ export default function App() {
       Number.isNaN(numZ) ||
       (hasYVal && Number.isNaN(numY))
     ) {
-      showToast('Tọa độ X và Z phải là số hợp lệ (Y có thể để trống)!');
+      showToast('Tọa độ X và Z phải là số hợp lệ!');
       return;
     }
 
@@ -2398,7 +2658,7 @@ export default function App() {
             : item
         )
       );
-      showToast('Đã cập nhật khối tọa độ!', 'orb');
+      showToast('Đã cập nhật tọa độ!', 'orb');
     } else {
       const newWp = {
         id: 'wp-' + Date.now(),
@@ -2420,9 +2680,7 @@ export default function App() {
       };
       setWaypoints((prev) => [newWp, ...prev]);
       showToast(
-        cleanParentId
-          ? `Đã thêm điểm con "${newWp.name}" vào khu vực!`
-          : 'Đã lưu tọa độ mới thành công!',
+        cleanParentId ? `Đã thêm "${newWp.name}" vào khu vực!` : 'Đã lưu tọa độ mới!',
         'orb'
       );
     }
@@ -2447,7 +2705,7 @@ export default function App() {
       dimension: quickForm.dimension,
       tag: quickForm.tag,
       icon: quickForm.icon || TAG_CONFIG[quickForm.tag]?.defaultIcon || 'grass',
-      notes: 'Lưu nhanh qua Command Block Widget trong lúc chơi game.',
+      notes: '',
       screenshots: [],
       locked: true,
       pinned: false,
@@ -2465,7 +2723,7 @@ export default function App() {
       icon: 'grass',
     });
     setIsMiniOverlayOpen(false);
-    showToast(`Đã lưu nhanh "${newWp.name}"!`, 'orb');
+    showToast(`Đã lưu "${newWp.name}"!`, 'orb');
   };
 
   const handleSelectQuickIcon = (iconId) => {
@@ -2476,7 +2734,7 @@ export default function App() {
       )
     );
     const meta = MC_ICON_MAP[iconId];
-    showToast(`Đã đổi biểu tượng thành "${meta?.label || iconId}"!`, 'orb');
+    showToast(`Đã đổi sang ${meta?.label || iconId}`, 'orb');
     setQuickIconTargetWp(null);
   };
 
@@ -2486,7 +2744,7 @@ export default function App() {
     try {
       const dataUrl = await compressImageFile(file, 128, 0.9);
       setAppIconConfig({ iconId: 'custom', customImage: dataUrl });
-      showToast('Đã cập nhật Icon App tùy chỉnh!', 'orb');
+      showToast('Đã đổi biểu tượng ứng dụng!', 'orb');
     } catch {
       showToast('Không thể đọc file ảnh này.');
     }
@@ -2503,11 +2761,7 @@ export default function App() {
       prev.map((item) => {
         if (item.id === id) {
           const nextLocked = !item.locked;
-          showToast(
-            nextLocked
-              ? `Đã KHÓA bảo vệ "${item.name}" (Không thể xóa nhầm)`
-              : `Đã mở khóa "${item.name}"`
-          );
+          showToast(nextLocked ? `Đã khóa "${item.name}"` : `Đã mở khóa "${item.name}"`);
           return { ...item, locked: nextLocked };
         }
         return item;
@@ -2517,25 +2771,25 @@ export default function App() {
 
   const handleSoftDelete = (wp) => {
     if (wp.locked) {
-      showToast('Tọa độ đang khóa bảo vệ! Hãy bấm mở khóa trước khi xóa.');
+      showToast('Hãy mở khóa trước khi xóa.');
       return;
     }
     setWaypoints((prev) =>
       prev.map((item) => (item.id === wp.id ? { ...item, deletedAt: Date.now() } : item))
     );
-    showToast(`Đã chuyển "${wp.name}" vào Thùng rác (Có thể khôi phục)`, 'tnt');
+    showToast(`Đã chuyển "${wp.name}" vào Thùng rác`, 'tnt');
   };
 
   const handleRestore = (id) => {
     setWaypoints((prev) =>
       prev.map((item) => (item.id === id ? { ...item, deletedAt: null } : item))
     );
-    showToast('Đã khôi phục tọa độ thành công!', 'orb');
+    showToast('Đã khôi phục tọa độ!', 'orb');
   };
 
   const handlePermanentDelete = (id) => {
     setWaypoints((prev) => prev.filter((item) => item.id !== id));
-    showToast('Đã xóa vĩnh viễn tọa độ khỏi Thùng rác.', 'tnt');
+    showToast('Đã xóa vĩnh viễn.', 'tnt');
   };
 
   const handleCreateWorld = (e) => {
@@ -2549,7 +2803,7 @@ export default function App() {
     setSelectedWorldId(newWorld.id);
     setNewWorldName('');
     setIsWorldModalOpen(false);
-    showToast(`Đã tạo Profile "${newWorld.name}"!`, 'orb');
+    showToast(`Đã tạo "${newWorld.name}"!`, 'orb');
   };
 
   const handleSelectForDistance = (wp) => {
@@ -2565,7 +2819,7 @@ export default function App() {
 
   const openBackupModal = () => {
     const payload = {
-      version: 4,
+      version: '2.1.2',
       exportedAt: new Date().toISOString(),
       appIconConfig,
       worlds,
@@ -2588,12 +2842,12 @@ export default function App() {
           setAppIconConfig(parsed.appIconConfig);
         }
         setIsBackupOpen(false);
-        showToast('Đã đồng bộ & khôi phục toàn bộ dữ liệu thành công!', 'orb');
+        showToast('Đã khôi phục dữ liệu thành công!', 'orb');
       } else {
-        showToast('Dữ liệu JSON không đúng định dạng!');
+        showToast('Dữ liệu JSON không hợp lệ!');
       }
     } catch {
-      showToast('Lỗi cú pháp JSON, vui lòng kiểm tra lại đoạn mã dán vào!');
+      showToast('Lỗi cú pháp JSON!');
     }
   };
 
@@ -2605,7 +2859,7 @@ export default function App() {
     a.download = `fu-waypoint-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Đã tải file sao lưu .json về máy!', 'orb');
+    showToast('Đã tải file .json!', 'orb');
   };
 
   const handleCloudSync = async () => {
@@ -2619,11 +2873,8 @@ export default function App() {
       const nowStr = new Date().toLocaleTimeString('vi-VN');
       setSupabaseConfig((prev) => ({ ...prev, lastSync: nowStr }));
       setIsSyncingCloud(false);
-      showToast(
-        `Đã lưu bản chụp đồng bộ cho mã phòng "${supabaseConfig.roomCode}" lúc ${nowStr}!`,
-        'orb'
-      );
-    }, 600);
+      showToast(`Đã đồng bộ phòng "${supabaseConfig.roomCode}" (${nowStr})`, 'orb');
+    }, 500);
   };
 
   const worldWaypoints = useMemo(
@@ -2699,9 +2950,26 @@ export default function App() {
           const distB = Math.hypot(b.x - playerPos.x, b.z - playerPos.z);
           return distA - distB;
         }
+        if (sortBy === 'name') {
+          return a.name.localeCompare(b.name, 'vi');
+        }
+        if (sortBy === 'children') {
+          const countA = (childrenByParentId[a.id] || []).length;
+          const countB = (childrenByParentId[b.id] || []).length;
+          if (countB !== countA) return countB - countA;
+        }
         return b.createdAt - a.createdAt;
       });
-  }, [activeWaypoints, currentParentId, activeDimension, activeTag, searchQuery, playerPos]);
+  }, [
+    activeWaypoints,
+    currentParentId,
+    activeDimension,
+    activeTag,
+    searchQuery,
+    playerPos,
+    sortBy,
+    childrenByParentId,
+  ]);
 
   const counts = useMemo(() => {
     const levelList = activeWaypoints.filter(
@@ -2753,14 +3021,14 @@ export default function App() {
     };
   }, [activeWaypoints, pointAId, pointBId]);
 
-  const iconCategories = ['Tất cả', 'Khối Block', 'Kho & Tiện Ích', 'Dân Làng & Mob'];
+  const iconCategories = ['Tất cả', 'Khối Block', 'Kho & Tiện Ích', 'Dân Làng & Mob', 'Vật Phẩm'];
   const filteredIconsForPicker = useMemo(() => {
     if (iconCategoryFilter === 'Tất cả') return MC_ICON_CATALOG;
     return MC_ICON_CATALOG.filter((item) => item.category === iconCategoryFilter);
   }, [iconCategoryFilter]);
 
   return (
-    <div className="min-h-screen mc-deepslate-bg text-slate-100 pb-28 selection:bg-[#55ff55]/30 selection:text-white">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden mc-deepslate-bg text-slate-100 pb-24 selection:bg-[#55ff55]/30 selection:text-white">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Silkscreen:wght@400;700&display=swap');
 
@@ -2768,6 +3036,20 @@ export default function App() {
           --mc-font-ui: 'Chakra Petch', sans-serif;
           --mc-font-pixel: 'Silkscreen', 'Chakra Petch', monospace;
           --mc-font-mono: 'JetBrains Mono', monospace;
+        }
+
+        html, body, #root {
+          width: 100%;
+          max-width: 100vw;
+          overflow-x: hidden !important;
+          overscroll-behavior-x: none;
+          margin: 0;
+          padding: 0;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        *, *::before, *::after {
+          box-sizing: border-box;
         }
 
         .mc-deepslate-bg {
@@ -2784,13 +3066,12 @@ export default function App() {
 
         .mc-logo-title {
           font-family: var(--mc-font-pixel);
-          letter-spacing: 0.06em;
+          letter-spacing: 0.04em;
           color: #55ff55;
           text-shadow:
             0 2px 0 #1b5e20,
             2px 2px 0 #1b5e20,
-            3px 3px 0 #000000,
-            4px 4px 0 #000000;
+            3px 3px 0 #000000;
         }
 
         .mc-text-shadow {
@@ -2809,7 +3090,7 @@ export default function App() {
           box-shadow:
             inset 3px 3px 0px #494758,
             inset -3px -3px 0px #121117,
-            0 6px 0px #09080c;
+            0 5px 0px #09080c;
         }
 
         .mc-card {
@@ -2818,49 +3099,49 @@ export default function App() {
           box-shadow:
             inset 3px 3px 0px rgba(255, 255, 255, 0.16),
             inset -3px -3px 0px rgba(0, 0, 0, 0.55),
-            0 7px 0px #08080b;
+            0 6px 0px #08080b;
         }
         .mc-card-overworld {
           background-color: #212621;
           box-shadow:
             inset 3px 3px 0px #4ca338,
             inset -3px -3px 0px #121812,
-            0 7px 0px #070a07;
+            0 6px 0px #070a07;
         }
         .mc-card-overworld:hover {
           box-shadow:
             inset 3px 3px 0px #68d84e,
             inset -3px -3px 0px #121812,
-            0 7px 0px #070a07,
-            0 0 18px rgba(85, 255, 85, 0.25);
+            0 6px 0px #070a07,
+            0 0 16px rgba(85, 255, 85, 0.22);
         }
         .mc-card-nether {
           background-color: #2a1619;
           box-shadow:
             inset 3px 3px 0px #d9381e,
             inset -3px -3px 0px #17090b,
-            0 7px 0px #0a0405;
+            0 6px 0px #0a0405;
         }
         .mc-card-nether:hover {
           box-shadow:
             inset 3px 3px 0px #ff6633,
             inset -3px -3px 0px #17090b,
-            0 7px 0px #0a0405,
-            0 0 18px rgba(255, 85, 85, 0.3);
+            0 6px 0px #0a0405,
+            0 0 16px rgba(255, 85, 85, 0.26);
         }
         .mc-card-end {
           background-color: #1f172b;
           box-shadow:
             inset 3px 3px 0px #a855f7,
             inset -3px -3px 0px #100b18,
-            0 7px 0px #07050b;
+            0 6px 0px #07050b;
         }
         .mc-card-end:hover {
           box-shadow:
             inset 3px 3px 0px #d8b4fe,
             inset -3px -3px 0px #100b18,
-            0 7px 0px #07050b,
-            0 0 18px rgba(192, 132, 252, 0.3);
+            0 6px 0px #07050b,
+            0 0 16px rgba(192, 132, 252, 0.26);
         }
 
         .mc-turf-overworld {
@@ -2881,31 +3162,31 @@ export default function App() {
 
         .mc-corner {
           position: absolute;
-          width: 5px;
-          height: 5px;
+          width: 4px;
+          height: 4px;
           background: #000;
           opacity: 0.45;
           pointer-events: none;
         }
-        .mc-corner-tl { top: 14px; left: 5px; }
-        .mc-corner-tr { top: 14px; right: 5px; }
-        .mc-corner-bl { bottom: 5px; left: 5px; }
-        .mc-corner-br { bottom: 5px; right: 5px; }
+        .mc-corner-tl { top: 12px; left: 4px; }
+        .mc-corner-tr { top: 12px; right: 4px; }
+        .mc-corner-bl { bottom: 4px; left: 4px; }
+        .mc-corner-br { bottom: 4px; right: 4px; }
 
         .mc-slot {
           background-color: #101016;
           border: 2px solid #000000;
           border-radius: 0px !important;
           box-shadow:
-            inset 3px 3px 0px #060609,
-            inset -3px -3px 0px #353442;
+            inset 2px 2px 0px #060609,
+            inset -2px -2px 0px #353442;
         }
         .mc-slot:focus-within {
           border-color: #55ff55;
           box-shadow:
-            inset 3px 3px 0px #060609,
-            inset -3px -3px 0px #2b6e2b,
-            0 0 10px rgba(85, 255, 85, 0.25);
+            inset 2px 2px 0px #060609,
+            inset -2px -2px 0px #2b6e2b,
+            0 0 8px rgba(85, 255, 85, 0.22);
         }
 
         .mc-coord-box {
@@ -2923,19 +3204,16 @@ export default function App() {
           background-color: #1b3b1a;
           color: #55ff55;
           border: 2px solid #3ca832;
-          box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2);
         }
         .mc-badge-nether {
           background-color: #421212;
           color: #ff7755;
           border: 2px solid #d9381e;
-          box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2);
         }
         .mc-badge-end {
           background-color: #2d1247;
           color: #e9d5ff;
           border: 2px solid #a855f7;
-          box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2);
         }
 
         .mc-btn {
@@ -2946,10 +3224,10 @@ export default function App() {
           user-select: none;
         }
         .mc-btn:hover:not(:disabled) {
-          filter: brightness(1.14);
+          filter: brightness(1.12);
         }
         .mc-btn:active:not(:disabled) {
-          transform: translateY(4px) !important;
+          transform: translateY(3px) !important;
         }
 
         .mc-btn-stone {
@@ -2957,8 +3235,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #68677a,
             inset -2px -2px 0px #1e1d26,
-            0 4px 0px #0d0c12,
-            0 6px 0px #000000;
+            0 3px 0px #0d0c12,
+            0 5px 0px #000000;
         }
         .mc-btn-stone:active:not(:disabled) {
           box-shadow:
@@ -2972,8 +3250,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #bbf7d0,
             inset -2px -2px 0px #14532d,
-            0 4px 0px #0c3b1e,
-            0 6px 0px #000000;
+            0 3px 0px #0c3b1e,
+            0 5px 0px #000000;
         }
         .mc-btn-emerald:active:not(:disabled) {
           box-shadow:
@@ -2987,8 +3265,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #fca5a5,
             inset -2px -2px 0px #450a0a,
-            0 4px 0px #450a0a,
-            0 6px 0px #000000;
+            0 3px 0px #450a0a,
+            0 5px 0px #000000;
         }
         .mc-btn-redstone:active:not(:disabled) {
           box-shadow:
@@ -3002,8 +3280,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #f87171,
             inset -2px -2px 0px #450a0a,
-            0 4px 0px #300707,
-            0 6px 0px #000000;
+            0 3px 0px #300707,
+            0 5px 0px #000000;
         }
         .mc-btn-tnt:active:not(:disabled) {
           box-shadow:
@@ -3017,8 +3295,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #fef08a,
             inset -2px -2px 0px #713f12,
-            0 4px 0px #522d0b,
-            0 6px 0px #000000;
+            0 3px 0px #522d0b,
+            0 5px 0px #000000;
         }
         .mc-btn-gold:active:not(:disabled) {
           box-shadow:
@@ -3032,8 +3310,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #bae6fd,
             inset -2px -2px 0px #0c4a6e,
-            0 4px 0px #082f49,
-            0 6px 0px #000000;
+            0 3px 0px #082f49,
+            0 5px 0px #000000;
         }
         .mc-btn-diamond:active:not(:disabled) {
           box-shadow:
@@ -3062,8 +3340,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #e9d5ff,
             inset -2px -2px 0px #3b0764,
-            0 4px 0px #2e054e,
-            0 6px 0px #000000;
+            0 3px 0px #2e054e,
+            0 5px 0px #000000;
         }
         .mc-btn-purpur:active:not(:disabled) {
           box-shadow:
@@ -3077,8 +3355,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #fde68a,
             inset -2px -2px 0px #451a03,
-            0 4px 0px #2e1002,
-            0 6px 0px #000000;
+            0 3px 0px #2e1002,
+            0 5px 0px #000000;
         }
 
         .mc-btn-disabled {
@@ -3088,8 +3366,8 @@ export default function App() {
         }
 
         .mc-redstone-dot {
-          width: 7px;
-          height: 7px;
+          width: 6px;
+          height: 6px;
           background-color: #7f1d1d;
           border: 1px solid #000;
           display: inline-block;
@@ -3098,27 +3376,27 @@ export default function App() {
         .mc-btn:hover .mc-redstone-dot,
         .mc-redstone-on {
           background-color: #ff3333;
-          box-shadow: 0 0 8px #ff3333, 0 0 12px #ff8800;
+          box-shadow: 0 0 6px #ff3333;
         }
 
         @keyframes mcBlockActivate {
           0% {
-            box-shadow: 0 0 0 0 rgba(85, 255, 85, 0.85), 0 0 18px rgba(255, 255, 85, 0.9);
+            box-shadow: 0 0 0 0 rgba(85, 255, 85, 0.8), 0 0 14px rgba(255, 255, 85, 0.8);
           }
           100% {
-            box-shadow: 0 0 0 12px rgba(85, 255, 85, 0), 0 0 0 rgba(255, 255, 85, 0);
+            box-shadow: 0 0 0 10px rgba(85, 255, 85, 0), 0 0 0 rgba(255, 255, 85, 0);
           }
         }
         .mc-btn-activating {
-          animation: mcBlockActivate 0.36s steps(4) forwards;
+          animation: mcBlockActivate 0.34s steps(4) forwards;
         }
 
         @keyframes mcCardFlash {
           0%, 100% { filter: brightness(1); }
-          40% { filter: brightness(1.3); }
+          40% { filter: brightness(1.25); }
         }
         .mc-block-flash {
-          animation: mcCardFlash 0.35s steps(3);
+          animation: mcCardFlash 0.32s steps(3);
         }
 
         @keyframes mcParticleBurst {
@@ -3128,57 +3406,57 @@ export default function App() {
           }
           100% {
             opacity: 0;
-            transform: translate(var(--dx), calc(var(--dy) + 28px)) scale(0.35);
+            transform: translate(var(--dx), calc(var(--dy) + 22px)) scale(0.35);
           }
         }
         .mc-voxel-particle {
           position: fixed;
           pointer-events: none;
           z-index: 9999;
-          border: 1.5px solid #000;
-          animation: mcParticleBurst 0.48s steps(6) forwards;
+          border: 1px solid #000;
+          animation: mcParticleBurst 0.44s steps(6) forwards;
         }
       `}</style>
 
-      {particles.map((p) => (
-        <span
-          key={p.id}
-          className="mc-voxel-particle"
-          style={{
-            left: p.x,
-            top: p.y,
-            width: p.size,
-            height: p.size,
-            backgroundColor: p.color,
-            '--dx': `${p.dx}px`,
-            '--dy': `${p.dy}px`,
-          }}
-        />
-      ))}
+      {/* Lớp hạt Voxel */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-[9999]">
+        {particles.map((p) => (
+          <span
+            key={p.id}
+            className="mc-voxel-particle"
+            style={{
+              left: p.x,
+              top: p.y,
+              width: p.size,
+              height: p.size,
+              backgroundColor: p.color,
+              '--dx': `${p.dx}px`,
+              '--dy': `${p.dy}px`,
+            }}
+          />
+        ))}
+      </div>
 
+      {/* Thông báo nổi Toast */}
       {toastMessage && (
-        <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-50 flex items-center gap-3 mc-panel px-4 py-3 text-xs sm:text-sm font-bold max-w-md border-2 border-black">
-          <div className="w-7 h-7 mc-slot flex items-center justify-center shrink-0">
-            <Check className="w-4 h-4 text-[#55ff55] stroke-[3]" />
+        <div className="fixed bottom-20 sm:bottom-6 left-3 right-3 sm:left-auto sm:right-6 z-50 flex items-center gap-2.5 mc-panel px-3.5 py-2.5 text-xs sm:text-sm font-bold sm:max-w-sm border-2 border-black">
+          <div className="w-6 h-6 mc-slot flex items-center justify-center shrink-0">
+            <Check className="w-3.5 h-3.5 text-[#55ff55] stroke-[3]" />
           </div>
-          <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wider text-[#ffff55] font-mono">
-              [Block Activated!]
-            </div>
-            <div className="truncate text-white">{toastMessage}</div>
-          </div>
+          <div className="min-w-0 flex-1 truncate text-white">{toastMessage}</div>
         </div>
       )}
 
+      {/* Khối nhập nhanh nổi góc phải dưới */}
       {floatingBubbleVisible && (
-        <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
+        <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2 max-w-[calc(100vw-2rem)]">
           {isMiniOverlayOpen && (
-            <div className="w-80 sm:w-96 mc-panel p-4 mb-2">
-              <div className="flex items-center justify-between pb-2.5 mb-3 border-b-2 border-black">
-                <div className="flex items-center gap-2">
-                  <VoxelBlockIcon type="command" className="w-5 h-5" />
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#ffff55] mc-text-shadow">
-                    Command Block Lưu Nhanh
+            <div className="w-80 max-w-full mc-panel p-3.5 mb-1">
+              <div className="flex items-center justify-between pb-2 mb-2.5 border-b-2 border-black">
+                <div className="flex items-center gap-2 min-w-0">
+                  <VoxelBlockIcon type="command" className="w-4 h-4" />
+                  <span className="text-xs font-extrabold uppercase text-[#ffff55] truncate mc-text-shadow">
+                    Lưu Nhanh
                   </span>
                 </div>
                 <button
@@ -3186,24 +3464,24 @@ export default function App() {
                   onClick={() => setIsMiniOverlayOpen(false)}
                   className="mc-btn mc-btn-stone p-1 text-slate-200 hover:text-white cursor-pointer"
                 >
-                  <Minimize2 className="w-4 h-4" />
+                  <Minimize2 className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {currentParentWaypoint && (
-                <div className="mb-2 px-2.5 py-1 bg-[#122616] border border-[#55ff55]/40 text-[11px] text-[#55ff55] font-mono">
-                  📂 Đang lưu vào trong: <strong>{currentParentWaypoint.name}</strong>
+                <div className="mb-2 px-2 py-1 bg-[#122616] border border-[#55ff55]/40 text-[11px] text-[#55ff55] font-mono truncate">
+                  📂 Trong: <strong>{currentParentWaypoint.name}</strong>
                 </div>
               )}
 
-              <form onSubmit={handleQuickSave} className="space-y-2.5">
+              <form onSubmit={handleQuickSave} className="space-y-2">
                 <input
                   type="text"
                   required
                   value={quickForm.name}
                   onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })}
-                  placeholder="Tên nhanh (VD: Kho Đồ, Dân Làng, Farm Sắt)..."
-                  className="w-full mc-slot px-3 py-2 text-xs text-white focus:outline-none"
+                  placeholder="Tên địa điểm..."
+                  className="w-full mc-slot px-2.5 py-1.5 text-xs text-white focus:outline-none"
                 />
 
                 <div className="grid grid-cols-3 gap-1.5 font-mono">
@@ -3213,14 +3491,14 @@ export default function App() {
                     value={quickForm.x}
                     onChange={(e) => setQuickForm({ ...quickForm, x: e.target.value })}
                     placeholder="X *"
-                    className="w-full mc-slot px-2.5 py-1.5 text-xs text-[#ff5555] font-bold focus:outline-none"
+                    className="w-full mc-slot px-2 py-1.5 text-xs text-[#ff5555] font-bold focus:outline-none"
                   />
                   <input
                     type="number"
                     value={quickForm.y}
                     onChange={(e) => setQuickForm({ ...quickForm, y: e.target.value })}
-                    placeholder="Y (Tùy)"
-                    className="w-full mc-slot px-2.5 py-1.5 text-xs text-[#55ff55] font-bold focus:outline-none"
+                    placeholder="Y"
+                    className="w-full mc-slot px-2 py-1.5 text-xs text-[#55ff55] font-bold focus:outline-none"
                   />
                   <input
                     type="number"
@@ -3228,7 +3506,7 @@ export default function App() {
                     value={quickForm.z}
                     onChange={(e) => setQuickForm({ ...quickForm, z: e.target.value })}
                     placeholder="Z *"
-                    className="w-full mc-slot px-2.5 py-1.5 text-xs text-[#55ffff] font-bold focus:outline-none"
+                    className="w-full mc-slot px-2 py-1.5 text-xs text-[#55ffff] font-bold focus:outline-none"
                   />
                 </div>
 
@@ -3236,11 +3514,11 @@ export default function App() {
                   <select
                     value={quickForm.dimension}
                     onChange={(e) => setQuickForm({ ...quickForm, dimension: e.target.value })}
-                    className="mc-slot px-2 py-1.5 text-xs text-slate-100 font-bold focus:outline-none"
+                    className="mc-slot px-1.5 py-1.5 text-[11px] text-slate-100 font-bold focus:outline-none min-w-0"
                   >
-                    <option value="overworld" className="bg-[#14141c]">🟢 Overworld</option>
-                    <option value="nether" className="bg-[#14141c]">🔴 Nether</option>
-                    <option value="end" className="bg-[#14141c]">🟣 The End</option>
+                    <option value="overworld" className="bg-[#14141c]">Overworld</option>
+                    <option value="nether" className="bg-[#14141c]">Nether</option>
+                    <option value="end" className="bg-[#14141c]">The End</option>
                   </select>
                   <select
                     value={quickForm.tag}
@@ -3251,18 +3529,18 @@ export default function App() {
                         icon: TAG_CONFIG[e.target.value]?.defaultIcon || quickForm.icon,
                       })
                     }
-                    className="mc-slot px-2 py-1.5 text-xs text-slate-100 font-bold focus:outline-none"
+                    className="mc-slot px-1.5 py-1.5 text-[11px] text-slate-100 font-bold focus:outline-none min-w-0"
                   >
                     {Object.keys(TAG_CONFIG).map((k) => (
                       <option key={k} value={k} className="bg-[#14141c]">
-                        [{k}]
+                        {k}
                       </option>
                     ))}
                   </select>
                   <select
                     value={quickForm.icon}
                     onChange={(e) => setQuickForm({ ...quickForm, icon: e.target.value })}
-                    className="mc-slot px-2 py-1.5 text-xs text-[#ffff55] font-bold focus:outline-none"
+                    className="mc-slot px-1.5 py-1.5 text-[11px] text-[#ffff55] font-bold focus:outline-none min-w-0"
                   >
                     {MC_ICON_CATALOG.map((ic) => (
                       <option key={ic.id} value={ic.id} className="bg-[#14141c]">
@@ -3274,7 +3552,7 @@ export default function App() {
 
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-[10px] text-zinc-400 font-mono">
-                    PC: Ấn <kbd className="px-1.5 py-0.5 mc-slot text-[#ffff55]">Ctrl+Shift+S</kbd>
+                    PC: <kbd className="px-1 py-0.5 mc-slot text-[#ffff55]">Ctrl+Shift+S</kbd>
                   </span>
                   <button
                     type="submit"
@@ -3290,53 +3568,52 @@ export default function App() {
           <button
             type="button"
             onClick={() => setIsMiniOverlayOpen(!isMiniOverlayOpen)}
-            title="Khối nhập nhanh tọa độ (Android Floating Widget / PC Ctrl+Shift+S)"
-            className="mc-btn mc-btn-command w-14 h-14 p-3 text-white flex items-center justify-center cursor-pointer"
+            title="Lưu nhanh tọa độ"
+            className="mc-btn mc-btn-command w-12 h-12 sm:w-13 sm:h-13 p-2.5 text-white flex items-center justify-center cursor-pointer"
           >
             {isMiniOverlayOpen ? (
-              <X className="w-6 h-6 stroke-[3]" />
+              <X className="w-5 h-5 stroke-[3]" />
             ) : (
-              <Zap className="w-6 h-6 fill-[#ffff55] text-[#ffff55]" />
+              <Zap className="w-5 h-5 fill-[#ffff55] text-[#ffff55]" />
             )}
           </button>
         </div>
       )}
 
-      {/* HEADER BAR */}
-      <header className="sticky top-0 z-30 bg-[#181720] border-b-4 border-black shadow-[0_4px_0_#09080c]">
+      {/* HEADER BAR (Tối ưu gọn cho cả Android & Windows) */}
+      <header className="sticky top-0 z-30 bg-[#181720] border-b-4 border-black shadow-[0_4px_0_#09080c] w-full">
         <div className="h-2 w-full mc-turf-overworld" />
-        <div className="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2">
+          {/* Logo & Tên App: CHỈ HIỂN THỊ "fu WAYPOINT" */}
+          <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setIsAppIconModalOpen(true)}
-              title="Bấm để thay đổi Icon App & Tải file icon.ico / icon.png"
-              className="w-11 h-11 mc-btn mc-btn-stone flex items-center justify-center p-1.5 cursor-pointer"
+              title="Đổi biểu tượng ứng dụng"
+              className="w-9 h-9 sm:w-10 sm:h-10 mc-btn mc-btn-stone flex items-center justify-center p-1 cursor-pointer shrink-0"
             >
               <VoxelBlockIcon
                 type={appIconConfig.iconId}
                 customImage={appIconConfig.customImage}
-                className="w-7 h-7"
+                className="w-6 h-6 sm:w-7 sm:h-7"
               />
             </button>
             <h1
               onClick={() => setCurrentParentId(null)}
-              className="text-xl sm:text-2xl font-black tracking-wider mc-logo-title cursor-pointer"
+              className="text-base sm:text-2xl font-black tracking-wider mc-logo-title cursor-pointer truncate"
             >
               fu WAYPOINT
             </h1>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center mc-slot p-1">
-              <Globe className="w-4 h-4 text-[#55ff55] ml-2 mr-1.5 shrink-0" />
-              <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mr-1 hidden sm:inline">
-                World:
-              </span>
+          {/* Cụm công cụ trên Header */}
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            <div className="flex items-center mc-slot p-0.5 sm:p-1 max-w-[180px] sm:max-w-none">
+              <Globe className="w-3.5 h-3.5 text-[#55ff55] ml-1.5 mr-1 shrink-0" />
               <select
                 value={selectedWorldId}
                 onChange={(e) => setSelectedWorldId(e.target.value)}
-                className="bg-transparent text-xs sm:text-sm font-extrabold text-white pr-2 py-1 focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-extrabold text-white pr-1 py-1 focus:outline-none cursor-pointer truncate max-w-[105px] sm:max-w-[160px]"
               >
                 {worlds.map((w) => (
                   <option key={w.id} value={w.id} className="bg-[#161922] text-slate-100">
@@ -3347,45 +3624,48 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setIsWorldModalOpen(true)}
-                title="Thêm Profile (World / Server) mới"
-                className="mc-btn mc-btn-emerald px-2.5 py-1 text-xs font-black text-[#041a06] cursor-pointer"
+                title="Thêm World / Server mới"
+                className="mc-btn mc-btn-emerald px-2 py-0.5 text-[11px] font-black text-[#041a06] cursor-pointer shrink-0"
               >
-                + Profile
+                +
               </button>
             </div>
 
             <button
               type="button"
               onClick={() => setIsAppIconModalOpen(true)}
-              title="Đổi biểu tượng App (App Icon) & Xuất file icon.ico / icon.png"
-              className="mc-btn mc-btn-stone inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black text-[#55ff55] cursor-pointer"
+              title="Đổi biểu tượng App"
+              className="mc-btn mc-btn-stone inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#55ff55] cursor-pointer"
             >
               <Palette className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Icon App</span>
+              <span className="hidden lg:inline">Icon App</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsDistanceOpen(true)}
-              className="mc-btn mc-btn-gold inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black text-[#1f1300] cursor-pointer"
+              title="Đo khoảng cách 2 điểm"
+              className="mc-btn mc-btn-gold inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#1f1300] cursor-pointer"
             >
               <Ruler className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Đo khoảng cách 2 điểm</span>
+              <span className="hidden md:inline">Đo khoảng cách</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsCalcOpen(true)}
-              className="mc-btn mc-btn-purpur inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black text-white cursor-pointer"
+              title="Máy tính cổng Nether (÷8)"
+              className="mc-btn mc-btn-purpur inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-white cursor-pointer"
             >
               <Calculator className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Nether Hub (÷8)</span>
+              <span className="hidden md:inline">Nether (÷8)</span>
             </button>
 
             <button
               type="button"
               onClick={openBackupModal}
-              className="mc-btn mc-btn-diamond inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black text-[#041924] cursor-pointer"
+              title="Sao lưu / Đồng bộ"
+              className="mc-btn mc-btn-diamond inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#041924] cursor-pointer"
             >
               <Cloud className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Sao lưu / Đồng bộ</span>
@@ -3394,8 +3674,8 @@ export default function App() {
             <button
               type="button"
               onClick={() => setSoundEnabled(!soundEnabled)}
-              title={soundEnabled ? 'Đang bật tiếng Click Block Minecraft' : 'Đang tắt tiếng Click Block'}
-              className={`mc-btn p-2 cursor-pointer ${
+              title={soundEnabled ? 'Tắt âm thanh' : 'Bật âm thanh'}
+              className={`mc-btn p-1.5 cursor-pointer ${
                 soundEnabled ? 'mc-btn-stone text-[#55ff55]' : 'mc-btn-stone text-zinc-500'
               }`}
             >
@@ -3405,8 +3685,8 @@ export default function App() {
             <button
               type="button"
               onClick={() => setIsGuideOpen(true)}
-              title="Kiến trúc & Hướng dẫn dùng trên PC / Android"
-              className="mc-btn mc-btn-stone p-2 text-slate-200 cursor-pointer"
+              title="Thông tin phiên bản & mẹo"
+              className="mc-btn mc-btn-stone p-1.5 text-slate-200 cursor-pointer"
             >
               <HelpCircle className="w-4 h-4" />
             </button>
@@ -3414,37 +3694,39 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 pt-6">
+      {/* NỘI DUNG CHÍNH */}
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 w-full">
+        {/* THANH BREADCRUMB PHÂN TẦNG (KHI ĐANG Ở TRONG 1 KHU VỰC CHA) */}
         {currentParentWaypoint && !viewTrash && (
-          <div className="mc-panel p-4 mb-5 border-2 border-[#55ff55]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm font-extrabold">
+          <div className="mc-panel p-3 sm:p-4 mb-4 border-2 border-[#55ff55] w-full overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-1.5 flex-wrap text-xs font-extrabold min-w-0">
                 <button
                   type="button"
                   onClick={() =>
                     setCurrentParentId(currentParentWaypoint.parentId || null)
                   }
-                  className="mc-btn mc-btn-stone inline-flex items-center gap-1.5 px-3 py-1.5 text-white cursor-pointer"
+                  className="mc-btn mc-btn-stone inline-flex items-center gap-1 px-2.5 py-1 text-white cursor-pointer shrink-0"
                 >
-                  <ArrowLeft className="w-4 h-4 text-[#55ff55]" />
-                  <span>Quay Ra Ngoài</span>
+                  <ArrowLeft className="w-3.5 h-3.5 text-[#55ff55]" />
+                  <span>Quay lại</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setCurrentParentId(null)}
-                  className="text-zinc-400 hover:text-white cursor-pointer font-mono"
+                  className="text-zinc-400 hover:text-white cursor-pointer font-mono shrink-0"
                 >
-                  🏠 Tất cả địa điểm
+                  Ngoài cùng
                 </button>
 
                 {breadcrumbTrail.map((crumb, idx) => (
                   <React.Fragment key={crumb.id}>
-                    <ChevronRight className="w-4 h-4 text-zinc-500" />
+                    <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                     <button
                       type="button"
                       onClick={() => setCurrentParentId(crumb.id)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 mc-slot cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 mc-slot cursor-pointer min-w-0 max-w-full ${
                         idx === breadcrumbTrail.length - 1
                           ? 'text-[#55ff55] border-[#55ff55]'
                           : 'text-zinc-200'
@@ -3452,12 +3734,9 @@ export default function App() {
                     >
                       <VoxelBlockIcon
                         type={crumb.icon || TAG_CONFIG[crumb.tag]?.defaultIcon || 'grass'}
-                        className="w-4 h-4"
+                        className="w-3.5 h-3.5 shrink-0"
                       />
-                      <span>{crumb.name}</span>
-                      <span className="text-[11px] font-mono text-zinc-400">
-                        (X:{crumb.x} {crumb.y !== null ? `Y:${crumb.y}` : ''} Z:{crumb.z})
-                      </span>
+                      <span className="truncate max-w-[140px] sm:max-w-[220px]">{crumb.name}</span>
                     </button>
                   </React.Fragment>
                 ))}
@@ -3466,31 +3745,32 @@ export default function App() {
               <button
                 type="button"
                 onClick={openCreateForm}
-                className="mc-btn mc-btn-emerald inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-[#041a06] uppercase cursor-pointer"
+                className="mc-btn mc-btn-emerald inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-black text-[#041a06] uppercase cursor-pointer shrink-0"
               >
-                <FolderPlus className="w-4 h-4" />
-                <span>+ Thêm Điểm Con Trong &quot;{currentParentWaypoint.name}&quot;</span>
+                <FolderPlus className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">+ Thêm Điểm Con Trong &quot;{currentParentWaypoint.name}&quot;</span>
               </button>
             </div>
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
-          <div className="grid grid-cols-2 sm:flex items-center gap-2 mc-panel p-2">
+        {/* THANH ĐIỀU KHIỂN CHIỀU KHÔNG GIAN & NÚT TẠO MỚI */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 mb-4">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 mc-panel p-1.5">
             <button
               type="button"
               onClick={() => {
                 setActiveDimension('all');
                 setViewTrash(false);
               }}
-              className={`mc-btn px-3.5 py-2 text-xs sm:text-sm cursor-pointer flex items-center justify-center gap-1.5 font-extrabold ${
+              className={`mc-btn px-2.5 py-2 text-xs cursor-pointer flex items-center justify-center gap-1 font-extrabold min-w-0 ${
                 !viewTrash && activeDimension === 'all'
                   ? 'mc-btn-gold text-[#1f1300]'
                   : 'mc-btn-stone text-slate-200'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Tất cả ({counts.all})</span>
+              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Tất cả ({counts.all})</span>
             </button>
 
             {Object.values(DIMENSION_CONFIG).map((dim) => {
@@ -3504,12 +3784,12 @@ export default function App() {
                     setActiveDimension(dim.id);
                     setViewTrash(false);
                   }}
-                  className={`mc-btn px-3.5 py-2 text-xs sm:text-sm cursor-pointer flex items-center justify-center gap-1.5 font-extrabold ${
+                  className={`mc-btn px-2.5 py-2 text-xs cursor-pointer flex items-center justify-center gap-1 font-extrabold min-w-0 ${
                     isActive ? dim.activeTab : 'mc-btn-stone text-slate-200'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">
                     {dim.label} ({counts[dim.id]})
                   </span>
                 </button>
@@ -3519,23 +3799,22 @@ export default function App() {
             <button
               type="button"
               onClick={() => setViewTrash(!viewTrash)}
-              className={`mc-btn px-3 py-2 text-xs sm:text-sm cursor-pointer flex items-center justify-center gap-1.5 font-extrabold ${
+              className={`mc-btn col-span-2 sm:col-span-1 px-2.5 py-2 text-xs cursor-pointer flex items-center justify-center gap-1 font-extrabold min-w-0 ${
                 viewTrash
                   ? 'mc-btn-tnt text-white'
                   : 'mc-btn-stone text-rose-300'
               }`}
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Thùng rác ({trashedWaypoints.length})</span>
+              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Thùng rác ({trashedWaypoints.length})</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <div className="grid grid-cols-3 sm:flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setViewMode(viewMode === 'grid' ? 'radar' : 'grid')}
-              title="Chuyển đổi giữa Danh sách Thẻ và Bản đồ Radar Tọa Độ 2D"
-              className={`mc-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-3 text-xs sm:text-sm font-black uppercase cursor-pointer ${
+              className={`mc-btn inline-flex items-center justify-center gap-1 px-2.5 py-2.5 text-xs font-black uppercase cursor-pointer ${
                 viewMode === 'radar'
                   ? 'mc-btn-diamond text-[#041924]'
                   : 'mc-btn-stone text-[#55ffff]'
@@ -3543,13 +3822,13 @@ export default function App() {
             >
               {viewMode === 'radar' ? (
                 <>
-                  <LayoutGrid className="w-4 h-4" />
-                  <span>Dạng Thẻ</span>
+                  <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Dạng Thẻ</span>
                 </>
               ) : (
                 <>
-                  <MapIcon className="w-4 h-4" />
-                  <span>Radar 2D</span>
+                  <MapIcon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Radar 2D</span>
                 </>
               )}
             </button>
@@ -3557,72 +3836,95 @@ export default function App() {
             <button
               type="button"
               onClick={openCreateForm}
-              className="mc-btn mc-btn-command flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-3 text-white font-black text-xs sm:text-sm uppercase tracking-wide cursor-pointer mc-text-shadow"
+              className="mc-btn mc-btn-command inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2.5 text-white font-black text-xs uppercase cursor-pointer mc-text-shadow"
             >
-              <span className="mc-redstone-dot mc-redstone-on" />
-              <ScanLine className="w-4 h-4" />
-              <span>Quét Ảnh F3 / MCPE (OCR)</span>
+              <ScanLine className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Quét Ảnh F3 / MCPE (OCR)</span>
             </button>
 
             <button
               type="button"
               onClick={openCreateForm}
-              className="mc-btn mc-btn-emerald flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 text-[#041a06] font-black text-xs sm:text-sm uppercase tracking-wide cursor-pointer"
+              className="mc-btn mc-btn-emerald inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 text-[#041a06] font-black text-xs uppercase cursor-pointer"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Lưu Tọa Độ Mới</span>
+              <Plus className="w-3.5 h-3.5 stroke-[3] shrink-0" />
+              <span className="truncate">Lưu Tọa Độ Mới</span>
             </button>
           </div>
         </div>
 
+        {/* KHỐI BẢNG LỌC & TÌM KIẾM */}
         {!viewTrash && (
-          <div className="mc-panel p-4 mb-6 space-y-3.5">
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-[#55ff55] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <div className="mc-panel p-3 sm:p-4 mb-5 space-y-3 w-full overflow-hidden">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+              <div className="relative flex-1 min-w-0">
+                <Search className="w-4 h-4 text-[#55ff55] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm kiếm xuyên suốt mọi địa điểm cha & điểm con (tên, ghi chú, tag, tọa độ)..."
-                  className="w-full mc-slot text-white placeholder-zinc-500 pl-10 pr-4 py-2.5 text-xs sm:text-sm font-mono focus:outline-none"
+                  placeholder="Tìm tên địa điểm, ghi chú, tọa độ..."
+                  className="w-full mc-slot text-white placeholder-zinc-500 pl-9 pr-8 py-2 text-xs sm:text-sm font-mono focus:outline-none"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 mc-slot px-3 py-2 shrink-0">
-                <span className="text-xs text-zinc-400 font-bold uppercase">Chế độ Copy:</span>
-                <select
-                  value={copyMode}
-                  onChange={(e) => setCopyMode(e.target.value)}
-                  className="bg-transparent text-xs font-extrabold text-[#55ffff] focus:outline-none cursor-pointer font-mono"
-                >
-                  <option value="chat" className="bg-[#141720] text-slate-100">
-                    Chia sẻ Discord/Zalo ([Tên] - Overworld: X:120 Y:12 Z:-500)
-                  </option>
-                  <option value="raw" className="bg-[#141720] text-slate-100">
-                    Số tọa độ thuần (120 12 -500)
-                  </option>
-                  <option value="tp" className="bg-[#141720] text-slate-100">
-                    Lệnh dịch chuyển (/tp @s 120 12 -500)
-                  </option>
-                </select>
+              {/* Cụm chọn chế độ Copy & Sắp xếp (Gọn gàng không gây tràn trên Android) */}
+              <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 mc-slot px-2.5 py-1.5 min-w-0">
+                  <span className="text-[11px] text-zinc-400 font-bold shrink-0">Copy:</span>
+                  <select
+                    value={copyMode}
+                    onChange={(e) => setCopyMode(e.target.value)}
+                    className="bg-transparent text-xs font-extrabold text-[#55ffff] focus:outline-none cursor-pointer font-mono truncate w-full"
+                  >
+                    <option value="chat" className="bg-[#141720] text-slate-100">
+                      Chat ([Tên] X Y Z)
+                    </option>
+                    <option value="raw" className="bg-[#141720] text-slate-100">
+                      Số (X Y Z)
+                    </option>
+                    <option value="tp" className="bg-[#141720] text-slate-100">
+                      Lệnh (/tp @s)
+                    </option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1.5 mc-slot px-2.5 py-1.5 min-w-0">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-[#ffff55] shrink-0" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent text-xs font-extrabold text-[#ffff55] focus:outline-none cursor-pointer font-mono truncate w-full"
+                  >
+                    <option value="newest" className="bg-[#141720] text-slate-100">
+                      Mới nhất
+                    </option>
+                    <option value="name" className="bg-[#141720] text-slate-100">
+                      Tên A → Z
+                    </option>
+                    <option value="children" className="bg-[#141720] text-slate-100">
+                      Nhiều điểm con
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5">
+            {/* Thanh lọc Tag */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
               <button
                 type="button"
                 onClick={() => setActiveTag('all')}
-                className={`mc-btn px-3 py-1.5 text-xs font-extrabold shrink-0 cursor-pointer ${
+                className={`mc-btn px-2.5 py-1 text-xs font-extrabold shrink-0 cursor-pointer ${
                   activeTag === 'all'
                     ? 'mc-btn-gold text-[#1f1300]'
                     : 'mc-btn-stone text-zinc-300'
@@ -3638,20 +3940,21 @@ export default function App() {
                     key={tagKey}
                     type="button"
                     onClick={() => setActiveTag(isSelected ? 'all' : tagKey)}
-                    className={`mc-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold shrink-0 cursor-pointer ${
+                    className={`mc-btn inline-flex items-center gap-1 px-2.5 py-1 text-xs font-extrabold shrink-0 cursor-pointer ${
                       isSelected
                         ? 'mc-btn-emerald text-[#041a06]'
                         : 'mc-btn-stone text-zinc-300'
                     }`}
                   >
-                    <TagIcon className="w-3.5 h-3.5" />
-                    <span>[{tagKey}]</span>
+                    <TagIcon className="w-3 h-3" />
+                    <span>{tagKey}</span>
                   </button>
                 );
               })}
             </div>
 
-            <div className="pt-2.5 border-t-2 border-black/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+            {/* Đo khoảng cách từ vị trí người chơi */}
+            <div className="pt-2 border-t-2 border-black/80 flex flex-wrap items-center justify-between gap-2 text-xs">
               <label className="inline-flex items-center gap-2 cursor-pointer text-zinc-200 font-bold">
                 <input
                   type="checkbox"
@@ -3661,13 +3964,12 @@ export default function App() {
                   }
                   className="w-4 h-4 accent-[#55ff55]"
                 />
-                <Navigation className="w-3.5 h-3.5 text-[#55ffff]" />
-                <span>Đo khoảng cách trực tiếp từ tọa độ bạn đang đứng</span>
+                <Navigation className="w-3.5 h-3.5 text-[#55ffff] shrink-0" />
+                <span>Đo khoảng cách từ vị trí đang đứng</span>
               </label>
 
               {playerPos.enabled ? (
-                <div className="flex items-center gap-2 flex-wrap font-mono">
-                  <span className="text-zinc-300 font-bold">Vị trí bạn:</span>
+                <div className="flex items-center gap-1.5 flex-wrap font-mono">
                   <input
                     type="number"
                     value={playerPos.x}
@@ -3675,7 +3977,7 @@ export default function App() {
                       setPlayerPos((prev) => ({ ...prev, x: Number(e.target.value) }))
                     }
                     placeholder="X"
-                    className="w-20 mc-slot px-2 py-1 text-xs text-[#ff5555] font-bold"
+                    className="w-16 sm:w-20 mc-slot px-2 py-1 text-xs text-[#ff5555] font-bold"
                   />
                   <input
                     type="number"
@@ -3684,7 +3986,7 @@ export default function App() {
                       setPlayerPos((prev) => ({ ...prev, z: Number(e.target.value) }))
                     }
                     placeholder="Z"
-                    className="w-20 mc-slot px-2 py-1 text-xs text-[#55ffff] font-bold"
+                    className="w-16 sm:w-20 mc-slot px-2 py-1 text-xs text-[#55ffff] font-bold"
                   />
                   <select
                     value={playerPos.dimension}
@@ -3699,18 +4001,13 @@ export default function App() {
                   </select>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 text-[11px] text-zinc-400 font-mono">
-                  <span>
-                    💡 Bấm vào <strong>Icon trên thẻ</strong> để đổi nhanh sang Cục Obi, Dân Làng, Rương...
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setFloatingBubbleVisible(!floatingBubbleVisible)}
-                    className="mc-btn mc-btn-stone px-2 py-0.5 text-[#55ffff] font-bold cursor-pointer"
-                  >
-                    {floatingBubbleVisible ? 'Ẩn khối nổi' : 'Hiện khối nổi Android'}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setFloatingBubbleVisible(!floatingBubbleVisible)}
+                  className="mc-btn mc-btn-stone px-2 py-0.5 text-[11px] text-[#55ffff] font-bold cursor-pointer"
+                >
+                  {floatingBubbleVisible ? 'Ẩn nút lưu nhanh ⚡' : 'Hiện nút lưu nhanh ⚡'}
+                </button>
               )}
             </div>
           </div>
@@ -3724,63 +4021,56 @@ export default function App() {
           />
         )}
 
+        {/* DANH SÁCH THÙNG RÁC HOẶC DANH SÁCH THẺ */}
         {viewTrash ? (
-          <div className="mc-panel p-5">
-            <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b-2 border-black">
-              <div className="flex items-center gap-2.5">
-                <ShieldAlert className="w-6 h-6 text-[#ff5555]" />
-                <div>
-                  <h2 className="text-base font-extrabold text-white mc-text-shadow">
-                    Rương Thùng Rác Bảo Vệ (Chống Xóa Nhầm)
-                  </h2>
-                  <p className="text-xs text-zinc-400">
-                    Mọi tọa độ bạn lỡ tay bấm xóa đều nằm an toàn ở đây. Bấm &quot;Khôi phục&quot; để lấy lại ngay lập tức.
-                  </p>
-                </div>
+          <div className="mc-panel p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b-2 border-black flex-wrap">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-[#ff5555] shrink-0" />
+                <h2 className="text-sm sm:text-base font-extrabold text-white mc-text-shadow">
+                  Thùng Rác ({trashedWaypoints.length})
+                </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setViewTrash(false)}
                 className="mc-btn mc-btn-stone px-3 py-1.5 text-xs font-bold text-white cursor-pointer"
               >
-                Quay lại danh sách
+                Quay lại
               </button>
             </div>
 
             {trashedWaypoints.length === 0 ? (
-              <div className="text-center py-12 text-zinc-400 text-sm font-mono mc-slot">
-                Thùng rác đang trống. Không có tọa độ nào bị xóa gần đây.
+              <div className="text-center py-10 text-zinc-400 text-xs sm:text-sm font-mono mc-slot">
+                Thùng rác trống.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {trashedWaypoints.map((wp) => (
                   <div
                     key={wp.id}
-                    className="flex items-center justify-between gap-3 p-4 mc-slot"
+                    className="flex items-center justify-between gap-2 p-3 mc-slot min-w-0"
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <VoxelBlockIcon
                         type={wp.icon || TAG_CONFIG[wp.tag]?.defaultIcon || 'grass'}
                         className="w-6 h-6"
                       />
-                      <div>
-                        <span className="text-xs font-extrabold text-[#ff5555] uppercase font-mono">
-                          [{wp.dimension}] • [{wp.tag}]
-                        </span>
-                        <h4 className="font-extrabold text-white mt-0.5">{wp.name}</h4>
-                        <p className="text-xs font-mono text-zinc-400 mt-0.5">
-                          X: {wp.x} | Y: {wp.y ?? '~'} | Z: {wp.z}
+                      <div className="min-w-0">
+                        <h4 className="font-extrabold text-white text-sm truncate">{wp.name}</h4>
+                        <p className="text-xs font-mono text-zinc-400 truncate">
+                          X:{wp.x} | Y:{wp.y ?? '~'} | Z:{wp.z}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => handleRestore(wp.id)}
-                        className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-3 py-1.5 text-xs font-black text-[#041a06] cursor-pointer"
+                        className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#041a06] cursor-pointer"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        Khôi phục
+                        <span>Khôi phục</span>
                       </button>
                       <button
                         type="button"
@@ -3798,31 +4088,26 @@ export default function App() {
         ) : (
           <>
             {filteredWaypoints.length === 0 ? (
-              <div className="mc-panel p-12 text-center">
+              <div className="mc-panel p-8 sm:p-12 text-center">
                 <div className="w-12 h-12 mc-slot mx-auto mb-3 flex items-center justify-center">
                   <Compass className="w-7 h-7 text-[#ffff55]" />
                 </div>
-                <h3 className="text-base font-extrabold text-white mb-1 mc-text-shadow">
+                <h3 className="text-sm sm:text-base font-extrabold text-white mb-2 mc-text-shadow">
                   {currentParentWaypoint
-                    ? `Khu vực "${currentParentWaypoint.name}" chưa có tọa độ con nào`
-                    : 'Chưa có khối tọa độ nào khớp với bộ lọc'}
+                    ? `Chưa có điểm con nào trong "${currentParentWaypoint.name}"`
+                    : 'Chưa có tọa độ nào'}
                 </h3>
-                <p className="text-xs text-zinc-400 mb-4">
-                  {currentParentWaypoint
-                    ? 'Hãy thêm các điểm con như Kho đồ, Khu dân làng, Máy Farm... vào trong khu vực này.'
-                    : 'Hãy bấm nút "Lưu Tọa Độ Mới" hoặc quét ảnh chụp màn hình F3 / MCPE.'}
-                </p>
                 <button
                   type="button"
                   onClick={openCreateForm}
-                  className="mc-btn mc-btn-emerald inline-flex items-center gap-2 px-4 py-2.5 text-[#041a06] text-xs font-black uppercase cursor-pointer"
+                  className="mc-btn mc-btn-emerald inline-flex items-center gap-2 px-4 py-2 text-[#041a06] text-xs font-black uppercase cursor-pointer"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
                   <span>Thêm điểm tọa độ đầu tiên</span>
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredWaypoints.map((wp) => {
                   const parentWp = wp.parentId
                     ? activeWaypoints.find((p) => p.id === wp.parentId) || null
@@ -3857,35 +4142,32 @@ export default function App() {
         )}
       </main>
 
-      {/* MODAL 0: CHỌN NHANH BIỂU TƯỢNG TRÊN THẺ */}
+      {/* ==========================================
+          MODAL 0: ĐỔI NHANH BIỂU TƯỢNG TRÊN THẺ
+      ========================================== */}
       {quickIconTargetWp && (
         <div
           onClick={() => setQuickIconTargetWp(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="mc-panel max-w-lg w-full p-5 max-h-[88vh] overflow-y-auto"
+            className="mc-panel max-w-lg w-full p-4 max-h-[88vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between mb-3 pb-2.5 border-b-2 border-black">
-              <div>
-                <h3 className="text-base font-black text-[#55ff55] mc-text-shadow">
-                  Đổi Biểu Tượng Cho &quot;{quickIconTargetWp.name}&quot;
-                </h3>
-                <p className="text-xs text-zinc-400">
-                  Chọn Cục Obi, Dân Làng, Rương Đồ, Quái Vật... (40 biểu tượng Pixel)
-                </p>
-              </div>
+            <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-black">
+              <h3 className="text-sm sm:text-base font-black text-[#55ff55] truncate mc-text-shadow">
+                Chọn biểu tượng — {quickIconTargetWp.name}
+              </h3>
               <button
                 type="button"
                 onClick={() => setQuickIconTargetWp(null)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
+                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
             </div>
 
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mc-slot p-3 max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mc-slot p-2.5 max-h-96 overflow-y-auto">
               {MC_ICON_CATALOG.map((ic) => {
                 const isSelected = quickIconTargetWp.icon === ic.id;
                 return (
@@ -3893,14 +4175,14 @@ export default function App() {
                     key={ic.id}
                     type="button"
                     onClick={() => handleSelectQuickIcon(ic.id)}
-                    className={`mc-btn p-2 flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer ${
+                    className={`mc-btn p-1.5 flex flex-col items-center justify-center gap-1 text-center cursor-pointer min-w-0 ${
                       isSelected
                         ? 'mc-btn-emerald text-[#041a06]'
                         : 'mc-btn-stone text-zinc-200'
                     }`}
                   >
-                    <VoxelBlockIcon type={ic.id} className="w-7 h-7" />
-                    <span className="text-[10px] font-bold leading-tight line-clamp-1">
+                    <VoxelBlockIcon type={ic.id} className="w-6 h-6" />
+                    <span className="text-[9px] font-bold leading-tight truncate w-full">
                       {ic.label}
                     </span>
                   </button>
@@ -3911,105 +4193,59 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 0B: ĐỔI ICON CHO APP & XUẤT FILE ICON.ICO / ICON.PNG */}
+      {/* ==========================================
+          MODAL 0B: ĐỔI ICON CHO APP (ĐÃ XÓA PHẦN XUẤT FILE THỪA)
+      ========================================== */}
       {isAppIconModalOpen && (
         <div
           onClick={() => setIsAppIconModalOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="mc-panel max-w-xl w-full p-5 my-8 max-h-[92vh] overflow-y-auto"
+            className="mc-panel max-w-lg w-full p-4 sm:p-5 my-6 max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-black">
-              <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b-2 border-black">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <VoxelBlockIcon
                   type={appIconConfig.iconId}
                   customImage={appIconConfig.customImage}
-                  className="w-8 h-8"
+                  className="w-7 h-7"
                 />
-                <div>
-                  <h2 className="text-base font-black text-[#55ff55] mc-text-shadow">
-                    Thay Đổi Icon Của App (fu WAYPOINT)
-                  </h2>
-                  <p className="text-xs text-zinc-400">
-                    Đổi logo hiển thị trên App, cửa sổ trình duyệt và tải file icon.ico / icon.png để đóng gói .exe / .apk
-                  </p>
-                </div>
+                <h2 className="text-sm sm:text-base font-black text-[#55ff55] truncate mc-text-shadow">
+                  Đổi Biểu Tượng App
+                </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAppIconModalOpen(false)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
+                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
             </div>
 
-            <div className="p-3.5 mc-slot mb-4 space-y-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-extrabold text-[#ffff55]">
-                  1. Tải ảnh riêng từ máy tính của bạn làm Icon App:
-                </span>
-                <input
-                  ref={appIconFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleUploadCustomAppIcon}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => appIconFileInputRef.current?.click()}
-                  className="mc-btn mc-btn-diamond px-3 py-1.5 text-xs font-black text-[#041924] cursor-pointer"
-                >
-                  + Chọn Ảnh Từ Máy (.PNG / .ICO)
-                </button>
-              </div>
-
-              <div className="pt-2.5 border-t border-zinc-800 flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-extrabold text-[#55ff55]">
-                  2. Xuất Icon hiện tại ra file chuẩn để build .EXE / .APK:
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      downloadRenderedAppIcon(
-                        appIconConfig.iconId,
-                        appIconConfig.customImage,
-                        'ico',
-                        () => showToast('Đã tải file icon.ico (256x256)!', 'orb')
-                      )
-                    }
-                    className="mc-btn mc-btn-gold px-3 py-1.5 text-xs font-black text-[#1f1300] inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    Tải file icon.ico (Windows)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      downloadRenderedAppIcon(
-                        appIconConfig.iconId,
-                        appIconConfig.customImage,
-                        'png',
-                        () => showToast('Đã tải file icon.png (256x256)!', 'orb')
-                      )
-                    }
-                    className="mc-btn mc-btn-emerald px-3 py-1.5 text-xs font-black text-[#041a06] inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    Tải file icon.png (Android)
-                  </button>
-                </div>
-              </div>
+            <div className="p-3 mc-slot mb-3 flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-xs font-bold text-zinc-200">
+                Tải ảnh riêng từ máy:
+              </span>
+              <input
+                ref={appIconFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleUploadCustomAppIcon}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => appIconFileInputRef.current?.click()}
+                className="mc-btn mc-btn-diamond px-3 py-1.5 text-xs font-black text-[#041924] cursor-pointer"
+              >
+                Chọn ảnh từ máy
+              </button>
             </div>
 
-            <div className="mb-2 text-xs font-extrabold text-zinc-200">
-              Hoặc chọn từ 40 Biểu Tượng Pixel Minecraft làm Icon App:
-            </div>
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mc-slot p-3 max-h-72 overflow-y-auto">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mc-slot p-2.5 max-h-80 overflow-y-auto">
               {MC_ICON_CATALOG.map((ic) => {
                 const isSelected =
                   !appIconConfig.customImage && appIconConfig.iconId === ic.id;
@@ -4019,16 +4255,16 @@ export default function App() {
                     type="button"
                     onClick={() => {
                       setAppIconConfig({ iconId: ic.id, customImage: null });
-                      showToast(`Đã đổi Icon App thành "${ic.label}"!`, 'orb');
+                      showToast(`Đã đổi Icon App: ${ic.label}`, 'orb');
                     }}
-                    className={`mc-btn p-2 flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer ${
+                    className={`mc-btn p-1.5 flex flex-col items-center justify-center gap-1 text-center cursor-pointer min-w-0 ${
                       isSelected
                         ? 'mc-btn-emerald text-[#041a06]'
                         : 'mc-btn-stone text-zinc-200'
                     }`}
                   >
-                    <VoxelBlockIcon type={ic.id} className="w-7 h-7" />
-                    <span className="text-[10px] font-bold leading-tight line-clamp-1">
+                    <VoxelBlockIcon type={ic.id} className="w-6 h-6" />
+                    <span className="text-[9px] font-bold leading-tight truncate w-full">
                       {ic.label}
                     </span>
                   </button>
@@ -4039,32 +4275,33 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 1: THÊM / SỬA TỌA ĐỘ */}
+      {/* ==========================================
+          MODAL 1: THÊM / SỬA TỌA ĐỘ
+      ========================================== */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="mc-panel max-w-2xl w-full p-5 sm:p-6 my-8 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+          <div className="mc-panel max-w-xl w-full p-4 sm:p-5 my-6 max-h-[92vh] overflow-y-auto">
             <div className="absolute top-0 left-0 right-0 h-2.5 mc-turf-overworld" />
-            <div className="flex items-center justify-between mb-4 pb-3 pt-1 border-b-2 border-black">
-              <h2 className="text-lg font-black text-white flex items-center gap-2.5 mc-text-shadow">
+            <div className="flex items-center justify-between gap-2 mb-3.5 pb-2.5 pt-1 border-b-2 border-black">
+              <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2 truncate mc-text-shadow">
                 <VoxelBlockIcon type={formData.icon || 'command'} className="w-6 h-6" />
-                {editingId
-                  ? 'Chỉnh Sửa Khối Tọa Độ & Biểu Tượng'
-                  : 'Lưu Tọa Độ Mới (Hỗ trợ Tọa Độ Con & 40 Icon)'}
+                <span className="truncate">{editingId ? 'Sửa Tọa Độ' : 'Thêm Tọa Độ Mới'}</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setIsFormOpen(false)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
+                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
             </div>
 
-            <div className="mb-4 p-3.5 mc-slot space-y-2.5">
+            {/* Quét OCR & Dán lệnh F3+C */}
+            <div className="mb-3.5 p-3 mc-slot space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-xs font-extrabold text-[#55ff55] flex items-center gap-1.5">
-                  <Camera className="w-4 h-4 text-[#55ff55]" />
-                  Đọc ảnh chụp màn hình F3 (PC) / Góc trái MCPE (Android) bằng AI/OCR
+                  <Camera className="w-3.5 h-3.5 text-[#55ff55] shrink-0" />
+                  <span>Quét ảnh chụp F3 / MCPE</span>
                 </span>
 
                 <input
@@ -4077,21 +4314,20 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => ocrFileInputRef.current?.click()}
-                  className="mc-btn mc-btn-emerald inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-[#041a06] cursor-pointer"
+                  className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black text-[#041a06] cursor-pointer"
                 >
                   <ScanLine className="w-3.5 h-3.5" />
-                  Chọn Ảnh Để Quét Số
+                  <span>Chọn ảnh</span>
                 </button>
               </div>
 
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] text-zinc-400 font-bold">Thử mẫu quét tự động:</span>
                 {OCR_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
                     onClick={() => applyOcrPreset(preset)}
-                    className="mc-btn mc-btn-stone px-2.5 py-1 text-[11px] text-[#55ff55] font-bold cursor-pointer"
+                    className="mc-btn mc-btn-stone px-2 py-0.5 text-[10px] text-[#55ff55] font-bold cursor-pointer"
                   >
                     ⚡ {preset.label}
                   </button>
@@ -4099,32 +4335,29 @@ export default function App() {
               </div>
 
               {ocrStatusText && (
-                <p className="text-xs text-[#55ff55] bg-[#0b2210] px-2.5 py-1.5 border-2 border-[#22c55e] font-mono">
+                <p className="text-xs text-[#55ff55] bg-[#0b2210] px-2 py-1 border border-[#22c55e] font-mono break-words">
                   {isScanningOcr ? '⏳ ' : ''}
                   {ocrStatusText}
                 </p>
               )}
 
-              <div className="pt-1">
-                <label className="block text-[11px] text-[#d8b4fe] font-bold mb-1 flex items-center gap-1">
-                  <ClipboardPaste className="w-3 h-3" />
-                  Hoặc dán trực tiếp dòng F3+C / văn bản chứa số tọa độ:
-                </label>
+              <div>
                 <input
                   type="text"
                   value={smartPasteInput}
                   onChange={(e) => handleSmartPaste(e.target.value)}
-                  placeholder="VD: XYZ: 120 / 64 / -500 hoặc /execute in minecraft:the_nether run tp @s -145 68 310"
-                  className="w-full bg-[#09090d] border-2 border-[#6b21a8] px-3 py-1.5 text-xs font-mono text-white placeholder-zinc-500 focus:outline-none"
+                  placeholder="Dán nhanh dòng F3+C hoặc chuỗi tọa độ XYZ..."
+                  className="w-full bg-[#09090d] border border-[#6b21a8] px-2.5 py-1.5 text-xs font-mono text-white placeholder-zinc-500 focus:outline-none"
                 />
               </div>
             </div>
 
-            <form onSubmit={handleSaveWaypoint} className="space-y-4">
-              <div className="p-3 mc-slot border-2 border-[#eab308]/50">
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-[#ffff55] mb-1.5 flex items-center gap-1.5">
-                  <FolderOpen className="w-4 h-4 text-[#ffff55]" />
-                  Phân tầng: Thuộc địa điểm / Khu vực nào? (Tạo tọa độ trong tọa độ)
+            <form onSubmit={handleSaveWaypoint} className="space-y-3.5">
+              {/* Chọn Khu vực cha */}
+              <div className="p-2.5 mc-slot border border-[#eab308]/50">
+                <label className="block text-xs font-extrabold text-[#ffff55] mb-1 flex items-center gap-1.5">
+                  <FolderOpen className="w-3.5 h-3.5 text-[#ffff55] shrink-0" />
+                  <span>Thuộc khu vực</span>
                 </label>
                 <select
                   value={formData.parentId}
@@ -4137,23 +4370,21 @@ export default function App() {
                       dimension: parentObj ? parentObj.dimension : prev.dimension,
                     }));
                   }}
-                  className="w-full bg-[#14141d] border-2 border-black px-3 py-2 text-xs sm:text-sm font-bold text-white focus:outline-none"
+                  className="w-full bg-[#14141d] border border-black px-2.5 py-1.5 text-xs font-bold text-white focus:outline-none"
                 >
-                  <option value="">
-                    🏠 Địa điểm chính bên ngoài (Không nằm trong điểm nào)
-                  </option>
+                  <option value="">Ngoài cùng (Tọa độ chính)</option>
                   {activeWaypoints
                     .filter((w) => w.id !== editingId)
                     .map((w) => (
                       <option key={w.id} value={w.id}>
-                        📂 Nằm trong: {w.name} ({w.dimension} — X:{w.x}, Z:{w.z})
+                        📂 Trong: {w.name} ({w.x}, {w.z})
                       </option>
                     ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-200 mb-1">
+                <label className="block text-xs font-extrabold uppercase text-zinc-200 mb-1">
                   Tên địa điểm *
                 </label>
                 <input
@@ -4161,71 +4392,71 @@ export default function App() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="VD: Căn cứ chính, Kho để đồ, Khu dân làng Mending, Máy Farm Sắt..."
-                  className="w-full mc-slot px-3.5 py-2.5 text-sm text-white font-bold focus:outline-none"
+                  placeholder="VD: Căn cứ chính, Kho để đồ, Khu dân làng..."
+                  className="w-full mc-slot px-3 py-2 text-sm text-white font-bold focus:outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block text-xs font-extrabold text-[#ff5555] mb-1 font-mono">
-                    Tọa độ X *
+                    X *
                   </label>
                   <input
                     type="number"
                     required
                     value={formData.x}
                     onChange={(e) => setFormData({ ...formData, x: e.target.value })}
-                    placeholder="VD: 120"
-                    className="w-full mc-slot px-3 py-2 text-sm font-mono font-bold text-white focus:outline-none"
+                    placeholder="0"
+                    className="w-full mc-slot px-2.5 py-2 text-sm font-mono font-bold text-white focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-extrabold text-[#55ff55] mb-1 font-mono">
-                    Độ cao Y <span className="text-[10px] text-zinc-400 font-normal">(Tùy chọn)</span>
+                    Y <span className="text-[10px] text-zinc-400 font-normal">(Tùy)</span>
                   </label>
                   <input
                     type="number"
                     value={formData.y}
                     onChange={(e) => setFormData({ ...formData, y: e.target.value })}
-                    placeholder="Bỏ trống được"
-                    className="w-full mc-slot px-3 py-2 text-sm font-mono font-bold text-white focus:outline-none"
+                    placeholder="~"
+                    className="w-full mc-slot px-2.5 py-2 text-sm font-mono font-bold text-white focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-extrabold text-[#55ffff] mb-1 font-mono">
-                    Tọa độ Z *
+                    Z *
                   </label>
                   <input
                     type="number"
                     required
                     value={formData.z}
                     onChange={(e) => setFormData({ ...formData, z: e.target.value })}
-                    placeholder="VD: -500"
-                    className="w-full mc-slot px-3 py-2 text-sm font-mono font-bold text-white focus:outline-none"
+                    placeholder="0"
+                    className="w-full mc-slot px-2.5 py-2 text-sm font-mono font-bold text-white focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-200 mb-1">
-                    Chiều không gian (Dimension)
+                  <label className="block text-xs font-extrabold uppercase text-zinc-200 mb-1">
+                    Chiều không gian
                   </label>
                   <select
                     value={formData.dimension}
                     onChange={(e) => setFormData({ ...formData, dimension: e.target.value })}
-                    className="w-full mc-slot px-3 py-2.5 text-sm font-bold text-white focus:outline-none"
+                    className="w-full mc-slot px-2.5 py-2 text-xs sm:text-sm font-bold text-white focus:outline-none"
                   >
-                    <option value="overworld" className="bg-[#141720]">🟢 Overworld (Khối Cỏ)</option>
-                    <option value="nether" className="bg-[#141720]">🔴 Nether (Khối Netherrack)</option>
-                    <option value="end" className="bg-[#141720]">🟣 The End (Khối Đá End)</option>
+                    <option value="overworld" className="bg-[#141720]">Overworld</option>
+                    <option value="nether" className="bg-[#141720]">Nether</option>
+                    <option value="end" className="bg-[#141720]">The End</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-200 mb-1">
-                    Hệ thống Tag (Nhãn dán)
+                  <label className="block text-xs font-extrabold uppercase text-zinc-200 mb-1">
+                    Phân loại (Tag)
                   </label>
                   <select
                     value={formData.tag}
@@ -4237,7 +4468,7 @@ export default function App() {
                         icon: TAG_CONFIG[nextTag]?.defaultIcon || formData.icon,
                       });
                     }}
-                    className="w-full mc-slot px-3 py-2.5 text-sm font-bold text-white focus:outline-none"
+                    className="w-full mc-slot px-2.5 py-2 text-xs sm:text-sm font-bold text-white focus:outline-none"
                   >
                     {Object.keys(TAG_CONFIG).map((key) => (
                       <option key={key} value={key} className="bg-[#141720]">
@@ -4248,11 +4479,12 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="p-3 mc-slot space-y-2.5">
+              {/* Bảng chọn Biểu Tượng */}
+              <div className="p-2.5 mc-slot space-y-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#55ff55] flex items-center gap-2">
-                    <VoxelBlockIcon type={formData.icon || 'grass'} className="w-5 h-5" />
-                    Chọn Biểu Tượng Địa Điểm ({MC_ICON_MAP[formData.icon]?.label || 'Khối Đất Cỏ'})
+                  <span className="text-xs font-extrabold uppercase text-[#55ff55] flex items-center gap-1.5">
+                    <VoxelBlockIcon type={formData.icon || 'grass'} className="w-4 h-4" />
+                    <span>Biểu tượng: {MC_ICON_MAP[formData.icon]?.label || 'Đất Cỏ'}</span>
                   </span>
                   <div className="flex items-center gap-1 flex-wrap">
                     {iconCategories.map((cat) => (
@@ -4272,7 +4504,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-48 overflow-y-auto p-1">
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-44 overflow-y-auto p-1">
                   {filteredIconsForPicker.map((ic) => {
                     const isSelected = formData.icon === ic.id;
                     return (
@@ -4280,14 +4512,14 @@ export default function App() {
                         key={ic.id}
                         type="button"
                         onClick={() => setFormData({ ...formData, icon: ic.id })}
-                        className={`mc-btn p-1.5 flex flex-col items-center justify-center gap-1 text-center cursor-pointer ${
+                        className={`mc-btn p-1.5 flex flex-col items-center justify-center gap-1 text-center cursor-pointer min-w-0 ${
                           isSelected
                             ? 'mc-btn-emerald text-[#041a06]'
                             : 'mc-btn-stone text-zinc-200'
                         }`}
                       >
-                        <VoxelBlockIcon type={ic.id} className="w-6 h-6" />
-                        <span className="text-[9px] font-bold leading-tight line-clamp-1">
+                        <VoxelBlockIcon type={ic.id} className="w-5 h-5" />
+                        <span className="text-[9px] font-bold leading-tight truncate w-full">
                           {ic.label}
                         </span>
                       </button>
@@ -4297,23 +4529,23 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-200 mb-1">
-                  Ghi chú (Notes)
+                <label className="block text-xs font-extrabold uppercase text-zinc-200 mb-1">
+                  Ghi chú
                 </label>
                 <textarea
                   rows={2}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder='VD: "Dưới đáy giếng có 2 cục kim cương chưa đào"...'
+                  placeholder="Ghi chú ngắn..."
                   className="w-full mc-slot px-3 py-2 text-xs sm:text-sm font-mono text-white focus:outline-none"
                 />
               </div>
 
-              <div className="p-3 mc-slot">
-                <div className="flex items-center justify-between mb-2">
+              <div className="p-2.5 mc-slot">
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-extrabold text-zinc-200 flex items-center gap-1.5">
-                    <ImageIcon className="w-4 h-4 text-[#55ffff]" />
-                    Đính kèm ảnh chụp địa điểm ({(formData.screenshots || []).length}/2 ảnh)
+                    <ImageIcon className="w-3.5 h-3.5 text-[#55ffff]" />
+                    <span>Ảnh đính kèm ({(formData.screenshots || []).length}/2)</span>
                   </span>
                   <input
                     ref={screenshotInputRef}
@@ -4329,16 +4561,12 @@ export default function App() {
                       onClick={() => screenshotInputRef.current?.click()}
                       className="mc-btn mc-btn-diamond px-2.5 py-1 text-xs font-black text-[#041924] cursor-pointer"
                     >
-                      + Tải ảnh lên
+                      + Tải ảnh
                     </button>
                   )}
                 </div>
 
-                {(formData.screenshots || []).length === 0 ? (
-                  <p className="text-[11px] text-zinc-500 font-mono">
-                    Lưu hình dáng cái hang hoặc thiết kế máy farm để nhìn là nhớ ngay.
-                  </p>
-                ) : (
+                {(formData.screenshots || []).length > 0 && (
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {formData.screenshots.map((src, idx) => (
                       <div
@@ -4363,8 +4591,8 @@ export default function App() {
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-4 pt-1">
-                <label className="inline-flex items-center gap-2 text-xs font-bold text-[#55ffff] cursor-pointer">
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <label className="inline-flex items-center gap-1.5 text-xs font-bold text-[#55ffff] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.locked}
@@ -4372,10 +4600,10 @@ export default function App() {
                     className="w-4 h-4 accent-[#55ffff]"
                   />
                   <Lock className="w-3.5 h-3.5" />
-                  <span>Khóa bảo vệ (Chống bấm xóa nhầm)</span>
+                  <span>Khóa bảo vệ</span>
                 </label>
 
-                <label className="inline-flex items-center gap-2 text-xs font-bold text-[#ffff55] cursor-pointer">
+                <label className="inline-flex items-center gap-1.5 text-xs font-bold text-[#ffff55] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.pinned}
@@ -4387,17 +4615,17 @@ export default function App() {
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t-2 border-black">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t-2 border-black">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="mc-btn mc-btn-stone px-4 py-2.5 text-xs font-black uppercase text-zinc-200 cursor-pointer"
+                  className="mc-btn mc-btn-stone px-4 py-2 text-xs font-black uppercase text-zinc-200 cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="mc-btn mc-btn-emerald px-5 py-2.5 text-xs font-black uppercase text-[#041a06] cursor-pointer"
+                  className="mc-btn mc-btn-emerald px-5 py-2 text-xs font-black uppercase text-[#041a06] cursor-pointer"
                 >
                   {editingId ? 'Lưu Thay Đổi' : 'Lưu Tọa Độ'}
                 </button>
@@ -4407,19 +4635,19 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 2: DISTANCE CALCULATOR */}
+      {/* MODAL 2: ĐO KHOẢNG CÁCH 2 ĐIỂM */}
       {isDistanceOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="mc-panel max-w-lg w-full p-5">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-black">
-              <h2 className="text-base font-black text-[#ffff55] flex items-center gap-2 mc-text-shadow">
-                <Ruler className="w-5 h-5 text-[#ffff55]" />
-                Tính Khoảng Cách Giữa 2 Điểm (Đường Ray, Xây Cầu, Elytra)
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+          <div className="mc-panel max-w-lg w-full p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2 mb-3.5 pb-2.5 border-b-2 border-black">
+              <h2 className="text-sm sm:text-base font-black text-[#ffff55] flex items-center gap-2 truncate mc-text-shadow">
+                <Ruler className="w-4 h-4 text-[#ffff55] shrink-0" />
+                <span className="truncate">Đo Khoảng Cách 2 Điểm</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setIsDistanceOpen(false)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
+                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
@@ -4427,36 +4655,36 @@ export default function App() {
 
             {activeWaypoints.length < 2 ? (
               <p className="text-xs text-zinc-400 py-6 text-center mc-slot font-mono">
-                Cần có ít nhất 2 tọa độ trong Profile hiện tại để so sánh khoảng cách.
+                Cần tối thiểu 2 tọa độ để đo khoảng cách.
               </p>
             ) : (
-              <div className="space-y-4 text-xs sm:text-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-3.5 text-xs sm:text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-xs font-bold text-zinc-300 mb-1">Điểm xuất phát (A)</label>
+                    <label className="block text-xs font-bold text-zinc-300 mb-1">Điểm A</label>
                     <select
                       value={distanceCalcResult?.wpA?.id || ''}
                       onChange={(e) => setPointAId(e.target.value)}
-                      className="w-full mc-slot px-3 py-2 text-white text-xs font-bold"
+                      className="w-full mc-slot px-2.5 py-2 text-white text-xs font-bold"
                     >
                       {activeWaypoints.map((w) => (
                         <option key={w.id} value={w.id} className="bg-[#141720]">
-                          [{w.dimension}] {w.name} ({w.x}, {w.z})
+                          {w.name} ({w.x}, {w.z})
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-zinc-300 mb-1">Điểm đích (B)</label>
+                    <label className="block text-xs font-bold text-zinc-300 mb-1">Điểm B</label>
                     <select
                       value={distanceCalcResult?.wpB?.id || ''}
                       onChange={(e) => setPointBId(e.target.value)}
-                      className="w-full mc-slot px-3 py-2 text-white text-xs font-bold"
+                      className="w-full mc-slot px-2.5 py-2 text-white text-xs font-bold"
                     >
                       {activeWaypoints.map((w) => (
                         <option key={w.id} value={w.id} className="bg-[#141720]">
-                          [{w.dimension}] {w.name} ({w.x}, {w.z})
+                          {w.name} ({w.x}, {w.z})
                         </option>
                       ))}
                     </select>
@@ -4464,52 +4692,52 @@ export default function App() {
                 </div>
 
                 {distanceCalcResult && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {!distanceCalcResult.sameDimension && (
-                      <div className="p-2.5 bg-[#332200] border-2 border-[#ffaa00] text-[#ffff55] text-xs font-bold">
-                        ⚠️ Hai điểm đang ở 2 chiều không gian khác nhau ({distanceCalcResult.wpA.dimension} vs {distanceCalcResult.wpB.dimension}). Hãy dùng thêm máy tính Nether (÷8) nếu đi qua cổng!
+                      <div className="p-2 bg-[#332200] border border-[#ffaa00] text-[#ffff55] text-xs font-bold">
+                        ⚠️ Hai điểm khác chiều không gian ({distanceCalcResult.wpA.dimension} / {distanceCalcResult.wpB.dimension}).
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3.5 mc-slot text-center">
-                        <span className="text-[11px] text-zinc-400 font-bold">Khoảng cách đường chim bay</span>
-                        <div className="text-xl font-black font-mono text-[#ffff55] mt-0.5 mc-text-shadow">
-                          {distanceCalcResult.dist2D} blocks
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="p-3 mc-slot text-center">
+                        <span className="text-[11px] text-zinc-400 font-bold">Khoảng cách</span>
+                        <div className="text-lg sm:text-xl font-black font-mono text-[#ffff55] mt-0.5 mc-text-shadow">
+                          {distanceCalcResult.dist2D}m
                         </div>
                         <span className="text-[11px] text-zinc-400">
-                          Hướng đi: <strong className="text-white">{distanceCalcResult.compass}</strong>
+                          Hướng: <strong className="text-white">{distanceCalcResult.compass}</strong>
                         </span>
                       </div>
 
-                      <div className="p-3.5 mc-slot text-center">
-                        <span className="text-[11px] text-zinc-400 font-bold">Số khối xây cầu / đường đi</span>
-                        <div className="text-xl font-black font-mono text-[#55ff55] mt-0.5 mc-text-shadow">
-                          {distanceCalcResult.stackCount} stacks + {distanceCalcResult.remBlocks}
+                      <div className="p-3 mc-slot text-center">
+                        <span className="text-[11px] text-zinc-400 font-bold">Số khối cần đặt</span>
+                        <div className="text-lg sm:text-xl font-black font-mono text-[#55ff55] mt-0.5 mc-text-shadow">
+                          {distanceCalcResult.stackCount}s + {distanceCalcResult.remBlocks}
                         </div>
                         <span className="text-[11px] text-zinc-400">
-                          (Mỗi stack = 64 blocks)
+                          (1 stack = 64 khối)
                         </span>
                       </div>
                     </div>
 
-                    <div className="p-3.5 mc-slot space-y-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-zinc-400 font-bold">🛤️ Chuẩn bị làm đường ray xe mỏ:</span>
-                        <span className="font-mono font-bold text-white">
-                          {distanceCalcResult.normalRails} Ray thường + {distanceCalcResult.poweredRails} Ray tăng tốc
+                    <div className="p-3 mc-slot space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-zinc-400 font-bold">🛤️ Đường ray:</span>
+                        <span className="font-mono font-bold text-white text-right">
+                          {distanceCalcResult.normalRails} thường + {distanceCalcResult.poweredRails} tăng tốc
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-zinc-400 font-bold">🪽 Thời gian bay bằng Elytra:</span>
-                        <span className="font-mono font-bold text-[#55ffff]">
-                          ~{distanceCalcResult.elytraSeconds} giây (Cần ~{distanceCalcResult.fireworksNeeded} pháo hoa)
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-zinc-400 font-bold">🪽 Bay Elytra:</span>
+                        <span className="font-mono font-bold text-[#55ffff] text-right">
+                          ~{distanceCalcResult.elytraSeconds}s (~{distanceCalcResult.fireworksNeeded} pháo hoa)
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-zinc-400 font-bold">🚣 Cao tốc thuyền băng Nether (÷8):</span>
-                        <span className="font-mono font-bold text-[#d8b4fe]">
-                          Chỉ mất ~{distanceCalcResult.netherIceBoatSeconds} giây ({Math.round(distanceCalcResult.dist2D / 8)} blocks ở Nether)
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-zinc-400 font-bold">🚣 Thuyền băng Nether:</span>
+                        <span className="font-mono font-bold text-[#d8b4fe] text-right">
+                          ~{distanceCalcResult.netherIceBoatSeconds}s ({Math.round(distanceCalcResult.dist2D / 8)}m)
                         </span>
                       </div>
                     </div>
@@ -4523,35 +4751,32 @@ export default function App() {
 
       {/* MODAL 3: NETHER HUB CALCULATOR */}
       {isCalcOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="mc-panel max-w-md w-full p-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4">
+          <div className="mc-panel max-w-md w-full p-4 sm:p-5">
             <div className="absolute top-0 left-0 right-0 h-2.5 mc-turf-nether" />
-            <div className="flex items-center justify-between mb-4 pb-3 pt-1 border-b-2 border-black">
-              <h2 className="text-base font-black text-white flex items-center gap-2 mc-text-shadow">
+            <div className="flex items-center justify-between gap-2 mb-3.5 pb-2.5 pt-1 border-b-2 border-black">
+              <h2 className="text-sm sm:text-base font-black text-white flex items-center gap-2 truncate mc-text-shadow">
                 <VoxelBlockIcon type="obsidian" className="w-5 h-5" />
-                Nether Portal Calculator (Xây Nether Hub)
+                <span>Tính Tọa Độ Cổng Nether</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setIsCalcOpen(false)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
+                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
             </div>
 
-            <div className="space-y-4 text-xs sm:text-sm">
+            <div className="space-y-3.5 text-xs sm:text-sm">
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1">
-                  Chiều chuyển đổi:
-                </label>
                 <select
                   value={calcInput.from}
                   onChange={(e) => setCalcInput({ ...calcInput, from: e.target.value })}
-                  className="w-full mc-slot px-3 py-2 text-white font-bold"
+                  className="w-full mc-slot px-2.5 py-2 text-white font-bold text-xs sm:text-sm"
                 >
-                  <option value="overworld" className="bg-[#141720]">Từ Overworld (X, Z) ➔ Chia 8 ra tọa độ Nether</option>
-                  <option value="nether" className="bg-[#141720]">Từ Nether (X, Z) ➔ Nhân 8 ra tọa độ Overworld</option>
+                  <option value="overworld" className="bg-[#141720]">Overworld ➔ Nether (÷8)</option>
+                  <option value="nether" className="bg-[#141720]">Nether ➔ Overworld (×8)</option>
                 </select>
               </div>
 
@@ -4562,16 +4787,16 @@ export default function App() {
                     type="number"
                     value={calcInput.x}
                     onChange={(e) => setCalcInput({ ...calcInput, x: Number(e.target.value) })}
-                    className="w-full mc-slot px-2.5 py-1.5 text-white font-bold"
+                    className="w-full mc-slot px-2 py-1.5 text-white font-bold"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-[#55ff55] mb-1">Y (Giữ nguyên)</label>
+                  <label className="block text-[11px] font-bold text-[#55ff55] mb-1">Y</label>
                   <input
                     type="number"
                     value={calcInput.y}
                     onChange={(e) => setCalcInput({ ...calcInput, y: Number(e.target.value) })}
-                    className="w-full mc-slot px-2.5 py-1.5 text-white font-bold"
+                    className="w-full mc-slot px-2 py-1.5 text-white font-bold"
                   />
                 </div>
                 <div>
@@ -4580,53 +4805,50 @@ export default function App() {
                     type="number"
                     value={calcInput.z}
                     onChange={(e) => setCalcInput({ ...calcInput, z: Number(e.target.value) })}
-                    className="w-full mc-slot px-2.5 py-1.5 text-white font-bold"
+                    className="w-full mc-slot px-2 py-1.5 text-white font-bold"
                   />
                 </div>
               </div>
 
-              <div className="p-4 mc-slot border-2 border-[#a855f7] text-center">
+              <div className="p-3.5 mc-slot border-2 border-[#a855f7] text-center">
                 <span className="text-xs text-[#d8b4fe] font-extrabold uppercase">
-                  Tọa độ đặt cổng bên {calcInput.from === 'overworld' ? 'Nether (÷8)' : 'Overworld (×8)'}:
+                  Tọa độ bên {calcInput.from === 'overworld' ? 'Nether (÷8)' : 'Overworld (×8)'}:
                 </span>
-                <div className="text-xl font-black font-mono text-[#55ff55] mt-1 mc-text-shadow">
+                <div className="text-lg sm:text-xl font-black font-mono text-[#55ff55] mt-1 mc-text-shadow">
                   X: {calcInput.from === 'overworld' ? Math.round(calcInput.x / 8) : calcInput.x * 8}{' '}
                   | Y: {calcInput.y} | Z:{' '}
                   {calcInput.from === 'overworld' ? Math.round(calcInput.z / 8) : calcInput.z * 8}
                 </div>
-                <p className="text-[11px] text-zinc-400 mt-1">
-                  Giúp xây hệ thống đường cao tốc Nether Hub chuẩn xác từng block mà không cần nhẩm tính.
-                </p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 4: BACKUP & CLOUD SYNC */}
+      {/* MODAL 4: SAO LƯU & ĐỒNG BỘ */}
       {isBackupOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="mc-panel max-w-lg w-full p-5 my-8">
-            <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-black">
-              <h2 className="text-base font-black text-[#55ffff] flex items-center gap-2 mc-text-shadow">
-                <Cloud className="w-5 h-5 text-[#55ffff]" />
-                Đồng Bộ Đám Mây (Cloud Sync PC ↔ Android)
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+          <div className="mc-panel max-w-lg w-full p-4 sm:p-5 my-6">
+            <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b-2 border-black">
+              <h2 className="text-sm sm:text-base font-black text-[#55ffff] flex items-center gap-2 truncate mc-text-shadow">
+                <Cloud className="w-4 h-4 text-[#55ffff] shrink-0" />
+                <span>Sao Lưu & Đồng Bộ</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setIsBackupOpen(false)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
+                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
             </div>
 
-            <div className="p-3.5 mc-slot mb-4 space-y-2.5 text-xs">
+            <div className="p-3 mc-slot mb-3.5 space-y-2 text-xs">
               <div className="font-extrabold text-[#55ffff] flex items-center justify-between">
-                <span>☁️ Cấu hình Cloud Sync (Supabase / Mã Phòng)</span>
+                <span>Cloud Sync (Mã phòng)</span>
                 {supabaseConfig.lastSync && (
                   <span className="text-[11px] text-[#55ff55] font-mono">
-                    Đã đồng bộ: {supabaseConfig.lastSync}
+                    {supabaseConfig.lastSync}
                   </span>
                 )}
               </div>
@@ -4637,7 +4859,7 @@ export default function App() {
                   onChange={(e) =>
                     setSupabaseConfig({ ...supabaseConfig, roomCode: e.target.value })
                   }
-                  placeholder="Mã đồng bộ (VD: mochi-smp-2026)"
+                  placeholder="Mã phòng (VD: smp-2026)"
                   className="mc-slot px-2.5 py-1.5 text-white font-mono"
                 />
                 <input
@@ -4646,7 +4868,7 @@ export default function App() {
                   onChange={(e) =>
                     setSupabaseConfig({ ...supabaseConfig, url: e.target.value })
                   }
-                  placeholder="Supabase Project URL (Tùy chọn)"
+                  placeholder="Supabase URL (Tùy chọn)"
                   className="mc-slot px-2.5 py-1.5 text-white font-mono"
                 />
               </div>
@@ -4656,21 +4878,15 @@ export default function App() {
                 disabled={isSyncingCloud}
                 className="mc-btn mc-btn-diamond w-full py-2 font-black text-[#041924] uppercase cursor-pointer"
               >
-                {isSyncingCloud
-                  ? 'Đang đồng bộ dữ liệu...'
-                  : 'Đồng Bộ Ngay Lên Cloud (PC ↔ Điện Thoại)'}
+                {isSyncingCloud ? 'Đang đồng bộ...' : 'Đồng Bộ Ngay'}
               </button>
             </div>
 
-            <p className="text-xs text-zinc-300 mb-2 leading-relaxed">
-              Hoặc sao lưu / chuyển nhanh bằng <strong>Mã JSON</strong> (dán qua Zalo / Discord để mở trên điện thoại):
-            </p>
-
             <textarea
-              rows={6}
+              rows={5}
               value={backupJsonText}
               onChange={(e) => setBackupJsonText(e.target.value)}
-              className="w-full mc-slot p-3 text-xs font-mono text-[#55ff55] focus:outline-none mb-3"
+              className="w-full mc-slot p-2.5 text-xs font-mono text-[#55ff55] focus:outline-none mb-3"
             />
 
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -4679,43 +4895,43 @@ export default function App() {
                   type="button"
                   onClick={async () => {
                     await copyToClipboard(backupJsonText);
-                    showToast('Đã copy toàn bộ mã sao lưu vào Clipboard!', 'orb');
+                    showToast('Đã copy mã JSON!', 'orb');
                   }}
-                  className="mc-btn mc-btn-stone inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black text-white cursor-pointer"
+                  className="mc-btn mc-btn-stone inline-flex items-center gap-1 px-2.5 py-2 text-xs font-black text-white cursor-pointer"
                 >
                   <Copy className="w-3.5 h-3.5" />
-                  Copy Mã Sao Lưu
+                  <span>Copy JSON</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleDownloadJsonFile}
-                  className="mc-btn mc-btn-diamond inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black text-[#041924] cursor-pointer"
+                  className="mc-btn mc-btn-diamond inline-flex items-center gap-1 px-2.5 py-2 text-xs font-black text-[#041924] cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  Tải File .JSON
+                  <span>Tải File .JSON</span>
                 </button>
               </div>
 
               <button
                 type="button"
                 onClick={handleImportBackup}
-                className="mc-btn mc-btn-emerald inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-[#041a06] cursor-pointer"
+                className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-3.5 py-2 text-xs font-black text-[#041a06] cursor-pointer"
               >
                 <Upload className="w-3.5 h-3.5" />
-                Khôi Phục Dữ Liệu
+                <span>Khôi Phục Dữ Liệu</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 5: CREATE WORLD */}
+      {/* MODAL 5: TẠO WORLD MỚI */}
       {isWorldModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="mc-panel max-w-sm w-full p-5">
-            <h3 className="text-base font-black text-white mb-3 flex items-center gap-2 mc-text-shadow">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4">
+          <div className="mc-panel max-w-sm w-full p-4 sm:p-5">
+            <h3 className="text-sm sm:text-base font-black text-white mb-3 flex items-center gap-2 mc-text-shadow">
               <VoxelBlockIcon type="grass" className="w-5 h-5" />
-              Thêm Cấp 1 - Profile (World / Server)
+              <span>Thêm World / Server</span>
             </h3>
             <form onSubmit={handleCreateWorld} className="space-y-3">
               <input
@@ -4723,7 +4939,7 @@ export default function App() {
                 required
                 value={newWorldName}
                 onChange={(e) => setNewWorldName(e.target.value)}
-                placeholder="VD: Survival Solo, Server SMP, Mochi's Hardcore..."
+                placeholder="Tên thế giới / Server..."
                 className="w-full mc-slot px-3 py-2 text-sm text-white font-bold focus:outline-none"
               />
               <div className="flex justify-end gap-2">
@@ -4746,22 +4962,24 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 6: LIGHTBOX */}
+      {/* MODAL 6: XEM ẢNH LIGHTBOX */}
       {lightboxData && (
         <div
           onClick={() => setLightboxData(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-3 sm:p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="mc-panel max-w-2xl w-full p-4"
+            className="mc-panel max-w-2xl w-full p-3.5 sm:p-4"
           >
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-black text-white mc-text-shadow">{lightboxData.title}</h4>
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <h4 className="text-xs sm:text-sm font-black text-white truncate mc-text-shadow">
+                {lightboxData.title}
+              </h4>
               <button
                 type="button"
                 onClick={() => setLightboxData(null)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
+                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
@@ -4775,37 +4993,46 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 7: HƯỚNG DẪN */}
+      {/* ==========================================
+          MODAL 7: THÔNG TIN PHIÊN BẢN & MẸO SỬ DỤNG (?)
+      ========================================== */}
       {isGuideOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="mc-panel max-w-lg w-full p-5">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-black">
-              <h3 className="text-base font-black text-[#55ff55] flex items-center gap-2 mc-text-shadow">
-                <Smartphone className="w-4 h-4 text-[#55ff55]" />
-                Hướng Dẫn Các Tính Năng Mới (fu WAYPOINT)
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4">
+          <div className="mc-panel max-w-md w-full p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-black">
+              <h3 className="text-sm sm:text-base font-black text-[#55ff55] flex items-center gap-2 mc-text-shadow">
+                <VoxelBlockIcon type="command" className="w-5 h-5" />
+                <span>fu-WAYPOINT v2.1.2</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setIsGuideOpen(false)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
+                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
             </div>
-            <ul className="space-y-2.5 text-xs text-zinc-200 leading-relaxed font-mono">
-              <li>
-                • <strong>1. Phân tầng Tọa độ trong Tọa độ (Sub-Waypoints):</strong> Trên mỗi thẻ địa điểm (VD: Base chính), bạn bấm nút <strong className="text-[#55ff55]">+ Điểm Con</strong> để thêm các vị trí bên trong (Kho đồ, Dân làng, Máy Farm...) hoặc bấm <strong className="text-[#ffff55]">Mở Khu Vực</strong> để đi vào bên trong mà không làm loạn danh sách bên ngoài.
-              </li>
-              <li>
-                • <strong>2. Kho 40 Biểu Tượng Pixel (Cục Obi, Dân Làng, Rương, Mob...):</strong> Bấm trực tiếp vào biểu tượng trên bất kỳ thẻ tọa độ nào để đổi nhanh hình đại diện.
-              </li>
-              <li>
-                • <strong>3. Đổi Icon App & Xuất file .ICO / .PNG:</strong> Bấm nút <strong className="text-[#55ff55]">Icon App</strong> trên thanh Header (hoặc bấm vào logo góc trái trên cùng) để đổi icon của ứng dụng hoặc tải file <code>icon.ico</code> / <code>icon.png</code> về đóng gói <code>.exe</code> và <code>.apk</code>.
-              </li>
-              <li>
-                • <strong>4. Bản đồ Radar 2D:</strong> Bấm nút <strong className="text-[#55ffff]">Radar 2D</strong> để quan sát vị trí tương đối giữa các địa điểm trên mặt phẳng tọa độ X/Z.
-              </li>
-            </ul>
+
+            <div className="space-y-3 text-xs text-zinc-200 font-mono leading-relaxed">
+              <div className="mc-slot p-2.5 space-y-1">
+                <div className="font-extrabold text-[#ffff55] uppercase">Cập nhật giao diện:</div>
+                <p>• Cố định khung màn hình trên Android & Windows, chống tràn chữ và lệch ngang.</p>
+                <p>• Bổ sung 64 biểu tượng Pixel (Netherite, Elytra, Totem, Dân làng, Cục Obi...).</p>
+              </div>
+
+              <div className="mc-slot p-2.5 space-y-1">
+                <div className="font-extrabold text-[#55ff55] uppercase">Cập nhật tính năng:</div>
+                <p>• Phân tầng khu vực: Tạo các điểm con (Kho đồ, Farm...) nằm gọn trong Base chính.</p>
+                <p>• Thêm bộ sắp xếp nhanh, bản đồ Radar 2D và copy 1 chạm tọa độ cổng Nether.</p>
+              </div>
+
+              <div className="mc-slot p-2.5 space-y-1">
+                <div className="font-extrabold text-[#55ffff] uppercase">Mẹo sử dụng nhanh:</div>
+                <p>• Bấm vào icon trên thẻ để đổi nhanh biểu tượng địa điểm.</p>
+                <p>• Bấm trực tiếp vào dòng Nether/Overworld ở chân thẻ để copy tọa độ đặt cổng.</p>
+                <p>• Trên PC ấn <strong className="text-white">Ctrl + Shift + S</strong> để mở bảng lưu nhanh.</p>
+              </div>
+            </div>
           </div>
         </div>
       )}

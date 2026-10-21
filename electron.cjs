@@ -7,9 +7,9 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1240,
     height: 820,
-    minWidth: 420,
+    minWidth: 400,
     minHeight: 560,
-    title: 'fu WAYPOINT',
+    title: 'fu-WAYPOINT v2.1.2',
     icon: path.join(__dirname, 'dist', 'icon.png'),
     backgroundColor: '#111015',
     autoHideMenuBar: true,

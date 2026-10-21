@@ -1,8 +1,8 @@
 {
   "name": "fu-waypoint",
   "private": true,
-  "version": "2.1.0",
-  "description": "fu WAYPOINT - Minecraft Waypoint Manager",
+  "version": "2.1.2",
+  "description": "fu-WAYPOINT v2.1.2 - Minecraft Waypoint Manager",
   "author": "fu WAYPOINT",
   "type": "module",
   "main": "electron.cjs",
@@ -27,7 +27,7 @@
   },
   "build": {
     "appId": "com.minecraft.fuwaypoint",
-    "productName": "fu WAYPOINT",
+    "productName": "fu-WAYPOINT",
     "asar": true,
     "directories": {
       "output": "dist-electron"
