@@ -1,7 +1,7 @@
 {
   "name": "fu-waypoint",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "fu WAYPOINT - Minecraft Waypoint Manager",
   "author": "fu WAYPOINT",
   "type": "module",
@@ -38,6 +38,7 @@
       "package.json"
     ],
     "win": {
+      "icon": "public/icon.ico",
       "signAndEditExecutable": false,
       "target": [
         "portable"
