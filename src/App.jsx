@@ -44,22 +44,10 @@ import {
   ScanLine,
   Volume2,
   VolumeX,
-  FolderOpen,
-  FolderPlus,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  CornerDownRight,
-  ArrowLeft,
-  Palette,
-  Map as MapIcon,
-  LayoutGrid,
-  ZoomIn,
-  ZoomOut,
 } from 'lucide-react';
 
 // ==========================================
-// 0. HỆ THỐNG ÂM THANH & KHO 40 BIỂU TƯỢNG PIXEL MINECRAFT
+// 0. HỆ THỐNG ÂM THANH & HIỆU ỨNG BLOCK MINECRAFT
 // ==========================================
 let sharedAudioCtx = null;
 function getAudioCtx() {
@@ -84,6 +72,7 @@ function playMinecraftSound(type = 'click', enabled = true) {
     const now = ctx.currentTime;
 
     if (type === 'click') {
+      // Tiếng Stone Button / Lever click đặc trưng trong Minecraft
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'square';
@@ -96,6 +85,7 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.055);
     } else if (type === 'orb') {
+      // Tiếng Experience Orb (khi Lưu hoặc Copy tọa độ)
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
@@ -108,6 +98,7 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.24);
     } else if (type === 'tnt') {
+      // Tiếng phá block / xóa
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sawtooth';
@@ -121,607 +112,65 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.stop(now + 0.16);
     }
   } catch {
-    // Ignore autoplay errors
+    // Bỏ qua nếu trình duyệt chặn tự phát âm thanh
   }
 }
 
-// Danh mục 40 biểu tượng Pixel Minecraft (mỗi pixel rect là [x, y, w, h, hexColor])
-const MC_ICON_CATALOG = [
-  // --- NHÓM KHỐI BLOCK (BLOCKS) ---
-  {
-    id: 'grass',
-    label: 'Khối Đất Cỏ',
-    category: 'Khối Block',
-    bg: '#866043',
-    pixels: [
-      [0, 0, 16, 5, '#52a535'],
-      [0, 0, 16, 2, '#6bc946'],
-      [2, 5, 2, 2, '#52a535'],
-      [6, 5, 3, 3, '#3d8026'],
-      [12, 5, 2, 2, '#52a535'],
-      [3, 10, 2, 2, '#65462e'],
-      [10, 11, 3, 2, '#65462e'],
-    ],
-  },
-  {
-    id: 'obsidian',
-    label: 'Cục Obi (Obsidian)',
-    category: 'Khối Block',
-    bg: '#140d1e',
-    pixels: [
-      [1, 1, 14, 14, '#1d132b'],
-      [2, 2, 4, 3, '#3b2754'],
-      [8, 3, 5, 2, '#2d1c42'],
-      [3, 7, 5, 3, '#4c326b'],
-      [10, 8, 3, 4, '#3b2754'],
-      [4, 12, 6, 2, '#28183b'],
-      [2, 4, 2, 2, '#6b4696'],
-      [11, 5, 2, 2, '#58387e'],
-    ],
-  },
-  {
-    id: 'crying_obsidian',
-    label: 'Obi Khóc (Crying Obi)',
-    category: 'Khối Block',
-    bg: '#140d1e',
-    pixels: [
-      [1, 1, 14, 14, '#1f1230'],
-      [3, 2, 3, 4, '#a855f7'],
-      [4, 3, 1, 2, '#e9d5ff'],
-      [10, 3, 3, 3, '#9333ea'],
-      [6, 7, 4, 4, '#c084fc'],
-      [7, 8, 2, 2, '#f3e8ff'],
-      [2, 10, 3, 4, '#7e22ce'],
-      [11, 10, 2, 4, '#a855f7'],
-    ],
-  },
-  {
-    id: 'cobblestone',
-    label: 'Đá Cuội / Thành Trì',
-    category: 'Khối Block',
-    bg: '#4b5563',
-    pixels: [
-      [1, 1, 6, 6, '#9ca3af'],
-      [8, 1, 7, 6, '#6b7280'],
-      [1, 8, 8, 7, '#6b7280'],
-      [10, 8, 5, 7, '#9ca3af'],
-      [2, 2, 4, 2, '#d1d5db'],
-      [11, 9, 3, 3, '#d1d5db'],
-    ],
-  },
-  {
-    id: 'diamond_ore',
-    label: 'Quặng Kim Cương',
-    category: 'Khối Block',
-    bg: '#52525b',
-    pixels: [
-      [1, 1, 14, 14, '#71717a'],
-      [3, 3, 3, 3, '#22d3ee'],
-      [4, 3, 1, 1, '#cffafe'],
-      [10, 4, 3, 2, '#06b6d4'],
-      [5, 9, 4, 3, '#22d3ee'],
-      [6, 9, 2, 1, '#cffafe'],
-      [11, 10, 2, 3, '#67e8f9'],
-    ],
-  },
-  {
-    id: 'emerald',
-    label: 'Khối Ngọc Lục Bảo',
-    category: 'Khối Block',
-    bg: '#065f46',
-    pixels: [
-      [1, 1, 14, 14, '#10b981'],
-      [3, 3, 10, 10, '#34d399'],
-      [5, 5, 6, 6, '#059669'],
-      [6, 6, 4, 4, '#6ee7b7'],
-      [2, 2, 2, 2, '#a7f3d0'],
-    ],
-  },
-  {
-    id: 'gold_block',
-    label: 'Khối Vàng (Gold)',
-    category: 'Khối Block',
-    bg: '#b45309',
-    pixels: [
-      [1, 1, 14, 14, '#f59e0b'],
-      [2, 2, 12, 12, '#fbbf24'],
-      [4, 4, 8, 8, '#fde047'],
-      [2, 2, 4, 2, '#fef08a'],
-      [10, 10, 4, 4, '#d97706'],
-    ],
-  },
-  {
-    id: 'iron_block',
-    label: 'Khối Sắt (Farm Sắt)',
-    category: 'Khối Block',
-    bg: '#71717a',
-    pixels: [
-      [1, 1, 14, 14, '#d4d4d8'],
-      [2, 2, 12, 2, '#f4f4f5'],
-      [2, 6, 12, 2, '#a1a1aa'],
-      [2, 10, 12, 2, '#e4e4e7'],
-      [2, 13, 12, 1, '#71717a'],
-    ],
-  },
-  {
-    id: 'redstone',
-    label: 'Khối Đá Đỏ (Redstone)',
-    category: 'Khối Block',
-    bg: '#7f1d1d',
-    pixels: [
-      [1, 1, 14, 14, '#dc2626'],
-      [3, 3, 10, 10, '#ef4444'],
-      [5, 5, 6, 6, '#991b1b'],
-      [6, 6, 4, 4, '#ff5555'],
-      [2, 7, 2, 2, '#fca5a5'],
-    ],
-  },
-  {
-    id: 'amethyst',
-    label: 'Thạch Anh Tím (Geode)',
-    category: 'Khối Block',
-    bg: '#4c1d95',
-    pixels: [
-      [1, 1, 14, 14, '#7c3aed'],
-      [2, 2, 5, 5, '#a78bfa'],
-      [8, 3, 5, 6, '#c4b5fd'],
-      [3, 8, 6, 5, '#8b5cf6'],
-      [10, 10, 4, 4, '#ddd6fe'],
-    ],
-  },
-  {
-    id: 'slime',
-    label: 'Khối Slime (Slime Chunk)',
-    category: 'Khối Block',
-    bg: '#3f6212',
-    pixels: [
-      [1, 1, 14, 14, '#84cc16'],
-      [3, 3, 10, 10, '#65a30d'],
-      [4, 4, 8, 8, '#4d7c0f'],
-      [2, 2, 3, 2, '#bef264'],
-    ],
-  },
-  {
-    id: 'nether',
-    label: 'Khối Nham Thạch (Nether)',
-    category: 'Khối Block',
-    bg: '#4a1216',
-    pixels: [
-      [0, 0, 16, 4, '#d9381e'],
-      [2, 4, 3, 2, '#ff7b00'],
-      [9, 4, 4, 3, '#d9381e'],
-      [4, 8, 3, 3, '#ff9900'],
-      [11, 10, 3, 3, '#ff5500'],
-      [1, 12, 4, 2, '#7a1c24'],
-    ],
-  },
-  {
-    id: 'nether_brick',
-    label: 'Gạch Pháo Đài Nether',
-    category: 'Khối Block',
-    bg: '#2a0a10',
-    pixels: [
-      [1, 1, 6, 4, '#541822'],
-      [8, 1, 7, 4, '#45121b'],
-      [1, 6, 10, 4, '#45121b'],
-      [12, 6, 3, 4, '#541822'],
-      [1, 11, 5, 4, '#541822'],
-      [7, 11, 8, 4, '#380d14'],
-    ],
-  },
-  {
-    id: 'end',
-    label: 'Khối Đá End (Purpur)',
-    category: 'Khối Block',
-    bg: '#d9d2a9',
-    pixels: [
-      [0, 0, 16, 4, '#7e22ce'],
-      [3, 4, 4, 3, '#a855f7'],
-      [10, 4, 3, 2, '#6b21a8'],
-      [2, 9, 3, 3, '#b8ae82'],
-      [9, 10, 4, 3, '#c084fc'],
-    ],
-  },
-
-  // --- NHÓM KHO ĐỒ & CÔNG TRÌNH (BASE / STORAGE / UTILITY) ---
-  {
-    id: 'chest',
-    label: 'Rương Đồ (Kho Đồ)',
-    category: 'Kho & Tiện Ích',
-    bg: '#78350f',
-    pixels: [
-      [1, 2, 14, 12, '#b45309'],
-      [2, 3, 12, 4, '#d97706'],
-      [2, 8, 12, 5, '#b45309'],
-      [1, 6, 14, 2, '#27272a'],
-      [6, 5, 4, 4, '#facc15'],
-      [7, 6, 2, 2, '#fef08a'],
-    ],
-  },
-  {
-    id: 'ender_chest',
-    label: 'Rương Ender',
-    category: 'Kho & Tiện Ích',
-    bg: '#0f172a',
-    pixels: [
-      [1, 2, 14, 12, '#1e293b'],
-      [2, 3, 12, 4, '#0f766e'],
-      [2, 8, 12, 5, '#134e4a'],
-      [1, 6, 14, 2, '#020617'],
-      [6, 5, 4, 4, '#34d399'],
-      [7, 6, 2, 2, '#a7f3d0'],
-    ],
-  },
-  {
-    id: 'shulker',
-    label: 'Hộp Shulker',
-    category: 'Kho & Tiện Ích',
-    bg: '#581c87',
-    pixels: [
-      [1, 1, 14, 7, '#a855f7'],
-      [1, 8, 14, 7, '#7e22ce'],
-      [3, 6, 3, 3, '#a855f7'],
-      [10, 6, 3, 3, '#a855f7'],
-      [6, 8, 4, 4, '#fde047'],
-    ],
-  },
-  {
-    id: 'crafting',
-    label: 'Bàn Chế Tạo',
-    category: 'Kho & Tiện Ích',
-    bg: '#78350f',
-    pixels: [
-      [1, 1, 14, 5, '#a16207'],
-      [2, 2, 3, 3, '#fde047'],
-      [6, 2, 4, 3, '#b45309'],
-      [11, 2, 3, 3, '#fde047'],
-      [1, 6, 14, 9, '#92400e'],
-      [3, 8, 4, 6, '#451a03'],
-      [9, 8, 4, 6, '#d97706'],
-    ],
-  },
-  {
-    id: 'furnace',
-    label: 'Lò Nung Tự Động',
-    category: 'Kho & Tiện Ích',
-    bg: '#3f3f46',
-    pixels: [
-      [1, 1, 14, 14, '#71717a'],
-      [3, 3, 10, 4, '#27272a'],
-      [3, 9, 10, 5, '#18181b'],
-      [5, 10, 6, 4, '#f97316'],
-      [6, 11, 4, 2, '#fde047'],
-    ],
-  },
-  {
-    id: 'enchanting',
-    label: 'Bàn Phù Phép',
-    category: 'Kho & Tiện Ích',
-    bg: '#1e1b4b',
-    pixels: [
-      [1, 6, 14, 9, '#17153b'],
-      [1, 5, 14, 3, '#dc2626'],
-      [3, 6, 2, 3, '#22d3ee'],
-      [11, 6, 2, 3, '#22d3ee'],
-      [4, 1, 8, 4, '#f59e0b'],
-      [5, 2, 6, 2, '#fef3c7'],
-    ],
-  },
-  {
-    id: 'anvil',
-    label: 'Cái Đe Rèn (Anvil)',
-    category: 'Kho & Tiện Ích',
-    bg: '#18181b',
-    pixels: [
-      [2, 2, 12, 4, '#71717a'],
-      [5, 6, 6, 4, '#52525b'],
-      [3, 10, 10, 4, '#71717a'],
-      [3, 2, 10, 1, '#a1a1aa'],
-    ],
-  },
-  {
-    id: 'beacon',
-    label: 'Đèn Hiệu (Beacon)',
-    category: 'Kho & Tiện Ích',
-    bg: '#083344',
-    pixels: [
-      [1, 1, 14, 11, '#67e8f9'],
-      [3, 3, 10, 7, '#ecfeff'],
-      [5, 4, 6, 5, '#22d3ee'],
-      [1, 12, 14, 3, '#311042'],
-    ],
-  },
-  {
-    id: 'bed',
-    label: 'Giường Ngủ (Spawn)',
-    category: 'Kho & Tiện Ích',
-    bg: '#1e293b',
-    pixels: [
-      [1, 5, 4, 6, '#f8fafc'],
-      [5, 5, 10, 6, '#dc2626'],
-      [1, 11, 14, 3, '#92400e'],
-      [1, 14, 2, 2, '#78350f'],
-      [13, 14, 2, 2, '#78350f'],
-    ],
-  },
-  {
-    id: 'wheat',
-    label: 'Ruộng Lúa / Nông Trại',
-    category: 'Kho & Tiện Ích',
-    bg: '#422006',
-    pixels: [
-      [2, 2, 2, 10, '#facc15'],
-      [5, 1, 2, 11, '#eab308'],
-      [9, 2, 2, 10, '#facc15'],
-      [12, 3, 2, 9, '#ca8a04'],
-      [1, 12, 14, 3, '#713f12'],
-    ],
-  },
-  {
-    id: 'portal',
-    label: 'Cổng Dịch Chuyển Nether',
-    category: 'Kho & Tiện Ích',
-    bg: '#1e1b4b',
-    pixels: [
-      [1, 1, 14, 14, '#2e1065'],
-      [3, 3, 10, 10, '#9333ea'],
-      [5, 5, 6, 6, '#c084fc'],
-      [6, 6, 4, 4, '#f3e8ff'],
-    ],
-  },
-  {
-    id: 'end_portal',
-    label: 'Khung Cổng End (Mắt End)',
-    category: 'Kho & Tiện Ích',
-    bg: '#d9d2a9',
-    pixels: [
-      [1, 6, 14, 9, '#0d9488'],
-      [3, 8, 10, 6, '#d9d2a9'],
-      [4, 2, 8, 6, '#10b981'],
-      [6, 3, 4, 4, '#064e3b'],
-      [7, 4, 2, 2, '#a7f3d0'],
-    ],
-  },
-  {
-    id: 'lodestone',
-    label: 'Đá Từ Tính (Lodestone)',
-    category: 'Kho & Tiện Ích',
-    bg: '#3f3f46',
-    pixels: [
-      [1, 1, 14, 14, '#71717a'],
-      [3, 3, 10, 10, '#52525b'],
-      [5, 5, 6, 6, '#a1a1aa'],
-      [6, 2, 4, 12, '#d4d4d8'],
-      [2, 6, 12, 4, '#d4d4d8'],
-      [6, 6, 4, 4, '#38bdf8'],
-    ],
-  },
-  {
-    id: 'tnt',
-    label: 'Khối Thuốc Nổ (TNT)',
-    category: 'Kho & Tiện Ích',
-    bg: '#991b1b',
-    pixels: [
-      [1, 1, 14, 4, '#dc2626'],
-      [1, 5, 14, 6, '#f8fafc'],
-      [1, 11, 14, 4, '#dc2626'],
-      [3, 6, 2, 4, '#18181b'],
-      [7, 6, 2, 4, '#18181b'],
-      [11, 6, 2, 4, '#18181b'],
-    ],
-  },
-  {
-    id: 'command',
-    label: 'Khối Lệnh (Command Block)',
-    category: 'Kho & Tiện Ích',
-    bg: '#c77d48',
-    pixels: [
-      [2, 2, 12, 12, '#8b5029'],
-      [4, 4, 8, 8, '#3a281d'],
-      [5, 5, 2, 2, '#55ff55'],
-      [9, 5, 2, 2, '#ff5555'],
-      [5, 9, 2, 2, '#55ffff'],
-      [9, 9, 2, 2, '#ffaa00'],
-    ],
-  },
-
-  // --- NHÓM DÂN LÀNG & QUÁI VẬT (MOBS / VILLAGER / BOSS) ---
-  {
-    id: 'villager',
-    label: 'Dân Làng (Villager)',
-    category: 'Dân Làng & Mob',
-    bg: '#78350f',
-    pixels: [
-      [2, 1, 12, 14, '#b87a52'],
-      [3, 4, 10, 2, '#451a03'],
-      [3, 6, 3, 2, '#ffffff'],
-      [4, 6, 2, 2, '#10b981'],
-      [10, 6, 3, 2, '#ffffff'],
-      [10, 6, 2, 2, '#10b981'],
-      [6, 7, 4, 6, '#9c623e'],
-      [5, 13, 6, 1, '#5c341d'],
-    ],
-  },
-  {
-    id: 'iron_golem',
-    label: 'Người Sắt (Iron Golem)',
-    category: 'Dân Làng & Mob',
-    bg: '#a1a1aa',
-    pixels: [
-      [2, 1, 12, 14, '#e4e4e7'],
-      [3, 5, 10, 1, '#52525b'],
-      [3, 6, 3, 2, '#dc2626'],
-      [10, 6, 3, 2, '#dc2626'],
-      [6, 7, 4, 6, '#a1a1aa'],
-      [2, 2, 3, 3, '#4ead33'],
-    ],
-  },
-  {
-    id: 'creeper',
-    label: 'Mặt Creeper',
-    category: 'Dân Làng & Mob',
-    bg: '#15803d',
-    pixels: [
-      [1, 1, 14, 14, '#22c55e'],
-      [2, 2, 4, 4, '#4ade80'],
-      [3, 4, 3, 3, '#111827'],
-      [10, 4, 3, 3, '#111827'],
-      [6, 7, 4, 5, '#111827'],
-      [4, 9, 2, 5, '#111827'],
-      [10, 9, 2, 5, '#111827'],
-    ],
-  },
-  {
-    id: 'skeleton',
-    label: 'Đầu Lâu Skeleton',
-    category: 'Dân Làng & Mob',
-    bg: '#71717a',
-    pixels: [
-      [1, 1, 14, 14, '#e4e4e7'],
-      [3, 5, 3, 3, '#27272a'],
-      [10, 5, 3, 3, '#27272a'],
-      [7, 8, 2, 2, '#3f3f46'],
-      [3, 12, 10, 2, '#27272a'],
-    ],
-  },
-  {
-    id: 'wither',
-    label: 'Đầu Lâu Wither',
-    category: 'Dân Làng & Mob',
-    bg: '#18181b',
-    pixels: [
-      [1, 1, 14, 14, '#27272a'],
-      [3, 5, 3, 3, '#09090b'],
-      [10, 5, 3, 3, '#09090b'],
-      [4, 6, 1, 1, '#f4f4f5'],
-      [11, 6, 1, 1, '#f4f4f5'],
-      [3, 12, 10, 2, '#09090b'],
-    ],
-  },
-  {
-    id: 'spawner',
-    label: 'Lồng Quái (Mob Spawner)',
-    category: 'Dân Làng & Mob',
-    bg: '#0f172a',
-    pixels: [
-      [1, 1, 14, 14, '#1e293b'],
-      [1, 1, 14, 2, '#334155'],
-      [1, 7, 14, 2, '#334155'],
-      [1, 13, 14, 2, '#334155'],
-      [7, 1, 2, 14, '#334155'],
-      [5, 5, 6, 6, '#f97316'],
-      [6, 6, 4, 4, '#fde047'],
-    ],
-  },
-  {
-    id: 'warden',
-    label: 'Warden (Ancient City)',
-    category: 'Dân Làng & Mob',
-    bg: '#042f2e',
-    pixels: [
-      [2, 3, 12, 11, '#0f172a'],
-      [0, 1, 3, 5, '#2dd4bf'],
-      [13, 1, 3, 5, '#2dd4bf'],
-      [5, 6, 6, 5, '#134e4a'],
-      [6, 7, 4, 3, '#5eead4'],
-    ],
-  },
-  {
-    id: 'enderman',
-    label: 'Enderman',
-    category: 'Dân Làng & Mob',
-    bg: '#09090b',
-    pixels: [
-      [1, 1, 14, 14, '#18181b'],
-      [2, 7, 4, 2, '#f0abfc'],
-      [3, 7, 2, 2, '#a855f7'],
-      [10, 7, 4, 2, '#f0abfc'],
-      [11, 7, 2, 2, '#a855f7'],
-    ],
-  },
-  {
-    id: 'dragon',
-    label: 'Rồng Ender (Ender Dragon)',
-    category: 'Dân Làng & Mob',
-    bg: '#09090b',
-    pixels: [
-      [1, 2, 14, 12, '#18181b'],
-      [3, 1, 2, 3, '#71717a'],
-      [11, 1, 2, 3, '#71717a'],
-      [3, 6, 3, 2, '#d946ef'],
-      [10, 6, 3, 2, '#d946ef'],
-      [5, 11, 6, 2, '#a855f7'],
-    ],
-  },
-  {
-    id: 'blaze',
-    label: 'Quái Blaze (Nether)',
-    category: 'Dân Làng & Mob',
-    bg: '#7c2d12',
-    pixels: [
-      [2, 2, 12, 12, '#f59e0b'],
-      [3, 3, 10, 4, '#fde047'],
-      [3, 6, 3, 2, '#18181b'],
-      [10, 6, 3, 2, '#18181b'],
-      [4, 6, 1, 1, '#ffffff'],
-      [11, 6, 1, 1, '#ffffff'],
-    ],
-  },
-  {
-    id: 'piglin',
-    label: 'Piglin Đổi Vàng',
-    category: 'Dân Làng & Mob',
-    bg: '#78350f',
-    pixels: [
-      [2, 2, 12, 12, '#f4a27e'],
-      [0, 4, 2, 5, '#e08e68'],
-      [14, 4, 2, 5, '#e08e68'],
-      [3, 6, 2, 2, '#ffffff'],
-      [11, 6, 2, 2, '#ffffff'],
-      [6, 8, 4, 3, '#d97757'],
-      [4, 9, 1, 3, '#fef08a'],
-      [11, 9, 1, 3, '#fef08a'],
-    ],
-  },
-];
-
-const MC_ICON_MAP = Object.fromEntries(MC_ICON_CATALOG.map((item) => [item.id, item]));
-
-function getIconSvgString(iconId = 'grass', size = 256) {
-  const item = MC_ICON_MAP[iconId] || MC_ICON_MAP.grass;
-  const rects = item.pixels
-    .map(
-      ([x, y, w, h, fill]) =>
-        `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" />`
-    )
-    .join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect width="16" height="16" fill="${item.bg}" />${rects}<rect x="0" y="0" width="16" height="16" fill="none" stroke="#000000" stroke-width="1.2" /></svg>`;
-}
-
-function VoxelBlockIcon({ type = 'grass', customImage = null, className = 'w-6 h-6' }) {
-  if (customImage) {
+// Icon Khối Voxel Pixel Art đặc trưng của Minecraft
+function VoxelBlockIcon({ type = 'grass', className = 'w-6 h-6' }) {
+  if (type === 'nether') {
     return (
-      <img
-        src={customImage}
-        alt="Icon"
-        className={`${className} shrink-0 object-cover border border-black`}
-        style={{ imageRendering: 'pixelated' }}
-      />
+      <svg viewBox="0 0 16 16" className={`${className} shrink-0`} style={{ imageRendering: 'pixelated' }}>
+        <rect width="16" height="16" fill="#4a1216" />
+        <rect x="0" y="0" width="16" height="4" fill="#d9381e" />
+        <rect x="2" y="4" width="3" height="2" fill="#ff7b00" />
+        <rect x="9" y="4" width="4" height="3" fill="#d9381e" />
+        <rect x="4" y="8" width="3" height="3" fill="#ff9900" />
+        <rect x="11" y="10" width="3" height="3" fill="#ff5500" />
+        <rect x="1" y="12" width="4" height="2" fill="#7a1c24" />
+        <rect x="0" y="0" width="16" height="16" fill="none" stroke="#000" strokeWidth="1.5" />
+      </svg>
     );
   }
-  const item = MC_ICON_MAP[type] || MC_ICON_MAP.grass;
+  if (type === 'end') {
+    return (
+      <svg viewBox="0 0 16 16" className={`${className} shrink-0`} style={{ imageRendering: 'pixelated' }}>
+        <rect width="16" height="16" fill="#d9d2a9" />
+        <rect x="0" y="0" width="16" height="4" fill="#7e22ce" />
+        <rect x="3" y="4" width="4" height="3" fill="#a855f7" />
+        <rect x="10" y="4" width="3" height="2" fill="#6b21a8" />
+        <rect x="2" y="9" width="3" height="3" fill="#b8ae82" />
+        <rect x="9" y="10" width="4" height="3" fill="#c084fc" />
+        <rect x="0" y="0" width="16" height="16" fill="none" stroke="#000" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  if (type === 'command') {
+    return (
+      <svg viewBox="0 0 16 16" className={`${className} shrink-0`} style={{ imageRendering: 'pixelated' }}>
+        <rect width="16" height="16" fill="#c77d48" />
+        <rect x="2" y="2" width="12" height="12" fill="#8b5029" />
+        <rect x="4" y="4" width="8" height="8" fill="#3a281d" />
+        <rect x="5" y="5" width="2" height="2" fill="#55ff55" />
+        <rect x="9" y="5" width="2" height="2" fill="#ff5555" />
+        <rect x="5" y="9" width="2" height="2" fill="#55ffff" />
+        <rect x="9" y="9" width="2" height="2" fill="#ffaa00" />
+        <rect x="0" y="0" width="16" height="16" fill="none" stroke="#000" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  // Mặc định: Grass Block / Lodestone Overworld
   return (
-    <svg
-      viewBox="0 0 16 16"
-      className={`${className} shrink-0`}
-      style={{ imageRendering: 'pixelated' }}
-      shapeRendering="crispEdges"
-    >
-      <rect width="16" height="16" fill={item.bg} />
-      {item.pixels.map(([x, y, w, h, fill], idx) => (
-        <rect key={idx} x={x} y={y} width={w} height={h} fill={fill} />
-      ))}
-      <rect x="0" y="0" width="16" height="16" fill="none" stroke="#000" strokeWidth="1.4" />
+    <svg viewBox="0 0 16 16" className={`${className} shrink-0`} style={{ imageRendering: 'pixelated' }}>
+      <rect width="16" height="16" fill="#866043" />
+      <rect x="0" y="0" width="16" height="5" fill="#52a535" />
+      <rect x="0" y="0" width="16" height="2" fill="#6bc946" />
+      <rect x="2" y="5" width="2" height="2" fill="#52a535" />
+      <rect x="6" y="5" width="3" height="3" fill="#3d8026" />
+      <rect x="12" y="5" width="2" height="2" fill="#52a535" />
+      <rect x="3" y="10" width="2" height="2" fill="#65462e" />
+      <rect x="10" y="11" width="3" height="2" fill="#65462e" />
+      <rect x="0" y="0" width="16" height="16" fill="none" stroke="#000" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -772,77 +221,58 @@ const TAG_CONFIG = {
   Base: {
     label: '[Base] Căn cứ',
     color: 'bg-[#132a3e] text-[#55ffff] border-2 border-[#00aaaa]',
-    defaultIcon: 'grass',
     icon: Home,
   },
   Farm: {
     label: '[Farm] Máy sản xuất',
     color: 'bg-[#332409] text-[#ffaa00] border-2 border-[#aa6600]',
-    defaultIcon: 'wheat',
     icon: Wheat,
-  },
-  Storage: {
-    label: '[Storage] Kho để đồ',
-    color: 'bg-[#36200b] text-[#fde047] border-2 border-[#d97706]',
-    defaultIcon: 'chest',
-    icon: Layers,
-  },
-  Villager: {
-    label: '[Villager] Khu dân làng',
-    color: 'bg-[#143322] text-[#55ff55] border-2 border-[#22c55e]',
-    defaultIcon: 'villager',
-    icon: Home,
   },
   Spawner: {
     label: '[Spawner] Lồng quái',
     color: 'bg-[#381117] text-[#ff5555] border-2 border-[#aa0000]',
-    defaultIcon: 'spawner',
     icon: Skull,
   },
   Ore: {
     label: '[Ore] Mỏ khoáng sản',
     color: 'bg-[#0e3238] text-[#55ffff] border-2 border-[#22a8b8]',
-    defaultIcon: 'diamond_ore',
     icon: Gem,
   },
   Danger: {
     label: '[Danger] Nguy hiểm',
     color: 'bg-[#450d0d] text-[#ff5555] border-2 border-[#ff2222]',
-    defaultIcon: 'warden',
     icon: AlertTriangle,
   },
   Mine: {
     label: '[Mine] Hầm mỏ',
     color: 'bg-[#122e28] text-[#55ff55] border-2 border-[#1f8a70]',
-    defaultIcon: 'cobblestone',
     icon: Pickaxe,
   },
   Portal: {
     label: '[Portal] Cổng dịch chuyển',
     color: 'bg-[#2a123d] text-[#ff55ff] border-2 border-[#9333ea]',
-    defaultIcon: 'obsidian',
     icon: ArrowRightLeft,
   },
   Structure: {
     label: '[Structure] Công trình/Làng',
     color: 'bg-[#1b1f3b] text-[#8899ff] border-2 border-[#4f5bd5]',
-    defaultIcon: 'lodestone',
     icon: Castle,
   },
   Loot: {
     label: '[Loot] Kho báu',
     color: 'bg-[#382e08] text-[#ffff55] border-2 border-[#c29b0c]',
-    defaultIcon: 'shulker',
     icon: Sparkles,
   },
 };
 
+// Cấp 1 - Profile (World/Server)
 const INITIAL_WORLDS = [
   { id: 'world-1', name: 'Survival Solo' },
   { id: 'world-2', name: 'Server SMP với hội bạn' },
   { id: 'world-3', name: "Mochi's Hardcore" },
 ];
 
+// Ảnh minh họa nhẹ dạng SVG Data URI cho Waypoint mẫu
 const SAMPLE_SCREENSHOT_VILLAGE =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(`
@@ -887,106 +317,28 @@ const INITIAL_WAYPOINTS = [
   {
     id: 'wp-1',
     worldId: 'world-1',
-    parentId: null,
     name: 'Làng Xưởng Sắt & Căn Cứ Chính',
     x: 240,
     y: 72,
     z: -480,
     dimension: 'overworld',
     tag: 'Base',
-    icon: 'grass',
-    notes: 'Căn cứ trung tâm! Bấm "Mở Khu Vực" bên dưới để xem 4 điểm con: Kho đồ, Khu dân làng Mending, Máy Farm Sắt & Cổng Nether.',
+    notes: 'Dưới đáy giếng có 2 cục kim cương chưa đào. Đã xây cổng Nether chính ở tầng hầm.',
     screenshots: [SAMPLE_SCREENSHOT_VILLAGE],
     pinned: true,
     locked: true,
     deletedAt: null,
     createdAt: 1710000001000,
   },
-  // --- CÁC TỌA ĐỘ CON BÊN TRONG CĂN CỨ CHÍNH (wp-1) ---
-  {
-    id: 'wp-1-sub-1',
-    worldId: 'world-1',
-    parentId: 'wp-1',
-    name: 'Kho Đồ Tự Động & Rương Ender',
-    x: 244,
-    y: 62,
-    z: -476,
-    dimension: 'overworld',
-    tag: 'Storage',
-    icon: 'chest',
-    notes: 'Tầng hầm B1 ngay dưới nhà chính — Phân loại 64 loại vật phẩm bằng Redstone.',
-    screenshots: [],
-    pinned: true,
-    locked: true,
-    deletedAt: null,
-    createdAt: 1710000001100,
-  },
-  {
-    id: 'wp-1-sub-2',
-    worldId: 'world-1',
-    parentId: 'wp-1',
-    name: 'Trại Trao Đổi Dân Làng (Sách Mending)',
-    x: 268,
-    y: 72,
-    z: -492,
-    dimension: 'overworld',
-    tag: 'Villager',
-    icon: 'villager',
-    notes: 'Đã chữa khỏi Zombie Villager: 1 Emerald = Sách Mending, Unbreaking III, Fortune III.',
-    screenshots: [],
-    pinned: true,
-    locked: true,
-    deletedAt: null,
-    createdAt: 1710000001200,
-  },
-  {
-    id: 'wp-1-sub-3',
-    worldId: 'world-1',
-    parentId: 'wp-1',
-    name: 'Máy Farm Sắt (Iron Golem Tầng Cao)',
-    x: 215,
-    y: 96,
-    z: -465,
-    dimension: 'overworld',
-    tag: 'Farm',
-    icon: 'iron_block',
-    notes: 'Treo trên không cách mặt đất 24 block, ống dẫn sắt chảy thẳng về kho đồ.',
-    screenshots: [],
-    pinned: false,
-    locked: false,
-    deletedAt: null,
-    createdAt: 1710000001300,
-  },
-  {
-    id: 'wp-1-sub-4',
-    worldId: 'world-1',
-    parentId: 'wp-1',
-    name: 'Cổng Hắc Diện Thạch (Nether Portal Base)',
-    x: 238,
-    y: 56,
-    z: -488,
-    dimension: 'overworld',
-    tag: 'Portal',
-    icon: 'obsidian',
-    notes: 'Cổng Obi dẫn thẳng sang đường băng Nether Hub.',
-    screenshots: [],
-    pinned: false,
-    locked: true,
-    deletedAt: null,
-    createdAt: 1710000001400,
-  },
-  // --- CÁC TỌA ĐỘ CẤP NGOÀI KHÁC ---
   {
     id: 'wp-2',
     worldId: 'world-1',
-    parentId: null,
     name: 'Cổng Đền Sa Mạc & Mỏ Vàng Lộ Thiên',
     x: 860,
     y: null,
     z: -1120,
     dimension: 'overworld',
     tag: 'Ore',
-    icon: 'gold_block',
     notes: 'Đã phá tấm áp lực TNT dưới hầm đền. Quanh đền có nhiều mỏ quặng đồng và vàng.',
     screenshots: [SAMPLE_SCREENSHOT_TEMPLE],
     pinned: false,
@@ -997,14 +349,12 @@ const INITIAL_WAYPOINTS = [
   {
     id: 'wp-3',
     worldId: 'world-1',
-    parentId: null,
     name: 'Lồng Spawner Bộ Xương (Farm XP)',
     x: 512,
     y: -18,
     z: -320,
     dimension: 'overworld',
     tag: 'Spawner',
-    icon: 'skeleton',
     notes: 'Đào xuống từ gốc cây sồi lớn, nhớ mang theo kiếm Looting III.',
     screenshots: [],
     pinned: false,
@@ -1015,14 +365,12 @@ const INITIAL_WAYPOINTS = [
   {
     id: 'wp-4',
     worldId: 'world-1',
-    parentId: null,
     name: 'Trạm Cao Tốc Băng Nether Hub (Trục Bắc)',
     x: -145,
     y: 68,
     z: 310,
     dimension: 'nether',
     tag: 'Portal',
-    icon: 'crying_obsidian',
     notes: 'Đường thuyền băng xanh nối thẳng tới Pháo đài Blaze và Cổng End.',
     screenshots: [],
     pinned: true,
@@ -1031,34 +379,14 @@ const INITIAL_WAYPOINTS = [
     createdAt: 1710000003000,
   },
   {
-    id: 'wp-4-sub-1',
-    worldId: 'world-1',
-    parentId: 'wp-4',
-    name: 'Lồng Spawner Blaze (Trong Pháo Đài)',
-    x: -112,
-    y: 74,
-    z: 348,
-    dimension: 'nether',
-    tag: 'Spawner',
-    icon: 'blaze',
-    notes: 'Đã bao kín bằng gạch Nether chống Ghast bắn.',
-    screenshots: [],
-    pinned: false,
-    locked: true,
-    deletedAt: null,
-    createdAt: 1710000003100,
-  },
-  {
     id: 'wp-5',
     worldId: 'world-1',
-    parentId: null,
     name: 'Thành Phố Cổ Đại Warden (Ancient City)',
     x: -920,
     y: -51,
     z: 640,
     dimension: 'overworld',
     tag: 'Danger',
-    icon: 'warden',
     notes: 'Cực kỳ nguy hiểm! Nhớ mang nhiều khối Len (Wool) và Sneak liên tục.',
     screenshots: [],
     pinned: false,
@@ -1069,14 +397,12 @@ const INITIAL_WAYPOINTS = [
   {
     id: 'wp-6',
     worldId: 'world-1',
-    parentId: null,
     name: 'End City Có Tàu Bay (Lấy Cánh Elytra)',
     x: 1840,
     y: 95,
     z: -1290,
     dimension: 'end',
     tag: 'Loot',
-    icon: 'dragon',
     notes: 'Còn nhiều vỏ Shulker chưa lấy hết ở tòa tháp cao nhất.',
     screenshots: [],
     pinned: false,
@@ -1087,14 +413,12 @@ const INITIAL_WAYPOINTS = [
   {
     id: 'wp-7',
     worldId: 'world-2',
-    parentId: null,
     name: 'Khu Chợ Trung Tâm Server SMP',
     x: 0,
     y: 80,
     z: 0,
     dimension: 'overworld',
     tag: 'Base',
-    icon: 'emerald',
     notes: 'Nơi giao dịch Kim cương và Netherite của cả hội bạn.',
     screenshots: [],
     pinned: true,
@@ -1105,14 +429,12 @@ const INITIAL_WAYPOINTS = [
   {
     id: 'wp-8',
     worldId: 'world-3',
-    parentId: null,
     name: 'Căn Cứ Ngầm Chống Creeper (Hardcore)',
     x: -340,
     y: 63,
     z: 190,
     dimension: 'overworld',
     tag: 'Base',
-    icon: 'obsidian',
     notes: 'Thế giới Hardcore 1 mạng duy nhất — luôn cầm Totem of Undying ở tay phụ!',
     screenshots: [],
     pinned: true,
@@ -1122,6 +444,7 @@ const INITIAL_WAYPOINTS = [
   },
 ];
 
+// Mẫu kết quả OCR giả lập khi người dùng bấm thử tính năng Quét Ảnh F3 / MCPE
 const OCR_PRESETS = [
   {
     id: 'pc-f3',
@@ -1134,7 +457,6 @@ const OCR_PRESETS = [
     dimension: 'overworld',
     suggestedName: 'Mỏ Kim Cương Tầng Sâu (Quét từ F3)',
     suggestedTag: 'Ore',
-    suggestedIcon: 'diamond_ore',
   },
   {
     id: 'mcpe-hud',
@@ -1146,8 +468,7 @@ const OCR_PRESETS = [
     z: -500,
     dimension: 'overworld',
     suggestedName: 'Làng Sa Mạc (Quét từ MCPE)',
-    suggestedTag: 'Villager',
-    suggestedIcon: 'villager',
+    suggestedTag: 'Structure',
   },
   {
     id: 'nether-fort',
@@ -1160,12 +481,11 @@ const OCR_PRESETS = [
     dimension: 'nether',
     suggestedName: 'Lồng Spawner Blaze (Quét OCR)',
     suggestedTag: 'Spawner',
-    suggestedIcon: 'blaze',
   },
 ];
 
 // ==========================================
-// 2. CÁC HÀM TIỆN ÍCH
+// 2. CÁC HÀM TIỆN ÍCH (COPY, NETHER HUB, KHOẢNG CÁCH, NÉN ẢNH)
 // ==========================================
 function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {
@@ -1255,58 +575,11 @@ function compressImageFile(file, maxWidth = 520, quality = 0.72) {
   });
 }
 
-function downloadRenderedAppIcon(iconId, customImgSrc, format = 'png', onDone = () => {}) {
-  const size = 256;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
-
-  const triggerDownload = () => {
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = format === 'ico' ? 'icon.ico' : 'icon.png';
-      a.click();
-      URL.revokeObjectURL(url);
-      onDone();
-    }, 'image/png');
-  };
-
-  if (customImgSrc) {
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, size, size);
-      triggerDownload();
-    };
-    img.src = customImgSrc;
-    return;
-  }
-
-  const item = MC_ICON_MAP[iconId] || MC_ICON_MAP.grass;
-  const scale = size / 16;
-  ctx.fillStyle = item.bg;
-  ctx.fillRect(0, 0, size, size);
-  item.pixels.forEach(([x, y, w, h, fill]) => {
-    ctx.fillStyle = fill;
-    ctx.fillRect(x * scale, y * scale, w * scale, h * scale);
-  });
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = scale * 1.2;
-  ctx.strokeRect(0, 0, size, size);
-  triggerDownload();
-}
-
 // ==========================================
-// 3. COMPONENT THẺ TỌA ĐỘ KHỐI BLOCK (WaypointCard - Hỗ trợ Tọa độ Con & Đổi Icon)
+// 3. COMPONENT THẺ TỌA ĐỘ KHỐI BLOCK (WaypointCard)
 // ==========================================
 function WaypointCard({
   waypoint,
-  childWaypoints = [],
-  parentWaypoint = null,
   copyMode,
   playerPos,
   onTogglePin,
@@ -1316,13 +589,9 @@ function WaypointCard({
   onNotify,
   onOpenLightbox,
   onSelectForDistance,
-  onEnterFolder,
-  onCreateChild,
-  onQuickChangeIcon,
 }) {
   const [copied, setCopied] = useState(false);
   const [activatedBlock, setActivatedBlock] = useState(false);
-  const [showInlineChildren, setShowInlineChildren] = useState(false);
 
   const dimStyle = DIMENSION_CONFIG[waypoint.dimension] || DIMENSION_CONFIG.overworld;
   const DimensionIcon = dimStyle.icon;
@@ -1330,13 +599,9 @@ function WaypointCard({
   const tagStyle = TAG_CONFIG[waypoint.tag] || {
     label: `[${waypoint.tag || 'Khác'}]`,
     color: 'bg-[#262830] text-slate-200 border-2 border-[#454954]',
-    defaultIcon: 'grass',
     icon: Tag,
   };
   const TagIcon = tagStyle.icon;
-
-  const resolvedIcon = waypoint.icon || tagStyle.defaultIcon || dimStyle.blockType || 'grass';
-  const iconMeta = MC_ICON_MAP[resolvedIcon] || MC_ICON_MAP.grass;
 
   const hasY = waypoint.y !== null && waypoint.y !== undefined && waypoint.y !== '';
   const displayY = hasY ? waypoint.y : '~';
@@ -1353,43 +618,22 @@ function WaypointCard({
     return null;
   }, [playerPos, waypoint.x, waypoint.z, waypoint.dimension]);
 
-  const parentOffset = useMemo(() => {
-    if (!parentWaypoint) return null;
-    const dist = calculateDistanceAndDirection(
-      parentWaypoint.x,
-      parentWaypoint.z,
-      waypoint.x,
-      waypoint.z
-    );
-    const dy =
-      hasY && parentWaypoint.y !== null && parentWaypoint.y !== undefined
-        ? Number(waypoint.y) - Number(parentWaypoint.y)
-        : null;
-    return {
-      blocks: dist.blocks,
-      compass: dist.compass,
-      dy,
-    };
-  }, [parentWaypoint, waypoint.x, waypoint.y, waypoint.z, hasY]);
-
-  const getCopyString = (overrideMode, targetWp = waypoint) => {
+  const getCopyString = (overrideMode) => {
     const mode = overrideMode || copyMode;
-    const tHasY = targetWp.y !== null && targetWp.y !== undefined && targetWp.y !== '';
-    const tDim = DIMENSION_CONFIG[targetWp.dimension] || DIMENSION_CONFIG.overworld;
     if (mode === 'tp') {
-      return `/tp @s ${targetWp.x} ${tHasY ? targetWp.y : '~'} ${targetWp.z}`;
+      return `/tp @s ${waypoint.x} ${tpY} ${waypoint.z}`;
     }
     if (mode === 'raw') {
-      return tHasY
-        ? `${targetWp.x} ${targetWp.y} ${targetWp.z}`
-        : `${targetWp.x} ${targetWp.z}`;
+      return hasY
+        ? `${waypoint.x} ${waypoint.y} ${waypoint.z}`
+        : `${waypoint.x} ${waypoint.z}`;
     }
-    const ySegment = tHasY ? ` Y:${targetWp.y}` : '';
-    return `[${targetWp.name}] - ${tDim.label}: X:${targetWp.x}${ySegment} Z:${targetWp.z}`;
+    const ySegment = hasY ? ` Y:${waypoint.y}` : '';
+    return `[${waypoint.name}] - ${dimStyle.label}: X:${waypoint.x}${ySegment} Z:${waypoint.z}`;
   };
 
-  const handleCopy = async (overrideMode, targetWp = waypoint) => {
-    const text = getCopyString(overrideMode, targetWp);
+  const handleCopy = async (overrideMode) => {
+    const text = getCopyString(overrideMode);
     setActivatedBlock(true);
     setTimeout(() => setActivatedBlock(false), 380);
     try {
@@ -1410,14 +654,17 @@ function WaypointCard({
         activatedBlock ? 'mc-block-flash' : ''
       }`}
     >
+      {/* Lớp cỏ / nham thạch / đá End pixel trên đỉnh khối */}
       <div className={`absolute top-0 left-0 right-0 h-3 ${dimStyle.accentBar}`} />
 
+      {/* 4 đinh tán góc khối đặc trưng Minecraft */}
       <span className="mc-corner mc-corner-tl" />
       <span className="mc-corner mc-corner-tr" />
       <span className="mc-corner mc-corner-bl" />
       <span className="mc-corner mc-corner-br" />
 
       <div className="pt-1.5">
+        {/* Hàng 1: Badge Chiều không gian + Tag + Cụm nút Block kích hoạt */}
         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span
@@ -1435,6 +682,7 @@ function WaypointCard({
             </span>
           </div>
 
+          {/* Cụm nút Block thao tác nhanh */}
           <div className="flex items-center gap-1.5">
             <button
               type="button"
@@ -1482,7 +730,7 @@ function WaypointCard({
             <button
               type="button"
               onClick={() => onEdit(waypoint)}
-              title="Chỉnh sửa tọa độ, đổi biểu tượng & ảnh đính kèm"
+              title="Chỉnh sửa tọa độ & ảnh đính kèm"
               className="mc-btn mc-btn-stone p-1.5 text-slate-200 hover:text-[#55ff55] cursor-pointer"
             >
               <Edit3 className="w-3.5 h-3.5" />
@@ -1508,48 +756,13 @@ function WaypointCard({
           </div>
         </div>
 
-        {parentWaypoint && parentOffset && (
-          <div className="mb-2.5 px-2.5 py-1.5 bg-[#121c14] border-2 border-[#22c55e]/60 flex items-center justify-between gap-2 text-[11px] font-mono text-[#86efac]">
-            <span className="truncate flex items-center gap-1 font-bold">
-              <CornerDownRight className="w-3.5 h-3.5 text-[#55ff55] shrink-0" />
-              Thuộc: {parentWaypoint.name}
-            </span>
-            <span className="shrink-0 text-[#ffff55] font-bold">
-              Cách tâm {parentOffset.blocks}m
-              {parentOffset.dy !== null
-                ? ` • ΔY: ${parentOffset.dy > 0 ? `+${parentOffset.dy}` : parentOffset.dy}`
-                : ''}
-            </span>
-          </div>
-        )}
-
+        {/* Hàng 2: Tên địa điểm + Cụm nút Block Kích Hoạt Copy / Share */}
         <div className="flex items-start justify-between gap-3 mb-3.5">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => onQuickChangeIcon(waypoint)}
-                title={`Biểu tượng: ${iconMeta.label} (Bấm để đổi biểu tượng khác)`}
-                className="mc-btn mc-btn-stone p-1.5 shrink-0 cursor-pointer"
-              >
-                <VoxelBlockIcon type={resolvedIcon} className="w-6 h-6" />
-              </button>
-
-              <div className="min-w-0 flex-1">
-                <h3
-                  onClick={() => childWaypoints.length > 0 && onEnterFolder(waypoint.id)}
-                  className={`text-base sm:text-lg font-extrabold text-white truncate leading-snug mc-text-shadow ${
-                    childWaypoints.length > 0 ? 'cursor-pointer hover:text-[#55ff55]' : ''
-                  }`}
-                >
-                  {waypoint.name}
-                </h3>
-                <span className="text-[10px] text-zinc-400 font-mono block">
-                  Icon: {iconMeta.label}
-                </span>
-              </div>
-            </div>
-
+            <h3 className="text-base sm:text-lg font-extrabold text-white flex items-center gap-2 leading-snug mc-text-shadow">
+              <VoxelBlockIcon type={dimStyle.blockType} className="w-5 h-5" />
+              <span className="truncate">{waypoint.name}</span>
+            </h3>
             {waypoint.notes && (
               <p className="text-xs text-[#d7d2c8] mt-2 line-clamp-2 leading-relaxed mc-slot px-2.5 py-2 font-mono">
                 📖 {waypoint.notes}
@@ -1594,6 +807,7 @@ function WaypointCard({
           </div>
         </div>
 
+        {/* Hàng 3: 3 Ô Inventory Slot chứa tọa độ X, Y, Z */}
         <div className="grid grid-cols-3 gap-2 mc-slot p-2.5 font-mono">
           <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-x py-1.5 px-2">
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#ff5555] mc-text-shadow">
@@ -1628,96 +842,7 @@ function WaypointCard({
           </div>
         </div>
 
-        {/* KHU VỰC PHÂN TẦNG (TỌA ĐỘ CON BÊN TRONG ĐỊA ĐIỂM NÀY) */}
-        <div className="mt-3 pt-2.5 border-t-2 border-black/60">
-          <div className="flex items-center justify-between gap-1.5 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => onEnterFolder(waypoint.id)}
-                title="Mở không gian riêng của địa điểm này để quản lý các tọa độ con bên trong"
-                className={`mc-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-black cursor-pointer ${
-                  childWaypoints.length > 0
-                    ? 'mc-btn-gold text-[#1f1300]'
-                    : 'mc-btn-stone text-zinc-200'
-                }`}
-              >
-                <FolderOpen className="w-3.5 h-3.5" />
-                <span>
-                  Mở Khu Vực ({childWaypoints.length} điểm con)
-                </span>
-              </button>
-
-              {childWaypoints.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowInlineChildren(!showInlineChildren)}
-                  title="Xem nhanh danh sách tọa độ con ngay trên thẻ"
-                  className="mc-btn mc-btn-stone px-2 py-1.5 text-xs font-bold text-[#55ffff] cursor-pointer"
-                >
-                  {showInlineChildren ? (
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  ) : (
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onCreateChild(waypoint)}
-              title={`Tạo thêm tọa độ con (Farm, Kho đồ, Dân làng...) nằm trong "${waypoint.name}"`}
-              className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#041a06] cursor-pointer"
-            >
-              <FolderPlus className="w-3.5 h-3.5" />
-              <span>+ Điểm Con</span>
-            </button>
-          </div>
-
-          {showInlineChildren && childWaypoints.length > 0 && (
-            <div className="mt-2.5 space-y-1.5 mc-slot p-2 max-h-48 overflow-y-auto">
-              {childWaypoints.map((child) => {
-                const cIcon = child.icon || TAG_CONFIG[child.tag]?.defaultIcon || 'chest';
-                return (
-                  <div
-                    key={child.id}
-                    className="flex items-center justify-between gap-2 bg-[#1a1924] border border-zinc-700/80 px-2.5 py-1.5 text-xs"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <VoxelBlockIcon type={cIcon} className="w-4 h-4" />
-                      <div className="min-w-0">
-                        <div className="font-bold text-white truncate">{child.name}</div>
-                        <div className="text-[10px] font-mono text-zinc-400">
-                          X:{child.x} {child.y !== null ? `Y:${child.y}` : ''} Z:{child.z}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(null, child)}
-                        title="Copy nhanh tọa độ điểm con này"
-                        className="mc-btn mc-btn-stone px-2 py-1 text-[10px] font-bold text-[#55ffff] cursor-pointer"
-                      >
-                        Copy
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onEdit(child)}
-                        title="Sửa điểm con"
-                        className="mc-btn mc-btn-stone p-1 text-zinc-300 cursor-pointer"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
+        {/* Hàng 3.5: Bộ sưu tập ảnh đính kèm (Screenshot Gallery 1-2 bức ảnh) */}
         {screenshots.length > 0 && (
           <div className="mt-3 grid grid-cols-2 gap-2">
             {screenshots.slice(0, 2).map((src, idx) => (
@@ -1742,6 +867,7 @@ function WaypointCard({
         )}
       </div>
 
+      {/* Hàng 4: Thông tin phụ (Quy đổi cổng Nether ÷8/×8 + Khoảng cách + Chunk) */}
       <div className="mt-3.5 pt-2.5 border-t-2 border-black/70 flex items-center justify-between gap-2 flex-wrap text-[11px] text-zinc-300 font-mono">
         {portalLink ? (
           <span
@@ -1773,162 +899,15 @@ function WaypointCard({
 }
 
 // ==========================================
-// 3B. COMPONENT BẢN ĐỒ RADAR TỌA ĐỘ 2D
-// ==========================================
-function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
-  const [zoom, setZoom] = useState(1);
-  const [hoveredWp, setHoveredWp] = useState(null);
-
-  const bounds = useMemo(() => {
-    if (waypoints.length === 0) return { minX: -500, maxX: 500, minZ: -500, maxZ: 500, range: 500 };
-    const xs = waypoints.map((w) => Number(w.x));
-    const zs = waypoints.map((w) => Number(w.z));
-    if (playerPos.enabled) {
-      xs.push(Number(playerPos.x));
-      zs.push(Number(playerPos.z));
-    }
-    const maxAbs = Math.max(
-      200,
-      ...xs.map((v) => Math.abs(v)),
-      ...zs.map((v) => Math.abs(v))
-    );
-    const range = Math.ceil((maxAbs * 1.2) / zoom);
-    return { minX: -range, maxX: range, minZ: -range, maxZ: range, range };
-  }, [waypoints, playerPos, zoom]);
-
-  const toPercent = (val) => {
-    const r = bounds.range || 500;
-    return Math.min(95, Math.max(5, ((Number(val) + r) / (2 * r)) * 100));
-  };
-
-  return (
-    <div className="mc-panel p-4 mb-6">
-      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <MapIcon className="w-5 h-5 text-[#55ff55]" />
-          <h3 className="text-sm sm:text-base font-black text-white mc-text-shadow">
-            Bản Đồ Radar Tọa Độ 2D (Trục X / Z • Phạm vi ±{bounds.range} blocks)
-          </h3>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setZoom((z) => Math.min(4, +(z + 0.5).toFixed(1)))}
-            className="mc-btn mc-btn-stone px-2.5 py-1 text-xs font-bold text-white inline-flex items-center gap-1 cursor-pointer"
-          >
-            <ZoomIn className="w-3.5 h-3.5 text-[#55ff55]" /> Phóng to
-          </button>
-          <button
-            type="button"
-            onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.5).toFixed(1)))}
-            className="mc-btn mc-btn-stone px-2.5 py-1 text-xs font-bold text-white inline-flex items-center gap-1 cursor-pointer"
-          >
-            <ZoomOut className="w-3.5 h-3.5 text-[#ffaa00]" /> Thu nhỏ
-          </button>
-        </div>
-      </div>
-
-      <div
-        className="relative w-full h-80 sm:h-96 mc-slot overflow-hidden"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, rgba(85,255,85,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(85,255,85,0.07) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-        }}
-      >
-        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-emerald-500/30 pointer-events-none" />
-        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-emerald-500/30 pointer-events-none" />
-
-        <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-[#55ffff] bg-black/75 px-1.5 py-0.5 border border-zinc-700">
-          BẮC (-Z)
-        </span>
-        <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-[#55ffff] bg-black/75 px-1.5 py-0.5 border border-zinc-700">
-          NAM (+Z)
-        </span>
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-[#ff5555] bg-black/75 px-1.5 py-0.5 border border-zinc-700">
-          TÂY (-X)
-        </span>
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-[#ff5555] bg-black/75 px-1.5 py-0.5 border border-zinc-700">
-          ĐÔNG (+X)
-        </span>
-
-        {waypoints.map((wp) => {
-          const left = toPercent(wp.x);
-          const top = toPercent(wp.z);
-          const iconId = wp.icon || TAG_CONFIG[wp.tag]?.defaultIcon || 'grass';
-          return (
-            <button
-              key={wp.id}
-              type="button"
-              onMouseEnter={() => setHoveredWp(wp)}
-              onMouseLeave={() => setHoveredWp(null)}
-              onClick={() => onSelectWaypoint(wp)}
-              style={{ left: `${left}%`, top: `${top}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 group/pin cursor-pointer focus:outline-none z-10 hover:z-30 hover:scale-125 transition-transform"
-            >
-              <div className="p-0.5 bg-black border-2 border-[#55ff55] shadow-lg">
-                <VoxelBlockIcon type={iconId} className="w-5 h-5" />
-              </div>
-              <span className="mt-0.5 block bg-black/90 text-[10px] font-mono font-bold text-white px-1 border border-zinc-700 whitespace-nowrap max-w-[110px] truncate">
-                {wp.name}
-              </span>
-            </button>
-          );
-        })}
-
-        {hoveredWp && (
-          <div className="absolute bottom-3 left-3 z-40 mc-panel px-3 py-2 text-xs font-mono">
-            <div className="font-extrabold text-[#55ff55]">{hoveredWp.name}</div>
-            <div className="text-white">
-              X: {hoveredWp.x} | Y: {hoveredWp.y ?? '~'} | Z: {hoveredWp.z}
-            </div>
-            <div className="text-[10px] text-zinc-400">Bấm vào điểm để chỉnh sửa</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ==========================================
 // 4. ỨNG DỤNG CHÍNH (fu WAYPOINT)
 // ==========================================
 export default function App() {
+  // Bật/tắt âm thanh Block Minecraft
   const [soundEnabled, setSoundEnabled] = useState(true);
+  // Danh sách hạt Voxel vỡ ra khi nhấn nút Block
   const [particles, setParticles] = useState([]);
 
-  // Cấu hình Biểu Tượng App (App Icon & Favicon)
-  const [appIconConfig, setAppIconConfig] = useState(() => {
-    try {
-      const saved = localStorage.getItem('fu_waypoint_app_icon_v3');
-      return saved ? JSON.parse(saved) : { iconId: 'grass', customImage: null };
-    } catch {
-      return { iconId: 'grass', customImage: null };
-    }
-  });
-  const [isAppIconModalOpen, setIsAppIconModalOpen] = useState(false);
-  const appIconFileInputRef = useRef(null);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('fu_waypoint_app_icon_v3', JSON.stringify(appIconConfig));
-      let link = document.querySelector("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      if (appIconConfig.customImage) {
-        link.href = appIconConfig.customImage;
-      } else {
-        const svgStr = getIconSvgString(appIconConfig.iconId, 64);
-        link.href = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgStr);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, [appIconConfig]);
-
+  // Cấp 1: Lưu trữ danh sách Profile (World/Server)
   const [worlds, setWorlds] = useState(() => {
     try {
       const saved = localStorage.getItem('mc_coords_worlds_v2');
@@ -1946,22 +925,11 @@ export default function App() {
     }
   });
 
+  // Cấp 3: Danh sách Waypoint
   const [waypoints, setWaypoints] = useState(() => {
     try {
-      const saved = localStorage.getItem('mc_coords_waypoints_v3');
-      if (saved) return JSON.parse(saved);
-      const oldV2 = localStorage.getItem('mc_coords_waypoints_v2');
-      if (oldV2) {
-        const parsed = JSON.parse(oldV2);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((w) => ({
-            ...w,
-            parentId: w.parentId || null,
-            icon: w.icon || TAG_CONFIG[w.tag]?.defaultIcon || 'grass',
-          }));
-        }
-      }
-      return INITIAL_WAYPOINTS;
+      const saved = localStorage.getItem('mc_coords_waypoints_v2');
+      return saved ? JSON.parse(saved) : INITIAL_WAYPOINTS;
     } catch {
       return INITIAL_WAYPOINTS;
     }
@@ -1985,23 +953,27 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('mc_coords_waypoints_v3', JSON.stringify(waypoints));
+      localStorage.setItem('mc_coords_waypoints_v2', JSON.stringify(waypoints));
     } catch (e) {
       console.error(e);
     }
   }, [waypoints]);
 
+  // Hiệu ứng toàn cục: Mỗi khi người dùng nhấn vào bất kỳ nút (<button>) nào, phát tiếng Block kích hoạt & bắn hạt Voxel!
   useEffect(() => {
     const handleGlobalButtonClick = (e) => {
       const btn = e.target.closest('button');
       if (!btn || btn.disabled) return;
 
+      // Phát tiếng click khối đá / piston
       playMinecraftSound('click', soundEnabled);
 
+      // Tạo hiệu ứng phát sáng kích hoạt trên chính nút vừa bấm
       btn.classList.remove('mc-btn-activating');
       void btn.offsetWidth;
       btn.classList.add('mc-btn-activating');
 
+      // Xác định bảng màu hạt Voxel theo loại Block của nút
       const cls = btn.className || '';
       let palette = ['#8b8d94', '#c4c6cc', '#55575e', '#ffffff'];
       if (cls.includes('mc-btn-emerald')) {
@@ -2045,18 +1017,14 @@ export default function App() {
     return () => window.removeEventListener('click', handleGlobalButtonClick, true);
   }, [soundEnabled]);
 
+  // Bộ lọc phân luồng (Cấp 2: Dimension & Tag)
   const [activeDimension, setActiveDimension] = useState('all');
   const [activeTag, setActiveTag] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copyMode, setCopyMode] = useState('chat');
   const [viewTrash, setViewTrash] = useState(false);
-  const [viewMode, setViewMode] = useState('grid');
-  const [currentParentId, setCurrentParentId] = useState(null);
 
-  useEffect(() => {
-    setCurrentParentId(null);
-  }, [selectedWorldId]);
-
+  // Vị trí hiện tại của người chơi
   const [playerPos, setPlayerPos] = useState({
     enabled: false,
     x: 0,
@@ -2064,9 +1032,9 @@ export default function App() {
     dimension: 'overworld',
   });
 
+  // Modal Thêm / Sửa tọa độ
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [iconCategoryFilter, setIconCategoryFilter] = useState('Tất cả');
   const [formData, setFormData] = useState({
     name: '',
     x: '',
@@ -2074,8 +1042,6 @@ export default function App() {
     z: '',
     dimension: 'overworld',
     tag: 'Base',
-    icon: 'grass',
-    parentId: '',
     notes: '',
     screenshots: [],
     locked: true,
@@ -2087,13 +1053,19 @@ export default function App() {
   const screenshotInputRef = useRef(null);
   const ocrFileInputRef = useRef(null);
 
-  const [quickIconTargetWp, setQuickIconTargetWp] = useState(null);
+  // Modal Phóng to ảnh (Lightbox)
   const [lightboxData, setLightboxData] = useState(null);
+
+  // Modal Tính toán khoảng cách giữa 2 điểm lưu sẵn
   const [isDistanceOpen, setIsDistanceOpen] = useState(false);
   const [pointAId, setPointAId] = useState('');
   const [pointBId, setPointBId] = useState('');
+
+  // Modal Máy tính cổng Nether
   const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [calcInput, setCalcInput] = useState({ x: 800, y: 64, z: -1200, from: 'overworld' });
+
+  // Modal Đồng bộ đám mây & Sao lưu JSON
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [backupJsonText, setBackupJsonText] = useState('');
   const [supabaseConfig, setSupabaseConfig] = useState(() => {
@@ -2107,10 +1079,13 @@ export default function App() {
     }
   });
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+
+  // Modal tạo Profile (World/Server) mới & Hướng dẫn
   const [isWorldModalOpen, setIsWorldModalOpen] = useState(false);
   const [newWorldName, setNewWorldName] = useState('');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
+  // UX PC & Android: Mini-Window & Floating Bubble Widget
   const [isMiniOverlayOpen, setIsMiniOverlayOpen] = useState(false);
   const [floatingBubbleVisible, setFloatingBubbleVisible] = useState(true);
   const [quickForm, setQuickForm] = useState({
@@ -2120,9 +1095,9 @@ export default function App() {
     z: '',
     dimension: 'overworld',
     tag: 'Base',
-    icon: 'grass',
   });
 
+  // Thông báo Achievement Toast kiểu Minecraft
   const [toastMessage, setToastMessage] = useState('');
   const showToast = (msg, soundType = null) => {
     if (soundType) {
@@ -2134,6 +1109,7 @@ export default function App() {
     }, 3200);
   };
 
+  // Phím tắt Ctrl + Shift + S (hoặc Alt + S)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (
@@ -2251,7 +1227,6 @@ export default function App() {
         z: String(preset.z),
         dimension: preset.dimension,
         tag: preset.suggestedTag,
-        icon: preset.suggestedIcon || prev.icon,
       }));
       setSmartPasteInput(preset.rawLine);
       setIsScanningOcr(false);
@@ -2292,36 +1267,17 @@ export default function App() {
     }));
   };
 
-  const openCreateForm = (overrideParentWp = null) => {
-    const validParent =
-      overrideParentWp && typeof overrideParentWp === 'object' && 'id' in overrideParentWp
-        ? overrideParentWp
-        : null;
+  const openCreateForm = () => {
     setEditingId(null);
     setSmartPasteInput('');
     setOcrStatusText('');
-    const targetParent =
-      validParent ||
-      (currentParentId ? activeWaypoints.find((w) => w.id === currentParentId) : null);
-
-    const defaultDim = targetParent
-      ? targetParent.dimension
-      : activeDimension === 'all'
-      ? 'overworld'
-      : activeDimension;
-
-    const defaultTag = targetParent ? 'Storage' : activeTag === 'all' ? 'Base' : activeTag;
-    const defaultIcon = TAG_CONFIG[defaultTag]?.defaultIcon || 'grass';
-
     setFormData({
       name: '',
-      x: targetParent ? String(targetParent.x) : '',
-      y: targetParent && targetParent.y !== null ? String(targetParent.y) : '',
-      z: targetParent ? String(targetParent.z) : '',
-      dimension: defaultDim,
-      tag: defaultTag,
-      icon: defaultIcon,
-      parentId: targetParent ? targetParent.id : '',
+      x: '',
+      y: '',
+      z: '',
+      dimension: activeDimension === 'all' ? 'overworld' : activeDimension,
+      tag: activeTag === 'all' ? 'Base' : activeTag,
       notes: '',
       screenshots: [],
       locked: true,
@@ -2341,8 +1297,6 @@ export default function App() {
       z: String(wp.z),
       dimension: wp.dimension,
       tag: wp.tag,
-      icon: wp.icon || TAG_CONFIG[wp.tag]?.defaultIcon || 'grass',
-      parentId: wp.parentId || '',
       notes: wp.notes || '',
       screenshots: Array.isArray(wp.screenshots) ? wp.screenshots : [],
       locked: Boolean(wp.locked),
@@ -2373,9 +1327,6 @@ export default function App() {
       return;
     }
 
-    const cleanParentId =
-      formData.parentId && formData.parentId !== editingId ? formData.parentId : null;
-
     if (editingId) {
       setWaypoints((prev) =>
         prev.map((item) =>
@@ -2388,8 +1339,6 @@ export default function App() {
                 z: numZ,
                 dimension: formData.dimension,
                 tag: formData.tag,
-                icon: formData.icon || 'grass',
-                parentId: cleanParentId,
                 notes: formData.notes.trim(),
                 screenshots: formData.screenshots || [],
                 locked: formData.locked,
@@ -2403,14 +1352,12 @@ export default function App() {
       const newWp = {
         id: 'wp-' + Date.now(),
         worldId: selectedWorldId,
-        parentId: cleanParentId,
         name: formData.name.trim(),
         x: numX,
         y: numY,
         z: numZ,
         dimension: formData.dimension,
         tag: formData.tag,
-        icon: formData.icon || 'grass',
         notes: formData.notes.trim(),
         screenshots: formData.screenshots || [],
         locked: formData.locked,
@@ -2419,12 +1366,7 @@ export default function App() {
         createdAt: Date.now(),
       };
       setWaypoints((prev) => [newWp, ...prev]);
-      showToast(
-        cleanParentId
-          ? `Đã thêm điểm con "${newWp.name}" vào khu vực!`
-          : 'Đã lưu tọa độ mới thành công!',
-        'orb'
-      );
+      showToast('Đã lưu tọa độ mới thành công!', 'orb');
     }
     setIsFormOpen(false);
   };
@@ -2439,14 +1381,12 @@ export default function App() {
     const newWp = {
       id: 'wp-' + Date.now(),
       worldId: selectedWorldId,
-      parentId: currentParentId || null,
       name: quickForm.name.trim(),
       x: Number(quickForm.x),
       y: hasY ? Number(quickForm.y) : null,
       z: Number(quickForm.z),
       dimension: quickForm.dimension,
       tag: quickForm.tag,
-      icon: quickForm.icon || TAG_CONFIG[quickForm.tag]?.defaultIcon || 'grass',
       notes: 'Lưu nhanh qua Command Block Widget trong lúc chơi game.',
       screenshots: [],
       locked: true,
@@ -2455,41 +1395,9 @@ export default function App() {
       createdAt: Date.now(),
     };
     setWaypoints((prev) => [newWp, ...prev]);
-    setQuickForm({
-      name: '',
-      x: '',
-      y: '',
-      z: '',
-      dimension: quickForm.dimension,
-      tag: 'Base',
-      icon: 'grass',
-    });
+    setQuickForm({ name: '', x: '', y: '', z: '', dimension: quickForm.dimension, tag: 'Base' });
     setIsMiniOverlayOpen(false);
     showToast(`Đã lưu nhanh "${newWp.name}"!`, 'orb');
-  };
-
-  const handleSelectQuickIcon = (iconId) => {
-    if (!quickIconTargetWp) return;
-    setWaypoints((prev) =>
-      prev.map((item) =>
-        item.id === quickIconTargetWp.id ? { ...item, icon: iconId } : item
-      )
-    );
-    const meta = MC_ICON_MAP[iconId];
-    showToast(`Đã đổi biểu tượng thành "${meta?.label || iconId}"!`, 'orb');
-    setQuickIconTargetWp(null);
-  };
-
-  const handleUploadCustomAppIcon = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const dataUrl = await compressImageFile(file, 128, 0.9);
-      setAppIconConfig({ iconId: 'custom', customImage: dataUrl });
-      showToast('Đã cập nhật Icon App tùy chỉnh!', 'orb');
-    } catch {
-      showToast('Không thể đọc file ảnh này.');
-    }
   };
 
   const handleTogglePin = (id) => {
@@ -2565,9 +1473,8 @@ export default function App() {
 
   const openBackupModal = () => {
     const payload = {
-      version: 4,
+      version: 3,
       exportedAt: new Date().toISOString(),
-      appIconConfig,
       worlds,
       waypoints,
     };
@@ -2583,9 +1490,6 @@ export default function App() {
         if (Array.isArray(parsed.worlds) && parsed.worlds.length > 0) {
           setWorlds(parsed.worlds);
           setSelectedWorldId(parsed.worlds[0].id);
-        }
-        if (parsed.appIconConfig) {
-          setAppIconConfig(parsed.appIconConfig);
         }
         setIsBackupOpen(false);
         showToast('Đã đồng bộ & khôi phục toàn bộ dữ liệu thành công!', 'orb');
@@ -2641,48 +1545,12 @@ export default function App() {
     [worldWaypoints]
   );
 
-  const childrenByParentId = useMemo(() => {
-    const map = {};
-    activeWaypoints.forEach((wp) => {
-      if (wp.parentId) {
-        if (!map[wp.parentId]) map[wp.parentId] = [];
-        map[wp.parentId].push(wp);
-      }
-    });
-    return map;
-  }, [activeWaypoints]);
-
-  const breadcrumbTrail = useMemo(() => {
-    const trail = [];
-    let currId = currentParentId;
-    const visited = new Set();
-    while (currId && !visited.has(currId)) {
-      visited.add(currId);
-      const found = activeWaypoints.find((w) => w.id === currId);
-      if (found) {
-        trail.unshift(found);
-        currId = found.parentId || null;
-      } else {
-        break;
-      }
-    }
-    return trail;
-  }, [activeWaypoints, currentParentId]);
-
-  const currentParentWaypoint =
-    breadcrumbTrail.length > 0 ? breadcrumbTrail[breadcrumbTrail.length - 1] : null;
-
   const filteredWaypoints = useMemo(() => {
-    const isSearching = searchQuery.trim().length > 0;
     return activeWaypoints
       .filter((wp) => {
-        if (!isSearching) {
-          const wpParent = wp.parentId || null;
-          if (wpParent !== (currentParentId || null)) return false;
-        }
         if (activeDimension !== 'all' && wp.dimension !== activeDimension) return false;
         if (activeTag !== 'all' && wp.tag !== activeTag) return false;
-        if (isSearching) {
+        if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const matchName = wp.name.toLowerCase().includes(q);
           const matchNotes = (wp.notes || '').toLowerCase().includes(q);
@@ -2701,19 +1569,16 @@ export default function App() {
         }
         return b.createdAt - a.createdAt;
       });
-  }, [activeWaypoints, currentParentId, activeDimension, activeTag, searchQuery, playerPos]);
+  }, [activeWaypoints, activeDimension, activeTag, searchQuery, playerPos]);
 
   const counts = useMemo(() => {
-    const levelList = activeWaypoints.filter(
-      (w) => (w.parentId || null) === (currentParentId || null)
-    );
     return {
-      all: levelList.length,
-      overworld: levelList.filter((w) => w.dimension === 'overworld').length,
-      nether: levelList.filter((w) => w.dimension === 'nether').length,
-      end: levelList.filter((w) => w.dimension === 'end').length,
+      all: activeWaypoints.length,
+      overworld: activeWaypoints.filter((w) => w.dimension === 'overworld').length,
+      nether: activeWaypoints.filter((w) => w.dimension === 'nether').length,
+      end: activeWaypoints.filter((w) => w.dimension === 'end').length,
     };
-  }, [activeWaypoints, currentParentId]);
+  }, [activeWaypoints]);
 
   const distanceCalcResult = useMemo(() => {
     const wpA = activeWaypoints.find((w) => w.id === pointAId) || activeWaypoints[0];
@@ -2753,14 +1618,9 @@ export default function App() {
     };
   }, [activeWaypoints, pointAId, pointBId]);
 
-  const iconCategories = ['Tất cả', 'Khối Block', 'Kho & Tiện Ích', 'Dân Làng & Mob'];
-  const filteredIconsForPicker = useMemo(() => {
-    if (iconCategoryFilter === 'Tất cả') return MC_ICON_CATALOG;
-    return MC_ICON_CATALOG.filter((item) => item.category === iconCategoryFilter);
-  }, [iconCategoryFilter]);
-
   return (
     <div className="min-h-screen mc-deepslate-bg text-slate-100 pb-28 selection:bg-[#55ff55]/30 selection:text-white">
+      {/* BỘ CSS ĐỒ HỌA KHỐI BLOCK MINECRAFT 3D & HIỆU ỨNG KÍCH HOẠT */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Silkscreen:wght@400;700&display=swap');
 
@@ -2797,6 +1657,7 @@ export default function App() {
           text-shadow: 2px 2px 0px #000000;
         }
 
+        /* KHUNG PANEL ĐÁ TẢNG 3D (STONE / DEEPSLATE CONTAINER) */
         .mc-panel {
           position: relative;
           background-color: #212029;
@@ -2812,6 +1673,7 @@ export default function App() {
             0 6px 0px #09080c;
         }
 
+        /* THẺ TỌA ĐỘ THEO CHIỀU KHÔNG GIAN (GRASS / NETHERRACK / END STONE BLOCK) */
         .mc-card {
           background-color: #23222b;
           border: 3px solid #000000;
@@ -2863,6 +1725,7 @@ export default function App() {
             0 0 18px rgba(192, 132, 252, 0.3);
         }
 
+        /* DẢI PIXEL ĐỈNH KHỐI (GRASS TURF / LAVA NYLIUM / END PORTAL) */
         .mc-turf-overworld {
           background:
             linear-gradient(to bottom, #6bc946 0%, #52a535 65%, #866043 65%, #65462e 100%);
@@ -2879,6 +1742,7 @@ export default function App() {
           border-bottom: 2px solid #000;
         }
 
+        /* 4 ĐINH TÁN GÓC KHỐI (CHISELED STONE CORNERS) */
         .mc-corner {
           position: absolute;
           width: 5px;
@@ -2892,6 +1756,7 @@ export default function App() {
         .mc-corner-bl { bottom: 5px; left: 5px; }
         .mc-corner-br { bottom: 5px; right: 5px; }
 
+        /* Ô LÕM KIỂU RƯƠNG / INVENTORY SLOT (DÙNG CHO INPUT & TỌA ĐỘ XYZ) */
         .mc-slot {
           background-color: #101016;
           border: 2px solid #000000;
@@ -2908,6 +1773,7 @@ export default function App() {
             0 0 10px rgba(85, 255, 85, 0.25);
         }
 
+        /* Ô TỌA ĐỘ X / Y / Z TRONG THẺ */
         .mc-coord-box {
           background-color: #181720;
           border: 2px solid #000;
@@ -2919,6 +1785,7 @@ export default function App() {
         .mc-coord-y { border-bottom: 3px solid #55ff55; }
         .mc-coord-z { border-bottom: 3px solid #55ffff; }
 
+        /* BADGE CHIỀU KHÔNG GIAN */
         .mc-badge-overworld {
           background-color: #1b3b1a;
           color: #55ff55;
@@ -2938,6 +1805,7 @@ export default function App() {
           box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2);
         }
 
+        /* NÚT NHẤN KHỐI KÍCH HOẠT 3D (ACTIVATOR BLOCK BUTTONS) */
         .mc-btn {
           position: relative;
           border-radius: 0px !important;
@@ -2952,6 +1820,7 @@ export default function App() {
           transform: translateY(4px) !important;
         }
 
+        /* Stone Button (Mặc định) */
         .mc-btn-stone {
           background-color: #3a3946;
           box-shadow:
@@ -2967,6 +1836,7 @@ export default function App() {
             0 1px 0px #000000;
         }
 
+        /* Emerald Block Button (Lưu / Tạo mới / Xác nhận) */
         .mc-btn-emerald {
           background: linear-gradient(180deg, #4ade80 0%, #22c55e 55%, #16a34a 100%);
           box-shadow:
@@ -2982,6 +1852,7 @@ export default function App() {
             0 1px 0px #000000;
         }
 
+        /* Redstone Activator Block Button (Nether / Cảnh báo / Kích hoạt) */
         .mc-btn-redstone {
           background: linear-gradient(180deg, #ef4444 0%, #dc2626 60%, #991b1b 100%);
           box-shadow:
@@ -2997,6 +1868,7 @@ export default function App() {
             0 1px 0px #000000;
         }
 
+        /* TNT Block Button (Xóa) */
         .mc-btn-tnt {
           background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);
           box-shadow:
@@ -3012,6 +1884,7 @@ export default function App() {
             0 1px 0px #000000;
         }
 
+        /* Gold Block Button (Ghim / Đo khoảng cách) */
         .mc-btn-gold {
           background: linear-gradient(180deg, #facc15 0%, #eab308 60%, #ca8a04 100%);
           box-shadow:
@@ -3027,6 +1900,7 @@ export default function App() {
             0 1px 0px #000000;
         }
 
+        /* Diamond Block Button (Khóa bảo vệ / Cloud) */
         .mc-btn-diamond {
           background: linear-gradient(180deg, #38bdf8 0%, #0ea5e9 60%, #0284c7 100%);
           box-shadow:
@@ -3042,6 +1916,7 @@ export default function App() {
             0 1px 0px #000000;
         }
 
+        /* Lapis Lazuli Block Button (Share) */
         .mc-btn-lapis {
           background: linear-gradient(180deg, #3b82f6 0%, #2563eb 60%, #1d4ed8 100%);
           box-shadow:
@@ -3057,6 +1932,7 @@ export default function App() {
             0 1px 0px #000000;
         }
 
+        /* Purpur / Ender Block Button (The End / Nether Hub) */
         .mc-btn-purpur {
           background: linear-gradient(180deg, #a855f7 0%, #9333ea 60%, #6b21a8 100%);
           box-shadow:
@@ -3072,6 +1948,7 @@ export default function App() {
             0 1px 0px #000000;
         }
 
+        /* Command Block Button */
         .mc-btn-command {
           background: linear-gradient(180deg, #d97706 0%, #b45309 55%, #78350f 100%);
           box-shadow:
@@ -3081,12 +1958,14 @@ export default function App() {
             0 6px 0px #000000;
         }
 
+        /* Disabled Bedrock Button */
         .mc-btn-disabled {
           background-color: #19191f;
           border: 2px solid #09090c;
           box-shadow: inset 2px 2px 0px #111116;
         }
 
+        /* Đèn tín hiệu Đá Đỏ (Redstone Torch Indicator) trên nút */
         .mc-redstone-dot {
           width: 7px;
           height: 7px;
@@ -3101,6 +1980,7 @@ export default function App() {
           box-shadow: 0 0 8px #ff3333, 0 0 12px #ff8800;
         }
 
+        /* HIỆU ỨNG KÍCH HOẠT KHỐI (REDSTONE PULSE KHI NHẤN) */
         @keyframes mcBlockActivate {
           0% {
             box-shadow: 0 0 0 0 rgba(85, 255, 85, 0.85), 0 0 18px rgba(255, 255, 85, 0.9);
@@ -3121,6 +2001,7 @@ export default function App() {
           animation: mcCardFlash 0.35s steps(3);
         }
 
+        /* HẠT VOXEL BẮN RA KHI BẤM NÚT */
         @keyframes mcParticleBurst {
           0% {
             opacity: 1;
@@ -3140,6 +2021,7 @@ export default function App() {
         }
       `}</style>
 
+      {/* Lớp hiển thị các hạt Voxel vỡ ra khi nhấn nút Block */}
       {particles.map((p) => (
         <span
           key={p.id}
@@ -3156,6 +2038,7 @@ export default function App() {
         />
       ))}
 
+      {/* Thông báo nổi kiểu Minecraft Advancement / Achievement Toast */}
       {toastMessage && (
         <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-50 flex items-center gap-3 mc-panel px-4 py-3 text-xs sm:text-sm font-bold max-w-md border-2 border-black">
           <div className="w-7 h-7 mc-slot flex items-center justify-center shrink-0">
@@ -3170,6 +2053,9 @@ export default function App() {
         </div>
       )}
 
+      {/* ==========================================
+          FLOATING WIDGET (KHỐI COMMAND BLOCK NỔI ANDROID & MINI-WINDOW PC)
+      ========================================== */}
       {floatingBubbleVisible && (
         <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
           {isMiniOverlayOpen && (
@@ -3190,19 +2076,13 @@ export default function App() {
                 </button>
               </div>
 
-              {currentParentWaypoint && (
-                <div className="mb-2 px-2.5 py-1 bg-[#122616] border border-[#55ff55]/40 text-[11px] text-[#55ff55] font-mono">
-                  📂 Đang lưu vào trong: <strong>{currentParentWaypoint.name}</strong>
-                </div>
-              )}
-
               <form onSubmit={handleQuickSave} className="space-y-2.5">
                 <input
                   type="text"
                   required
                   value={quickForm.name}
                   onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })}
-                  placeholder="Tên nhanh (VD: Kho Đồ, Dân Làng, Farm Sắt)..."
+                  placeholder="Tên nhanh (VD: Hang Kim Cương, Lồng Quái)..."
                   className="w-full mc-slot px-3 py-2 text-xs text-white focus:outline-none"
                 />
 
@@ -3232,7 +2112,7 @@ export default function App() {
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                   <select
                     value={quickForm.dimension}
                     onChange={(e) => setQuickForm({ ...quickForm, dimension: e.target.value })}
@@ -3244,29 +2124,12 @@ export default function App() {
                   </select>
                   <select
                     value={quickForm.tag}
-                    onChange={(e) =>
-                      setQuickForm({
-                        ...quickForm,
-                        tag: e.target.value,
-                        icon: TAG_CONFIG[e.target.value]?.defaultIcon || quickForm.icon,
-                      })
-                    }
+                    onChange={(e) => setQuickForm({ ...quickForm, tag: e.target.value })}
                     className="mc-slot px-2 py-1.5 text-xs text-slate-100 font-bold focus:outline-none"
                   >
                     {Object.keys(TAG_CONFIG).map((k) => (
                       <option key={k} value={k} className="bg-[#14141c]">
                         [{k}]
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={quickForm.icon}
-                    onChange={(e) => setQuickForm({ ...quickForm, icon: e.target.value })}
-                    className="mc-slot px-2 py-1.5 text-xs text-[#ffff55] font-bold focus:outline-none"
-                  >
-                    {MC_ICON_CATALOG.map((ic) => (
-                      <option key={ic.id} value={ic.id} className="bg-[#14141c]">
-                        {ic.label}
                       </option>
                     ))}
                   </select>
@@ -3287,6 +2150,7 @@ export default function App() {
             </div>
           )}
 
+          {/* Nút Khối Command Block Kích Hoạt Nổi */}
           <button
             type="button"
             onClick={() => setIsMiniOverlayOpen(!isMiniOverlayOpen)}
@@ -3302,31 +2166,21 @@ export default function App() {
         </div>
       )}
 
-      {/* HEADER BAR */}
+      {/* HEADER BAR KHỐI ĐÁ TẢNG MINECRAFT */}
       <header className="sticky top-0 z-30 bg-[#181720] border-b-4 border-black shadow-[0_4px_0_#09080c]">
         <div className="h-2 w-full mc-turf-overworld" />
         <div className="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+          {/* Logo Khối & Tên App: CHỈ HIỂN THỊ "fu WAYPOINT", KHÔNG THÊM CHÚ THÍCH DƯỚI TÊN */}
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setIsAppIconModalOpen(true)}
-              title="Bấm để thay đổi Icon App & Tải file icon.ico / icon.png"
-              className="w-11 h-11 mc-btn mc-btn-stone flex items-center justify-center p-1.5 cursor-pointer"
-            >
-              <VoxelBlockIcon
-                type={appIconConfig.iconId}
-                customImage={appIconConfig.customImage}
-                className="w-7 h-7"
-              />
-            </button>
-            <h1
-              onClick={() => setCurrentParentId(null)}
-              className="text-xl sm:text-2xl font-black tracking-wider mc-logo-title cursor-pointer"
-            >
+            <div className="w-11 h-11 mc-panel flex items-center justify-center p-1.5">
+              <VoxelBlockIcon type="grass" className="w-7 h-7" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-wider mc-logo-title">
               fu WAYPOINT
             </h1>
           </div>
 
+          {/* Cấp 1: Chọn Profile (World/Server) & Cụm Nút Khối Công Cụ */}
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center mc-slot p-1">
               <Globe className="w-4 h-4 text-[#55ff55] ml-2 mr-1.5 shrink-0" />
@@ -3353,16 +2207,6 @@ export default function App() {
                 + Profile
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsAppIconModalOpen(true)}
-              title="Đổi biểu tượng App (App Icon) & Xuất file icon.ico / icon.png"
-              className="mc-btn mc-btn-stone inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black text-[#55ff55] cursor-pointer"
-            >
-              <Palette className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Icon App</span>
-            </button>
 
             <button
               type="button"
@@ -3414,68 +2258,11 @@ export default function App() {
         </div>
       </header>
 
+      {/* NỘI DUNG CHÍNH */}
       <main className="max-w-6xl mx-auto px-4 pt-6">
-        {currentParentWaypoint && !viewTrash && (
-          <div className="mc-panel p-4 mb-5 border-2 border-[#55ff55]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm font-extrabold">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentParentId(currentParentWaypoint.parentId || null)
-                  }
-                  className="mc-btn mc-btn-stone inline-flex items-center gap-1.5 px-3 py-1.5 text-white cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4 text-[#55ff55]" />
-                  <span>Quay Ra Ngoài</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCurrentParentId(null)}
-                  className="text-zinc-400 hover:text-white cursor-pointer font-mono"
-                >
-                  🏠 Tất cả địa điểm
-                </button>
-
-                {breadcrumbTrail.map((crumb, idx) => (
-                  <React.Fragment key={crumb.id}>
-                    <ChevronRight className="w-4 h-4 text-zinc-500" />
-                    <button
-                      type="button"
-                      onClick={() => setCurrentParentId(crumb.id)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 mc-slot cursor-pointer ${
-                        idx === breadcrumbTrail.length - 1
-                          ? 'text-[#55ff55] border-[#55ff55]'
-                          : 'text-zinc-200'
-                      }`}
-                    >
-                      <VoxelBlockIcon
-                        type={crumb.icon || TAG_CONFIG[crumb.tag]?.defaultIcon || 'grass'}
-                        className="w-4 h-4"
-                      />
-                      <span>{crumb.name}</span>
-                      <span className="text-[11px] font-mono text-zinc-400">
-                        (X:{crumb.x} {crumb.y !== null ? `Y:${crumb.y}` : ''} Z:{crumb.z})
-                      </span>
-                    </button>
-                  </React.Fragment>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={openCreateForm}
-                className="mc-btn mc-btn-emerald inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-[#041a06] uppercase cursor-pointer"
-              >
-                <FolderPlus className="w-4 h-4" />
-                <span>+ Thêm Điểm Con Trong &quot;{currentParentWaypoint.name}&quot;</span>
-              </button>
-            </div>
-          </div>
-        )}
-
+        {/* THANH ĐIỀU KHIỂN TRÊN: Khối Chiều Không Gian + Nút Block Kích Hoạt Thêm Tọa Độ / Quét Ảnh OCR */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
+          {/* Cụm Khối Chiều Không Gian */}
           <div className="grid grid-cols-2 sm:flex items-center gap-2 mc-panel p-2">
             <button
               type="button"
@@ -3516,6 +2303,7 @@ export default function App() {
               );
             })}
 
+            {/* Tab Thùng rác khôi phục */}
             <button
               type="button"
               onClick={() => setViewTrash(!viewTrash)}
@@ -3530,30 +2318,8 @@ export default function App() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            <button
-              type="button"
-              onClick={() => setViewMode(viewMode === 'grid' ? 'radar' : 'grid')}
-              title="Chuyển đổi giữa Danh sách Thẻ và Bản đồ Radar Tọa Độ 2D"
-              className={`mc-btn inline-flex items-center justify-center gap-1.5 px-3.5 py-3 text-xs sm:text-sm font-black uppercase cursor-pointer ${
-                viewMode === 'radar'
-                  ? 'mc-btn-diamond text-[#041924]'
-                  : 'mc-btn-stone text-[#55ffff]'
-              }`}
-            >
-              {viewMode === 'radar' ? (
-                <>
-                  <LayoutGrid className="w-4 h-4" />
-                  <span>Dạng Thẻ</span>
-                </>
-              ) : (
-                <>
-                  <MapIcon className="w-4 h-4" />
-                  <span>Radar 2D</span>
-                </>
-              )}
-            </button>
-
+          {/* Nút Khối Kích Hoạt Quét Ảnh OCR & Lưu Tọa Độ Mới */}
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
               onClick={openCreateForm}
@@ -3575,16 +2341,18 @@ export default function App() {
           </div>
         </div>
 
+        {/* KHỐI BẢNG CÔNG CỤ LỌC TAG, TÌM KIẾM, CHẾ ĐỘ COPY & VỊ TRÍ NGƯỜI CHƠI */}
         {!viewTrash && (
           <div className="mc-panel p-4 mb-6 space-y-3.5">
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              {/* Ô tìm kiếm kiểu Inventory Slot */}
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-[#55ff55] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm kiếm xuyên suốt mọi địa điểm cha & điểm con (tên, ghi chú, tag, tọa độ)..."
+                  placeholder="Tìm theo tên địa điểm, ghi chú, tag ([Base], [Ore], [Danger]) hoặc số tọa độ..."
                   className="w-full mc-slot text-white placeholder-zinc-500 pl-10 pr-4 py-2.5 text-xs sm:text-sm font-mono focus:outline-none"
                 />
                 {searchQuery && (
@@ -3598,6 +2366,7 @@ export default function App() {
                 )}
               </div>
 
+              {/* Chọn kiểu Copy khi bấm nút Copy trên thẻ */}
               <div className="flex items-center gap-2 mc-slot px-3 py-2 shrink-0">
                 <span className="text-xs text-zinc-400 font-bold uppercase">Chế độ Copy:</span>
                 <select
@@ -3618,6 +2387,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* Hàng lọc theo Hệ thống Tag Block */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5">
               <button
                 type="button"
@@ -3651,6 +2421,7 @@ export default function App() {
               })}
             </div>
 
+            {/* Đo khoảng cách từ vị trí người chơi & Bật/tắt bong bóng nổi */}
             <div className="pt-2.5 border-t-2 border-black/80 flex flex-wrap items-center justify-between gap-3 text-xs">
               <label className="inline-flex items-center gap-2 cursor-pointer text-zinc-200 font-bold">
                 <input
@@ -3701,7 +2472,7 @@ export default function App() {
               ) : (
                 <div className="flex items-center gap-3 text-[11px] text-zinc-400 font-mono">
                   <span>
-                    💡 Bấm vào <strong>Icon trên thẻ</strong> để đổi nhanh sang Cục Obi, Dân Làng, Rương...
+                    💡 Mẹo PC: Ấn <strong className="text-[#ffff55]">Ctrl + Shift + S</strong> mở Command Block
                   </span>
                   <button
                     type="button"
@@ -3716,14 +2487,7 @@ export default function App() {
           </div>
         )}
 
-        {!viewTrash && viewMode === 'radar' && (
-          <PixelRadarMap
-            waypoints={filteredWaypoints}
-            playerPos={playerPos}
-            onSelectWaypoint={(wp) => openEditForm(wp)}
-          />
-        )}
-
+        {/* CHẾ ĐỘ XEM THÙNG RÁC (KHÔI PHỤC TỌA ĐỘ XÓA NHẦM) */}
         {viewTrash ? (
           <div className="mc-panel p-5">
             <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b-2 border-black">
@@ -3758,20 +2522,14 @@ export default function App() {
                     key={wp.id}
                     className="flex items-center justify-between gap-3 p-4 mc-slot"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <VoxelBlockIcon
-                        type={wp.icon || TAG_CONFIG[wp.tag]?.defaultIcon || 'grass'}
-                        className="w-6 h-6"
-                      />
-                      <div>
-                        <span className="text-xs font-extrabold text-[#ff5555] uppercase font-mono">
-                          [{wp.dimension}] • [{wp.tag}]
-                        </span>
-                        <h4 className="font-extrabold text-white mt-0.5">{wp.name}</h4>
-                        <p className="text-xs font-mono text-zinc-400 mt-0.5">
-                          X: {wp.x} | Y: {wp.y ?? '~'} | Z: {wp.z}
-                        </p>
-                      </div>
+                    <div>
+                      <span className="text-xs font-extrabold text-[#ff5555] uppercase font-mono">
+                        [{wp.dimension}] • [{wp.tag}]
+                      </span>
+                      <h4 className="font-extrabold text-white mt-0.5">{wp.name}</h4>
+                      <p className="text-xs font-mono text-zinc-400 mt-0.5">
+                        X: {wp.x} | Y: {wp.y ?? '~'} | Z: {wp.z}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -3796,6 +2554,7 @@ export default function App() {
             )}
           </div>
         ) : (
+          /* DANH SÁCH THẺ TỌA ĐỘ KHỐI MINECRAFT (WAYPOINT CARDS GRID) */
           <>
             {filteredWaypoints.length === 0 ? (
               <div className="mc-panel p-12 text-center">
@@ -3803,14 +2562,10 @@ export default function App() {
                   <Compass className="w-7 h-7 text-[#ffff55]" />
                 </div>
                 <h3 className="text-base font-extrabold text-white mb-1 mc-text-shadow">
-                  {currentParentWaypoint
-                    ? `Khu vực "${currentParentWaypoint.name}" chưa có tọa độ con nào`
-                    : 'Chưa có khối tọa độ nào khớp với bộ lọc'}
+                  Chưa có khối tọa độ nào khớp với bộ lọc
                 </h3>
                 <p className="text-xs text-zinc-400 mb-4">
-                  {currentParentWaypoint
-                    ? 'Hãy thêm các điểm con như Kho đồ, Khu dân làng, Máy Farm... vào trong khu vực này.'
-                    : 'Hãy bấm nút "Lưu Tọa Độ Mới" hoặc quét ảnh chụp màn hình F3 / MCPE.'}
+                  Hãy bấm nút &quot;Lưu Tọa Độ Mới&quot; hoặc quét ảnh chụp màn hình F3 / MCPE.
                 </p>
                 <button
                   type="button"
@@ -3818,238 +2573,43 @@ export default function App() {
                   className="mc-btn mc-btn-emerald inline-flex items-center gap-2 px-4 py-2.5 text-[#041a06] text-xs font-black uppercase cursor-pointer"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>Thêm điểm tọa độ đầu tiên</span>
+                  Thêm điểm tọa độ đầu tiên
                 </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredWaypoints.map((wp) => {
-                  const parentWp = wp.parentId
-                    ? activeWaypoints.find((p) => p.id === wp.parentId) || null
-                    : null;
-                  return (
-                    <WaypointCard
-                      key={wp.id}
-                      waypoint={wp}
-                      childWaypoints={childrenByParentId[wp.id] || []}
-                      parentWaypoint={parentWp}
-                      copyMode={copyMode}
-                      playerPos={playerPos}
-                      onTogglePin={handleTogglePin}
-                      onToggleLock={handleToggleLock}
-                      onEdit={openEditForm}
-                      onSoftDelete={handleSoftDelete}
-                      onNotify={showToast}
-                      onOpenLightbox={(src, title) => setLightboxData({ src, title })}
-                      onSelectForDistance={handleSelectForDistance}
-                      onEnterFolder={(folderId) => {
-                        setCurrentParentId(folderId);
-                        setSearchQuery('');
-                      }}
-                      onCreateChild={(parentItem) => openCreateForm(parentItem)}
-                      onQuickChangeIcon={(targetWp) => setQuickIconTargetWp(targetWp)}
-                    />
-                  );
-                })}
+                {filteredWaypoints.map((wp) => (
+                  <WaypointCard
+                    key={wp.id}
+                    waypoint={wp}
+                    copyMode={copyMode}
+                    playerPos={playerPos}
+                    onTogglePin={handleTogglePin}
+                    onToggleLock={handleToggleLock}
+                    onEdit={openEditForm}
+                    onSoftDelete={handleSoftDelete}
+                    onNotify={showToast}
+                    onOpenLightbox={(src, title) => setLightboxData({ src, title })}
+                    onSelectForDistance={handleSelectForDistance}
+                  />
+                ))}
               </div>
             )}
           </>
         )}
       </main>
 
-      {/* MODAL 0: CHỌN NHANH BIỂU TƯỢNG TRÊN THẺ */}
-      {quickIconTargetWp && (
-        <div
-          onClick={() => setQuickIconTargetWp(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="mc-panel max-w-lg w-full p-5 max-h-[88vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between mb-3 pb-2.5 border-b-2 border-black">
-              <div>
-                <h3 className="text-base font-black text-[#55ff55] mc-text-shadow">
-                  Đổi Biểu Tượng Cho &quot;{quickIconTargetWp.name}&quot;
-                </h3>
-                <p className="text-xs text-zinc-400">
-                  Chọn Cục Obi, Dân Làng, Rương Đồ, Quái Vật... (40 biểu tượng Pixel)
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setQuickIconTargetWp(null)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
-              >
-                <X className="w-4 h-4 stroke-[3]" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mc-slot p-3 max-h-96 overflow-y-auto">
-              {MC_ICON_CATALOG.map((ic) => {
-                const isSelected = quickIconTargetWp.icon === ic.id;
-                return (
-                  <button
-                    key={ic.id}
-                    type="button"
-                    onClick={() => handleSelectQuickIcon(ic.id)}
-                    className={`mc-btn p-2 flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer ${
-                      isSelected
-                        ? 'mc-btn-emerald text-[#041a06]'
-                        : 'mc-btn-stone text-zinc-200'
-                    }`}
-                  >
-                    <VoxelBlockIcon type={ic.id} className="w-7 h-7" />
-                    <span className="text-[10px] font-bold leading-tight line-clamp-1">
-                      {ic.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 0B: ĐỔI ICON CHO APP & XUẤT FILE ICON.ICO / ICON.PNG */}
-      {isAppIconModalOpen && (
-        <div
-          onClick={() => setIsAppIconModalOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="mc-panel max-w-xl w-full p-5 my-8 max-h-[92vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-black">
-              <div className="flex items-center gap-2.5">
-                <VoxelBlockIcon
-                  type={appIconConfig.iconId}
-                  customImage={appIconConfig.customImage}
-                  className="w-8 h-8"
-                />
-                <div>
-                  <h2 className="text-base font-black text-[#55ff55] mc-text-shadow">
-                    Thay Đổi Icon Của App (fu WAYPOINT)
-                  </h2>
-                  <p className="text-xs text-zinc-400">
-                    Đổi logo hiển thị trên App, cửa sổ trình duyệt và tải file icon.ico / icon.png để đóng gói .exe / .apk
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAppIconModalOpen(false)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer"
-              >
-                <X className="w-4 h-4 stroke-[3]" />
-              </button>
-            </div>
-
-            <div className="p-3.5 mc-slot mb-4 space-y-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-extrabold text-[#ffff55]">
-                  1. Tải ảnh riêng từ máy tính của bạn làm Icon App:
-                </span>
-                <input
-                  ref={appIconFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleUploadCustomAppIcon}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => appIconFileInputRef.current?.click()}
-                  className="mc-btn mc-btn-diamond px-3 py-1.5 text-xs font-black text-[#041924] cursor-pointer"
-                >
-                  + Chọn Ảnh Từ Máy (.PNG / .ICO)
-                </button>
-              </div>
-
-              <div className="pt-2.5 border-t border-zinc-800 flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-extrabold text-[#55ff55]">
-                  2. Xuất Icon hiện tại ra file chuẩn để build .EXE / .APK:
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      downloadRenderedAppIcon(
-                        appIconConfig.iconId,
-                        appIconConfig.customImage,
-                        'ico',
-                        () => showToast('Đã tải file icon.ico (256x256)!', 'orb')
-                      )
-                    }
-                    className="mc-btn mc-btn-gold px-3 py-1.5 text-xs font-black text-[#1f1300] inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    Tải file icon.ico (Windows)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      downloadRenderedAppIcon(
-                        appIconConfig.iconId,
-                        appIconConfig.customImage,
-                        'png',
-                        () => showToast('Đã tải file icon.png (256x256)!', 'orb')
-                      )
-                    }
-                    className="mc-btn mc-btn-emerald px-3 py-1.5 text-xs font-black text-[#041a06] inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    Tải file icon.png (Android)
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-2 text-xs font-extrabold text-zinc-200">
-              Hoặc chọn từ 40 Biểu Tượng Pixel Minecraft làm Icon App:
-            </div>
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mc-slot p-3 max-h-72 overflow-y-auto">
-              {MC_ICON_CATALOG.map((ic) => {
-                const isSelected =
-                  !appIconConfig.customImage && appIconConfig.iconId === ic.id;
-                return (
-                  <button
-                    key={ic.id}
-                    type="button"
-                    onClick={() => {
-                      setAppIconConfig({ iconId: ic.id, customImage: null });
-                      showToast(`Đã đổi Icon App thành "${ic.label}"!`, 'orb');
-                    }}
-                    className={`mc-btn p-2 flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer ${
-                      isSelected
-                        ? 'mc-btn-emerald text-[#041a06]'
-                        : 'mc-btn-stone text-zinc-200'
-                    }`}
-                  >
-                    <VoxelBlockIcon type={ic.id} className="w-7 h-7" />
-                    <span className="text-[10px] font-bold leading-tight line-clamp-1">
-                      {ic.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 1: THÊM / SỬA TỌA ĐỘ */}
+      {/* ==========================================
+          MODAL 1: BÀN CHẾ TẠO / LƯU TỌA ĐỘ MỚI (CRAFTING & OCR WAYPOINT MODAL)
+      ========================================== */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="mc-panel max-w-2xl w-full p-5 sm:p-6 my-8 max-h-[92vh] overflow-y-auto">
+          <div className="mc-panel max-w-xl w-full p-5 sm:p-6 my-8 max-h-[92vh] overflow-y-auto">
             <div className="absolute top-0 left-0 right-0 h-2.5 mc-turf-overworld" />
             <div className="flex items-center justify-between mb-4 pb-3 pt-1 border-b-2 border-black">
               <h2 className="text-lg font-black text-white flex items-center gap-2.5 mc-text-shadow">
-                <VoxelBlockIcon type={formData.icon || 'command'} className="w-6 h-6" />
-                {editingId
-                  ? 'Chỉnh Sửa Khối Tọa Độ & Biểu Tượng'
-                  : 'Lưu Tọa Độ Mới (Hỗ trợ Tọa Độ Con & 40 Icon)'}
+                <VoxelBlockIcon type="command" className="w-6 h-6" />
+                {editingId ? 'Chỉnh Sửa Khối Tọa Độ & Ảnh Chụp' : 'Lưu Tọa Độ Mới (Hỗ trợ Quét Ảnh OCR)'}
               </h2>
               <button
                 type="button"
@@ -4060,6 +2620,7 @@ export default function App() {
               </button>
             </div>
 
+            {/* KHU VỰC 1: TRÍCH XUẤT TỌA ĐỘ TỪ ẢNH CHỤP MÀN HÌNH (OCR) & LỆNH F3+C */}
             <div className="mb-4 p-3.5 mc-slot space-y-2.5">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-xs font-extrabold text-[#55ff55] flex items-center gap-1.5">
@@ -4084,6 +2645,7 @@ export default function App() {
                 </button>
               </div>
 
+              {/* Các nút bấm thử nghiệm nhanh mẫu OCR */}
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[11px] text-zinc-400 font-bold">Thử mẫu quét tự động:</span>
                 {OCR_PRESETS.map((preset) => (
@@ -4105,6 +2667,7 @@ export default function App() {
                 </p>
               )}
 
+              {/* Ô dán nhanh chuỗi lệnh F3+C */}
               <div className="pt-1">
                 <label className="block text-[11px] text-[#d8b4fe] font-bold mb-1 flex items-center gap-1">
                   <ClipboardPaste className="w-3 h-3" />
@@ -4121,37 +2684,6 @@ export default function App() {
             </div>
 
             <form onSubmit={handleSaveWaypoint} className="space-y-4">
-              <div className="p-3 mc-slot border-2 border-[#eab308]/50">
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-[#ffff55] mb-1.5 flex items-center gap-1.5">
-                  <FolderOpen className="w-4 h-4 text-[#ffff55]" />
-                  Phân tầng: Thuộc địa điểm / Khu vực nào? (Tạo tọa độ trong tọa độ)
-                </label>
-                <select
-                  value={formData.parentId}
-                  onChange={(e) => {
-                    const newParentId = e.target.value;
-                    const parentObj = activeWaypoints.find((w) => w.id === newParentId);
-                    setFormData((prev) => ({
-                      ...prev,
-                      parentId: newParentId,
-                      dimension: parentObj ? parentObj.dimension : prev.dimension,
-                    }));
-                  }}
-                  className="w-full bg-[#14141d] border-2 border-black px-3 py-2 text-xs sm:text-sm font-bold text-white focus:outline-none"
-                >
-                  <option value="">
-                    🏠 Địa điểm chính bên ngoài (Không nằm trong điểm nào)
-                  </option>
-                  {activeWaypoints
-                    .filter((w) => w.id !== editingId)
-                    .map((w) => (
-                      <option key={w.id} value={w.id}>
-                        📂 Nằm trong: {w.name} ({w.dimension} — X:{w.x}, Z:{w.z})
-                      </option>
-                    ))}
-                </select>
-              </div>
-
               <div>
                 <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-200 mb-1">
                   Tên địa điểm *
@@ -4161,11 +2693,12 @@ export default function App() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="VD: Căn cứ chính, Kho để đồ, Khu dân làng Mending, Máy Farm Sắt..."
+                  placeholder="VD: Làng xưởng sắt, Cổng đền sa mạc, Mỏ vàng..."
                   className="w-full mc-slot px-3.5 py-2.5 text-sm text-white font-bold focus:outline-none"
                 />
               </div>
 
+              {/* Bộ 3 ô tọa độ X, Y (Tùy chọn), Z */}
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
                   <label className="block text-xs font-extrabold text-[#ff5555] mb-1 font-mono">
@@ -4207,10 +2740,11 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Chọn Chiều không gian & Tag phân loại bằng Khối Block */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-200 mb-1">
-                    Chiều không gian (Dimension)
+                    Cấp 2 - Chiều không gian (Dimension)
                   </label>
                   <select
                     value={formData.dimension}
@@ -4229,14 +2763,7 @@ export default function App() {
                   </label>
                   <select
                     value={formData.tag}
-                    onChange={(e) => {
-                      const nextTag = e.target.value;
-                      setFormData({
-                        ...formData,
-                        tag: nextTag,
-                        icon: TAG_CONFIG[nextTag]?.defaultIcon || formData.icon,
-                      });
-                    }}
+                    onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
                     className="w-full mc-slot px-3 py-2.5 text-sm font-bold text-white focus:outline-none"
                   >
                     {Object.keys(TAG_CONFIG).map((key) => (
@@ -4248,54 +2775,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="p-3 mc-slot space-y-2.5">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#55ff55] flex items-center gap-2">
-                    <VoxelBlockIcon type={formData.icon || 'grass'} className="w-5 h-5" />
-                    Chọn Biểu Tượng Địa Điểm ({MC_ICON_MAP[formData.icon]?.label || 'Khối Đất Cỏ'})
-                  </span>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {iconCategories.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setIconCategoryFilter(cat)}
-                        className={`mc-btn px-2 py-0.5 text-[10px] font-bold cursor-pointer ${
-                          iconCategoryFilter === cat
-                            ? 'mc-btn-gold text-[#1f1300]'
-                            : 'mc-btn-stone text-zinc-300'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-48 overflow-y-auto p-1">
-                  {filteredIconsForPicker.map((ic) => {
-                    const isSelected = formData.icon === ic.id;
-                    return (
-                      <button
-                        key={ic.id}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, icon: ic.id })}
-                        className={`mc-btn p-1.5 flex flex-col items-center justify-center gap-1 text-center cursor-pointer ${
-                          isSelected
-                            ? 'mc-btn-emerald text-[#041a06]'
-                            : 'mc-btn-stone text-zinc-200'
-                        }`}
-                      >
-                        <VoxelBlockIcon type={ic.id} className="w-6 h-6" />
-                        <span className="text-[9px] font-bold leading-tight line-clamp-1">
-                          {ic.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
+              {/* Ghi chú (Notes) */}
               <div>
                 <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-200 mb-1">
                   Ghi chú (Notes)
@@ -4309,6 +2789,7 @@ export default function App() {
                 />
               </div>
 
+              {/* Đính kèm ảnh chụp (Screenshot Gallery: tối đa 1-2 bức ảnh) */}
               <div className="p-3 mc-slot">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-extrabold text-zinc-200 flex items-center gap-1.5">
@@ -4363,6 +2844,7 @@ export default function App() {
                 )}
               </div>
 
+              {/* Tùy chọn Khóa chống xóa nhầm & Ghim */}
               <div className="flex items-center justify-between gap-4 pt-1">
                 <label className="inline-flex items-center gap-2 text-xs font-bold text-[#55ffff] cursor-pointer">
                   <input
@@ -4407,7 +2889,9 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 2: DISTANCE CALCULATOR */}
+      {/* ==========================================
+          MODAL 2: TÍNH TOÁN KHOẢNG CÁCH GIỮA 2 ĐIỂM LƯU SẴN (DISTANCE CALCULATOR)
+      ========================================== */}
       {isDistanceOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="mc-panel max-w-lg w-full p-5">
@@ -4521,14 +3005,16 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 3: NETHER HUB CALCULATOR */}
+      {/* ==========================================
+          MODAL 3: MÁY TÍNH ĐƯỜNG CAO TỐC NETHER HUB (÷8 / ×8)
+      ========================================== */}
       {isCalcOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="mc-panel max-w-md w-full p-5">
             <div className="absolute top-0 left-0 right-0 h-2.5 mc-turf-nether" />
             <div className="flex items-center justify-between mb-4 pb-3 pt-1 border-b-2 border-black">
               <h2 className="text-base font-black text-white flex items-center gap-2 mc-text-shadow">
-                <VoxelBlockIcon type="obsidian" className="w-5 h-5" />
+                <VoxelBlockIcon type="nether" className="w-5 h-5" />
                 Nether Portal Calculator (Xây Nether Hub)
               </h2>
               <button
@@ -4603,7 +3089,9 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 4: BACKUP & CLOUD SYNC */}
+      {/* ==========================================
+          MODAL 4: ĐỒNG BỘ ĐÁM MÂY & SAO LƯU JSON
+      ========================================== */}
       {isBackupOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="mc-panel max-w-lg w-full p-5 my-8">
@@ -4709,7 +3197,9 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 5: CREATE WORLD */}
+      {/* ==========================================
+          MODAL 5: TẠO PROFILE (WORLD / SERVER) MỚI
+      ========================================== */}
       {isWorldModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="mc-panel max-w-sm w-full p-5">
@@ -4746,7 +3236,9 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 6: LIGHTBOX */}
+      {/* ==========================================
+          MODAL 6: XEM ẢNH ĐÍNH KÈM PHÓNG TO (LIGHTBOX)
+      ========================================== */}
       {lightboxData && (
         <div
           onClick={() => setLightboxData(null)}
@@ -4775,14 +3267,16 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 7: HƯỚNG DẪN */}
+      {/* ==========================================
+          MODAL 7: HƯỚNG DẪN & KIẾN TRÚC ỨNG DỤNG
+      ========================================== */}
       {isGuideOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="mc-panel max-w-lg w-full p-5">
             <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-black">
               <h3 className="text-base font-black text-[#55ff55] flex items-center gap-2 mc-text-shadow">
                 <Smartphone className="w-4 h-4 text-[#55ff55]" />
-                Hướng Dẫn Các Tính Năng Mới (fu WAYPOINT)
+                Hướng Dẫn Sử Dụng fu WAYPOINT
               </h3>
               <button
                 type="button"
@@ -4794,16 +3288,13 @@ export default function App() {
             </div>
             <ul className="space-y-2.5 text-xs text-zinc-200 leading-relaxed font-mono">
               <li>
-                • <strong>1. Phân tầng Tọa độ trong Tọa độ (Sub-Waypoints):</strong> Trên mỗi thẻ địa điểm (VD: Base chính), bạn bấm nút <strong className="text-[#55ff55]">+ Điểm Con</strong> để thêm các vị trí bên trong (Kho đồ, Dân làng, Máy Farm...) hoặc bấm <strong className="text-[#ffff55]">Mở Khu Vực</strong> để đi vào bên trong mà không làm loạn danh sách bên ngoài.
+                • <strong>1. Đồ họa Block & Hiệu ứng Kích hoạt:</strong> Mọi nút bấm đều được thiết kế như một khối kích hoạt (Emerald Block, Redstone, Gold, Diamond, TNT) kèm âm thanh click và hạt Voxel bung ra khi nhấn.
               </li>
               <li>
-                • <strong>2. Kho 40 Biểu Tượng Pixel (Cục Obi, Dân Làng, Rương, Mob...):</strong> Bấm trực tiếp vào biểu tượng trên bất kỳ thẻ tọa độ nào để đổi nhanh hình đại diện.
+                • <strong>2. Killer Features:</strong> Tự động chia/nhân 8 cổng Nether Hub, Đo khoảng cách 2 điểm (tính số đường ray, số stack khối xây cầu, pháo hoa Elytra), Quét ảnh OCR từ F3 (PC) & MCPE (Android).
               </li>
               <li>
-                • <strong>3. Đổi Icon App & Xuất file .ICO / .PNG:</strong> Bấm nút <strong className="text-[#55ff55]">Icon App</strong> trên thanh Header (hoặc bấm vào logo góc trái trên cùng) để đổi icon của ứng dụng hoặc tải file <code>icon.ico</code> / <code>icon.png</code> về đóng gói <code>.exe</code> và <code>.apk</code>.
-              </li>
-              <li>
-                • <strong>4. Bản đồ Radar 2D:</strong> Bấm nút <strong className="text-[#55ffff]">Radar 2D</strong> để quan sát vị trí tương đối giữa các địa điểm trên mặt phẳng tọa độ X/Z.
+                • <strong>3. Phím tắt nhanh:</strong> Bấm <code className="text-[#ffff55]">Ctrl + Shift + S</code> trên PC hoặc chạm vào <strong>Khối Command Block ⚡</strong> ở góc dưới bên phải để mở bảng nhập tọa độ siêu tốc.
               </li>
             </ul>
           </div>
