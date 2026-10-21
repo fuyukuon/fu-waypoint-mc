@@ -7,11 +7,12 @@
   "type": "module",
   "main": "electron.cjs",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "icons": "node scripts/generate-icons.mjs",
+    "dev": "node scripts/generate-icons.mjs && vite",
+    "build": "node scripts/generate-icons.mjs && vite build",
     "preview": "vite preview",
-    "electron:start": "vite build && electron .",
-    "electron:build": "vite build && electron-builder --win"
+    "electron:start": "npm run build && electron .",
+    "electron:build": "npm run build && node scripts/fix-wincodesign.mjs && electron-builder --win"
   },
   "dependencies": {
     "framer-motion": "^11.0.0",
@@ -30,19 +31,33 @@
     "productName": "fu-WAYPOINT",
     "asar": true,
     "directories": {
-      "output": "dist-electron"
+      "output": "dist-electron",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
       "electron.cjs",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
+      },
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
     "win": {
-      "icon": "public/icon.ico",
-      "signAndEditExecutable": false,
+      "icon": "build/icon.ico",
+      "verifyUpdateCodeSignature": false,
       "target": [
         "portable"
       ]
+    },
+    "portable": {
+      "artifactName": "${productName}-v${version}-Portable.${ext}"
     }
   }
 }
