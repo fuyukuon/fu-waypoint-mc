@@ -18,7 +18,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
--       name: Setup Node.js
+      # Nâng cấp lên Node.js 22 để đáp ứng yêu cầu của Capacitor CLI mới nhất
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -39,7 +40,7 @@ jobs:
       - name: Build Web App
         run: npm run build
 
-      # 3. Tạo sẵn file cấu hình Capacitor (tránh lỗi hỏi phím tương tác)
+      # 3. Tạo sẵn file cấu hình Capacitor
       - name: Create Capacitor Config
         run: |
           cat << 'EOF' > capacitor.config.json
