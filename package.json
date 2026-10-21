@@ -38,6 +38,7 @@
       "package.json"
     ],
     "win": {
+      "icon": null,
       "signAndEditExecutable": false,
       "target": [
         "portable"
