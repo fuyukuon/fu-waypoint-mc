@@ -1,11 +1,9 @@
 name: Build & Release Android APK
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    tags:
-      - 'v*'
 
 permissions:
   contents: write
@@ -18,30 +16,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Yêu cầu Node.js 22 cho Capacitor CLI mới nhất
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # Nâng cấp lên Java 21 để sửa lỗi "invalid source release: 21"
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # 1. Cài đặt các gói Capacitor cho Android
       - name: Install Dependencies
         run: |
           npm install
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
 
-      # 2. Build giao diện web
       - name: Build Web App
         run: npm run build
 
-      # 3. Tạo file cấu hình Capacitor
       - name: Create Capacitor Config
         run: |
           cat << 'EOF' > capacitor.config.json
@@ -52,37 +45,35 @@ jobs:
           }
           EOF
 
-      # 4. Khởi tạo dự án Android và đồng bộ
       - name: Add & Sync Android Project
         run: |
           npx cap add android
           npx cap sync android
 
-      # 5. Build file APK Debug bằng Java 21
       - name: Build Android APK
         run: |
           cd android
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
 
-      # 6. Đổi tên file APK
+      # Đổi tên file tự động theo tên Tag của Release
       - name: Prepare APK File
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk ./fu-waypoint-v2.0.0.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk ./fu-waypoint-${{ github.event.release.tag_name }}.apk
 
-      # 7. Lưu dự phòng vào mục Artifacts
+      # Lưu dự phòng vào Artifacts
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: fu-waypoint-android-apk
-          path: fu-waypoint-v2.0.0.apk
+          path: fu-waypoint-${{ github.event.release.tag_name }}.apk
 
-      # 8. Tự động nạp file APK lên mục Release v2.0.0
+      # Đẩy APK vào đúng cái Release cậu vừa tạo
       - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.0.0
-          name: "fu WAYPOINT v2.0.0"
-          files: fu-waypoint-v2.0.0.apk
+          tag_name: ${{ github.event.release.tag_name }}
+          name: ${{ github.event.release.name }}
+          files: fu-waypoint-${{ github.event.release.tag_name }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
