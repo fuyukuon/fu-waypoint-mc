@@ -13,8 +13,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout code (luôn lấy code mới nhất ở nhánh main)
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -24,8 +26,70 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build Web App (Vite)
+        run: npx vite build
+
+      # Tự động xóa file .ico lỗi, cấu hình electron-builder tự convert từ public/icon.png và tạo sẵn cache rcedit
+      - name: Fix Windows Icon & Electron Builder Config
+        shell: node {0}
+        run: |
+          const fs = require('fs');
+          const path = require('path');
+          const https = require('https');
+          const { spawnSync } = require('child_process');
+
+          (async () => {
+            // 1. Xóa triệt để mọi file .ico cũ bị lỗi để makensis không bao giờ đọc nhầm
+            for (const p of ['public/icon.ico', 'build/icon.ico', 'dist/icon.ico']) {
+              if (fs.existsSync(p)) fs.unlinkSync(p);
+            }
+            fs.mkdirSync('build', { recursive: true });
+            if (fs.existsSync('public/icon.png')) {
+              fs.copyFileSync('public/icon.png', 'build/icon.png');
+              fs.copyFileSync('public/icon.png', 'dist/icon.png');
+            }
+
+            // 2. Sửa trực tiếp package.json để electron-builder tự convert public/icon.png sang .ico chuẩn
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.build = pkg.build || {};
+            pkg.build.win = pkg.build.win || {};
+            delete pkg.build.win.signAndEditExecutable;
+            pkg.build.win.verifyUpdateCodeSignature = false;
+            pkg.build.win.icon = 'public/icon.png';
+            pkg.build.win.target = ['portable'];
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2), 'utf8');
+            console.log('Đã cập nhật cấu hình win trong package.json:', pkg.build.win);
+
+            // 3. Tải & giải nén sẵn winCodeSign-2.6.0 (loại bỏ thư mục darwin chứa symlink macOS)
+            const localAppData = process.env.LOCALAPPDATA;
+            if (localAppData) {
+              const cacheDir = path.join(localAppData, 'electron-builder', 'Cache', 'winCodeSign');
+              const targetDir = path.join(cacheDir, 'winCodeSign-2.6.0');
+              const rceditPath = path.join(targetDir, 'rcedit-x64.exe');
+              if (!fs.existsSync(rceditPath)) {
+                fs.mkdirSync(targetDir, { recursive: true });
+                const archivePath = path.join(cacheDir, 'winCodeSign-2.6.0.7z');
+                const sevenZip = path.join(process.cwd(), 'node_modules', '7zip-bin', 'win', 'x64', '7za.exe');
+                const url = 'https://github.com/electron-userland/electron-builder-binaries/releases/download/winCodeSign-2.6.0/winCodeSign-2.6.0.7z';
+                const download = (u) => new Promise((resolve, reject) => {
+                  https.get(u, (res) => {
+                    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                      return resolve(download(res.headers.location));
+                    }
+                    const file = fs.createWriteStream(archivePath);
+                    res.pipe(file);
+                    file.on('finish', () => file.close(resolve));
+                  }).on('error', reject);
+                });
+                await download(url);
+                spawnSync(sevenZip, ['x', '-bd', '-y', '-xr!darwin', archivePath, `-o${targetDir}`], { stdio: 'inherit' });
+                if (fs.existsSync(archivePath)) fs.unlinkSync(archivePath);
+              }
+            }
+          })();
+
       - name: Build Electron EXE
-        run: npm run electron:build
+        run: npx electron-builder --win
 
       - name: Upload EXE Artifact
         uses: actions/upload-artifact@v4
@@ -33,12 +97,12 @@ jobs:
           name: fu-waypoint-windows-exe
           path: dist-electron/*.exe
 
-      # Đẩy EXE vào đúng cái Release cậu vừa tạo
+      # Đẩy EXE vào đúng cái Release vừa tạo
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.release.tag_name }}
-          name: ${{ github.event.release.name }}
+          tag_name: ${{ github.event.release.tag_name || 'v2.1.2' }}
+          name: ${{ github.event.release.name || 'fu-WAYPOINT v2.1.2' }}
           files: dist-electron/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
