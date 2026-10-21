@@ -26,45 +26,56 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
+      # 1. Cài đặt các gói Capacitor cho Android
       - name: Install Dependencies
         run: |
           npm install
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
 
+      # 2. Build giao diện web
       - name: Build Web App
         run: npm run build
 
-      - name: Initialize Capacitor Android
+      # 3. Tạo sẵn file cấu hình Capacitor (tránh lỗi hỏi phím tương tác)
+      - name: Create Capacitor Config
         run: |
-          npx cap init "fu WAYPOINT" "com.fuwaypoint.mc" --web-dir dist
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.fuwaypoint.mc",
+            "appName": "fu WAYPOINT",
+            "webDir": "dist"
+          }
+          EOF
+
+      # 4. Khởi tạo dự án Android và đồng bộ
+      - name: Add & Sync Android Project
+        run: |
           npx cap add android
           npx cap sync android
 
-      - name: Build Debug APK
+      # 5. Build file APK Debug
+      - name: Build Android APK
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
-      # Đổi tên file cho dễ nhận diện trên điện thoại
-      - name: Rename APK
+      # 6. Đổi tên file APK
+      - name: Prepare APK File
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk ./fu-waypoint-v2.0.0.apk
 
-      # 1. Lưu dự phòng vào Artifacts
+      # 7. Lưu dự phòng vào mục Artifacts
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: fu-waypoint-android-apk
           path: fu-waypoint-v2.0.0.apk
 
-      # 2. Đẩy thẳng file APK vào mục GitHub Release v2.0.0
+      # 8. Tự động nạp file APK lên mục Release v2.0.0
       - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
