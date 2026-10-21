@@ -1,5 +1,18 @@
 name: Build & Release Android APK
 
+- name: Apply Custom App Icon to Android APK
+        run: |
+          if [ -f "public/icon.png" ]; then
+            rm -rf android/app/src/main/res/mipmap-anydpi-v26
+            for dir in android/app/src/main/res/mipmap-*; do
+              if [ -d "$dir" ]; then
+                cp public/icon.png "$dir/ic_launcher.png"
+                cp public/icon.png "$dir/ic_launcher_round.png"
+                cp public/icon.png "$dir/ic_launcher_foreground.png"
+              fi
+            done
+          fi
+
 on:
   release:
     types: [published]
