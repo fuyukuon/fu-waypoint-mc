@@ -13,8 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout code (luôn lấy code mới nhất ở nhánh main)
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,10 +32,10 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest @capacitor/assets@latest
 
       - name: Build Web App
-        run: npm run build
+        run: npx vite build
 
       - name: Create Capacitor Config
         run: |
@@ -50,6 +52,30 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      # Tự động tạo bộ Icon Android chuẩn (Adaptive Icon + Mipmap) từ public/icon.png
+      - name: Generate Official Android App Icons
+        run: |
+          rm -rf assets
+          mkdir -p assets
+          node -e '
+            const fs = require("fs");
+            try {
+              const sharp = require("sharp");
+              sharp("public/icon.png")
+                .resize(1024, 1024, { kernel: sharp.kernel.nearest })
+                .png()
+                .toFile("assets/logo.png")
+                .then(() => console.log("Created 1024x1024 assets/logo.png"));
+            } catch (e) {
+              fs.copyFileSync("public/icon.png", "assets/logo.png");
+            }
+          '
+          npx @capacitor/assets generate --android --iconBackgroundColor '#111015' --iconBackgroundColorDark '#111015' --splashBackgroundColor '#111015' --splashBackgroundColorDark '#111015'
+          find android/app/src/main/res/mipmap-* -name "ic_launcher*.webp" -delete || true
+          if [ -f "android/app/build.gradle" ]; then
+            sed -i "s/versionCode 1/versionCode ${{ github.run_number || 2 }}/g" android/app/build.gradle || true
+          fi
+
       - name: Build Android APK
         run: |
           cd android
@@ -59,21 +85,22 @@ jobs:
       # Đổi tên file tự động theo tên Tag của Release
       - name: Prepare APK File
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk ./fu-waypoint-${{ github.event.release.tag_name }}.apk
+          TAG_NAME="${{ github.event.release.tag_name || 'v2.1.2' }}"
+          cp android/app/build/outputs/apk/debug/app-debug.apk ./fu-waypoint-${TAG_NAME}.apk
 
       # Lưu dự phòng vào Artifacts
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: fu-waypoint-android-apk
-          path: fu-waypoint-${{ github.event.release.tag_name }}.apk
+          path: fu-waypoint-*.apk
 
-      # Đẩy APK vào đúng cái Release cậu vừa tạo
+      # Đẩy APK vào đúng cái Release vừa tạo
       - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.release.tag_name }}
-          name: ${{ github.event.release.name }}
-          files: fu-waypoint-${{ github.event.release.tag_name }}.apk
+          tag_name: ${{ github.event.release.tag_name || 'v2.1.2' }}
+          name: ${{ github.event.release.name || 'fu-WAYPOINT v2.1.2' }}
+          files: fu-waypoint-*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
