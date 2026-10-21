@@ -1,31 +1,5 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, nativeImage } = require('electron');
 const path = require('path');
-const fs = require('fs');
-
-// Đặt AppUserModelId cho Windows 10/11 để thanh Taskbar nhận diện đúng Icon App
-if (process.platform === 'win32') {
-  app.setAppUserModelId('com.minecraft.fuwaypoint');
-}
-
-function resolveWindowIcon() {
-  const candidates = process.platform === 'win32'
-    ? [
-        path.join(process.resourcesPath || '', 'icon.ico'),
-        path.join(__dirname, 'dist', 'icon.ico'),
-        path.join(__dirname, 'public', 'icon.ico'),
-        path.join(__dirname, 'dist', 'icon.png'),
-      ]
-    : [
-        path.join(process.resourcesPath || '', 'icon.png'),
-        path.join(__dirname, 'dist', 'icon.png'),
-        path.join(__dirname, 'public', 'icon.png'),
-      ];
-
-  for (const p of candidates) {
-    if (p && fs.existsSync(p)) return p;
-  }
-  return path.join(__dirname, 'dist', 'icon.png');
-}
 
 let mainWindow;
 
@@ -36,13 +10,30 @@ function createWindow() {
     minWidth: 400,
     minHeight: 560,
     title: 'fu-WAYPOINT v2.1.2',
-    icon: resolveWindowIcon(),
     backgroundColor: '#111015',
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
     },
+  });
+
+  // Tự động đồng bộ icon cửa sổ & thanh tác vụ theo icon chọn trực tiếp trong App
+  mainWindow.webContents.on('page-favicon-updated', (_event, favicons) => {
+    if (!favicons || favicons.length === 0) return;
+    for (const iconUrl of favicons) {
+      if (typeof iconUrl === 'string' && iconUrl.startsWith('data:image/png')) {
+        try {
+          const img = nativeImage.createFromDataURL(iconUrl);
+          if (!img.isEmpty() && mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.setIcon(img);
+            break;
+          }
+        } catch {
+          // Bỏ qua nếu data URL không hợp lệ
+        }
+      }
+    }
   });
 
   mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));

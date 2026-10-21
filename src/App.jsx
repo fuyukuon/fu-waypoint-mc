@@ -1009,6 +1009,67 @@ function getIconSvgString(iconId = 'grass', size = 256) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect width="16" height="16" fill="${item.bg}" />${rects}<rect x="0" y="0" width="16" height="16" fill="none" stroke="#000000" stroke-width="1.2" /></svg>`;
 }
 
+function renderPixelIconToPngDataUrl(iconId = 'grass', size = 256) {
+  if (typeof document === 'undefined') return '';
+  const item = MC_ICON_MAP[iconId] || MC_ICON_MAP.grass;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  ctx.imageSmoothingEnabled = false;
+  const scale = size / 16;
+
+  ctx.fillStyle = item.bg;
+  ctx.fillRect(0, 0, size, size);
+
+  item.pixels.forEach(([x, y, w, h, fill]) => {
+    ctx.fillStyle = fill;
+    ctx.fillRect(
+      Math.round(x * scale),
+      Math.round(y * scale),
+      Math.round(w * scale),
+      Math.round(h * scale)
+    );
+  });
+
+  const borderW = Math.max(2, Math.round(scale * 1.1));
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = borderW;
+  ctx.strokeRect(borderW / 2, borderW / 2, size - borderW, size - borderW);
+
+  return canvas.toDataURL('image/png');
+}
+
+function renderImageFileToPngIcon(file, size = 256) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('No canvas context'));
+          return;
+        }
+        ctx.imageSmoothingEnabled = false;
+        const minSide = Math.min(img.width, img.height);
+        const sx = Math.floor((img.width - minSide) / 2);
+        const sy = Math.floor((img.height - minSide) / 2);
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = reject;
+      img.src = event.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function VoxelBlockIcon({ type = 'grass', customImage = null, className = 'w-6 h-6' }) {
   if (customImage) {
     return (
@@ -2165,23 +2226,34 @@ export default function App() {
     }
   });
   const [isAppIconModalOpen, setIsAppIconModalOpen] = useState(false);
+  const [appIconCategoryFilter, setAppIconCategoryFilter] = useState('Tất cả');
   const appIconFileInputRef = useRef(null);
 
   useEffect(() => {
     try {
       localStorage.setItem('fu_waypoint_app_icon_v3', JSON.stringify(appIconConfig));
-      let link = document.querySelector("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      if (appIconConfig.customImage) {
-        link.href = appIconConfig.customImage;
-      } else {
-        const svgStr = getIconSvgString(appIconConfig.iconId, 64);
-        link.href = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgStr);
-      }
+      const pngDataUrl =
+        appIconConfig.customImage && appIconConfig.customImage.startsWith('data:image/')
+          ? appIconConfig.customImage
+          : renderPixelIconToPngDataUrl(appIconConfig.iconId || 'grass', 256);
+
+      if (!pngDataUrl) return;
+
+      const oldLinks = document.querySelectorAll("link[rel*='icon']");
+      oldLinks.forEach((el) => el.parentNode?.removeChild(el));
+
+      const iconLink = document.createElement('link');
+      iconLink.id = 'app-favicon';
+      iconLink.rel = 'icon';
+      iconLink.type = 'image/png';
+      iconLink.href = pngDataUrl;
+      document.head.appendChild(iconLink);
+
+      const appleLink = document.createElement('link');
+      appleLink.id = 'app-apple-icon';
+      appleLink.rel = 'apple-touch-icon';
+      appleLink.href = pngDataUrl;
+      document.head.appendChild(appleLink);
     } catch (e) {
       console.error(e);
     }
@@ -2742,11 +2814,13 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const dataUrl = await compressImageFile(file, 128, 0.9);
+      const dataUrl = await renderImageFileToPngIcon(file, 256);
       setAppIconConfig({ iconId: 'custom', customImage: dataUrl });
       showToast('Đã đổi biểu tượng ứng dụng!', 'orb');
     } catch {
       showToast('Không thể đọc file ảnh này.');
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -4194,7 +4268,7 @@ export default function App() {
       )}
 
       {/* ==========================================
-          MODAL 0B: ĐỔI ICON CHO APP (ĐÃ XÓA PHẦN XUẤT FILE THỪA)
+          MODAL 0B: ĐỔI ICON NGAY TRONG APP
       ========================================== */}
       {isAppIconModalOpen && (
         <div
@@ -4212,9 +4286,19 @@ export default function App() {
                   customImage={appIconConfig.customImage}
                   className="w-7 h-7"
                 />
-                <h2 className="text-sm sm:text-base font-black text-[#55ff55] truncate mc-text-shadow">
-                  Đổi Biểu Tượng App
-                </h2>
+                <div className="min-w-0">
+                  <h2 className="text-sm sm:text-base font-black text-[#55ff55] truncate mc-text-shadow">
+                    Đổi Biểu Tượng Trực Tiếp Trong App
+                  </h2>
+                  <p className="text-[11px] text-zinc-400 font-mono truncate">
+                    Đang dùng:{' '}
+                    <strong className="text-white">
+                      {appIconConfig.customImage
+                        ? 'Ảnh tùy chỉnh từ máy'
+                        : MC_ICON_MAP[appIconConfig.iconId]?.label || 'Đất Cỏ'}
+                    </strong>
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
@@ -4227,7 +4311,7 @@ export default function App() {
 
             <div className="p-3 mc-slot mb-3 flex items-center justify-between gap-2 flex-wrap">
               <span className="text-xs font-bold text-zinc-200">
-                Tải ảnh riêng từ máy:
+                Tải ảnh bất kỳ từ thiết bị:
               </span>
               <input
                 ref={appIconFileInputRef}
@@ -4236,17 +4320,51 @@ export default function App() {
                 onChange={handleUploadCustomAppIcon}
                 className="hidden"
               />
-              <button
-                type="button"
-                onClick={() => appIconFileInputRef.current?.click()}
-                className="mc-btn mc-btn-diamond px-3 py-1.5 text-xs font-black text-[#041924] cursor-pointer"
-              >
-                Chọn ảnh từ máy
-              </button>
+              <div className="flex items-center gap-1.5">
+                {(appIconConfig.customImage || appIconConfig.iconId !== 'grass') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppIconConfig({ iconId: 'grass', customImage: null });
+                      showToast('Đã khôi phục icon Đất Cỏ mặc định', 'orb');
+                    }}
+                    className="mc-btn mc-btn-stone px-2.5 py-1.5 text-xs font-bold text-zinc-200 cursor-pointer"
+                  >
+                    Mặc định
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => appIconFileInputRef.current?.click()}
+                  className="mc-btn mc-btn-diamond px-3 py-1.5 text-xs font-black text-[#041924] cursor-pointer"
+                >
+                  Chọn ảnh từ máy
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 flex-wrap mb-2">
+              {iconCategories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setAppIconCategoryFilter(cat)}
+                  className={`mc-btn px-2.5 py-1 text-[10px] font-bold cursor-pointer ${
+                    appIconCategoryFilter === cat
+                      ? 'mc-btn-gold text-[#1f1300]'
+                      : 'mc-btn-stone text-zinc-300'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
 
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mc-slot p-2.5 max-h-80 overflow-y-auto">
-              {MC_ICON_CATALOG.map((ic) => {
+              {(appIconCategoryFilter === 'Tất cả'
+                ? MC_ICON_CATALOG
+                : MC_ICON_CATALOG.filter((item) => item.category === appIconCategoryFilter)
+              ).map((ic) => {
                 const isSelected =
                   !appIconConfig.customImage && appIconConfig.iconId === ic.id;
                 return (
