@@ -38,7 +38,7 @@
       "package.json"
     ],
     "win": {
-      "icon": "public/icon.png",
+      "icon": "public/icon.ico",
       "signAndEditExecutable": false,
       "target": [
         "portable"
