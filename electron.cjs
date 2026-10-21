@@ -10,6 +10,7 @@ function createWindow() {
     minWidth: 420,
     minHeight: 560,
     title: 'fu WAYPOINT',
+    icon: path.join(__dirname, 'dist', 'icon.png'),
     backgroundColor: '#111015',
     autoHideMenuBar: true,
     webPreferences: {
@@ -18,7 +19,6 @@ function createWindow() {
     },
   });
 
-  // Khi đóng gói thành file .exe sẽ load giao diện từ dist/index.html
   mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
