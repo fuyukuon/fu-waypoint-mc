@@ -2,11 +2,18 @@
 /**
  * scripts/generate-icons.mjs
  * ---------------------------------------------------------------------------
- * Công cụ tự động tạo bộ Icon chuẩn cho cả PC (Electron Windows) & Mobile (Android APK / PWA)
- * chỉ từ 1 file ảnh gốc duy nhất: public/icon.png
- *
- * Hoạt động 100% bằng Node.js thuần (node:fs, node:zlib, node:path) - KHÔNG cần cài thêm
- * thư viện C++ hay công cụ bên ngoài.
+ * Công cụ tự động chuẩn hóa toàn bộ Icon cho:
+ * 1. PC (Electron Windows):
+ *    - Xuất public/icon.png & build/icon.png (512x512 RGBA chuẩn để electron-builder
+ *      tự động convert bằng app-builder.exe nội bộ).
+ *    - Xuất public/icon.ico chuẩn Win32 BMP/DIB (chỉ gồm các frame 16, 24, 32, 48, 64, 128px
+ *      với bWidth == biWidth và biSizeImage = xorSize chuẩn đặc tả Microsoft/NSIS).
+ * 2. Điện thoại Android (Capacitor APK):
+ *    - Tự động chạy ngay sau `npx cap sync android` (nhờ hook `capacitor:sync:after`
+ *      trong package.json) VÀ tự động gắn chốt chặn vào `android/app/build.gradle`
+ *      (`mergeDebugResources` / `preBuild`) để dù workflow cũ có xóa mipmap-anydpi-v26
+ *      thì trước khi đóng gói APK, hệ thống vẫn tự động phục hồi đầy đủ bộ Mipmap +
+ *      Adaptive Icon chuẩn 100%.
  * ---------------------------------------------------------------------------
  */
 
@@ -18,6 +25,10 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
+
+// ============================================================================
+// 1. BỘ GIẢI MÃ & MÃ HÓA PNG THUẦN NODE.JS
+// ============================================================================
 
 function paethPredictor(a, b, c) {
   const p = a + b - c;
@@ -215,6 +226,10 @@ function encodePNG(width, height, rgba) {
   ]);
 }
 
+// ============================================================================
+// 2. XỬ LÝ ẢNH: RESIZE, SAFE-ZONE ADAPTIVE ICON, MASK TRÒN & BO GÓC
+// ============================================================================
+
 function resizeRGBA(src, dstW, dstH) {
   const { width: srcW, height: srcH, rgba: srcBuf } = src;
   const dstBuf = Buffer.alloc(dstW * dstH * 4);
@@ -277,7 +292,7 @@ function createSolidRGBA(width, height, r, g, b, a = 255) {
   return { width, height, rgba };
 }
 
-function createPaddedIcon(src, canvasSize, scaleRatio = 0.52, bgColor = null) {
+function createPaddedIcon(src, canvasSize, scaleRatio = 0.56, bgColor = null) {
   const base = bgColor
     ? createSolidRGBA(canvasSize, canvasSize, bgColor[0], bgColor[1], bgColor[2], bgColor[3] ?? 255)
     : createSolidRGBA(canvasSize, canvasSize, 0, 0, 0, 0);
@@ -334,7 +349,7 @@ function applyCircleMask(img, bgColor = [17, 16, 21, 255]) {
 
 function applyRoundedRectMask(img, bgColor = [17, 16, 21, 255]) {
   const { width, height } = img;
-  const padded = createPaddedIcon(img, width, 0.82, bgColor);
+  const padded = createPaddedIcon(img, width, 0.84, bgColor);
   const out = Buffer.from(padded.rgba);
   const r = width * 0.18;
 
@@ -361,6 +376,10 @@ function applyRoundedRectMask(img, bgColor = [17, 16, 21, 255]) {
   return { width, height, rgba: out };
 }
 
+// ============================================================================
+// 3. BỘ TẠO FILE .ICO CHUẨN WIN32 BMP/DIB (Tương thích 100% NSIS makensis & rcedit)
+// ============================================================================
+
 function createBMPFrame(img) {
   const { width, height, rgba } = img;
   const xorRowBytes = width * 4;
@@ -371,13 +390,13 @@ function createBMPFrame(img) {
   const headerSize = 40;
   const buf = Buffer.alloc(headerSize + xorSize + andSize);
 
-  buf.writeUInt32LE(headerSize, 0);         // biSize = 40 (BITMAPINFOHEADER)
-  buf.writeInt32LE(width, 4);               // biWidth
-  buf.writeInt32LE(height * 2, 8);          // biHeight (x2 cho XOR + AND mask)
-  buf.writeUInt16LE(1, 12);                 // biPlanes = 1
-  buf.writeUInt16LE(32, 14);                // biBitCount = 32 (BGRA)
-  buf.writeUInt32LE(0, 16);                 // biCompression = BI_RGB (0)
-  buf.writeUInt32LE(xorSize + andSize, 20); // biSizeImage
+  buf.writeUInt32LE(headerSize, 0); // biSize = 40 (BITMAPINFOHEADER)
+  buf.writeInt32LE(width, 4);       // biWidth
+  buf.writeInt32LE(height * 2, 8);  // biHeight (x2 cho XOR + AND mask)
+  buf.writeUInt16LE(1, 12);         // biPlanes = 1
+  buf.writeUInt16LE(32, 14);        // biBitCount = 32 (BGRA)
+  buf.writeUInt32LE(0, 16);         // biCompression = BI_RGB (0)
+  buf.writeUInt32LE(xorSize, 20);   // biSizeImage = xorSize (chuẩn Win32 DIB)
   buf.writeInt32LE(0, 24);
   buf.writeInt32LE(0, 28);
   buf.writeUInt32LE(0, 32);
@@ -412,7 +431,13 @@ function createBMPFrame(img) {
   return buf;
 }
 
-function encodeICO(sourceImg, sizes = [16, 24, 32, 48, 64, 128, 256]) {
+/**
+ * Lưu ý quan trọng cho NSIS (makensis.exe):
+ * Chỉ dùng các kích thước <= 128 (16, 24, 32, 48, 64, 128) ở định dạng BMP/DIB
+ * để bWidth (uint8) trong ICONDIRENTRY luôn khớp 100% với biWidth trong BITMAPINFOHEADER
+ * (tránh lỗi bWidth=0 != biWidth=256 khiến makensis báo "invalid icon file").
+ */
+function encodeICO(sourceImg, sizes = [16, 24, 32, 48, 64, 128]) {
   const frames = sizes.map((size) => {
     const resized = resizeRGBA(sourceImg, size, size);
     const data = createBMPFrame(resized);
@@ -429,8 +454,8 @@ function encodeICO(sourceImg, sizes = [16, 24, 32, 48, 64, 128, 256]) {
 
   for (const frame of frames) {
     const entry = Buffer.alloc(16);
-    entry[0] = frame.size === 256 ? 0 : frame.size;
-    entry[1] = frame.size === 256 ? 0 : frame.size;
+    entry[0] = frame.size;
+    entry[1] = frame.size;
     entry[2] = 0;
     entry[3] = 0;
     entry.writeUInt16LE(1, 4);
@@ -444,63 +469,111 @@ function encodeICO(sourceImg, sizes = [16, 24, 32, 48, 64, 128, 256]) {
   return Buffer.concat([header, ...dirEntries, ...frames.map((f) => f.data)]);
 }
 
+// ============================================================================
+// 4. HÀM CHÍNH: TẠO ICON CHO PC, WEB PWA & ANDROID CAPACITOR
+// ============================================================================
+
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
 }
 
+function patchAndroidGradleAndManifest() {
+  const gradlePath = path.join(ROOT_DIR, 'android', 'app', 'build.gradle');
+  if (fs.existsSync(gradlePath)) {
+    let gradleContent = fs.readFileSync(gradlePath, 'utf8');
+
+    // 1. Tự động tăng versionCode theo thời gian thực để điện thoại Android bắt buộc xóa cache icon cũ
+    const dynamicVersionCode = Math.max(2, Math.floor(Date.now() / 60000) - 29000000);
+    gradleContent = gradleContent.replace(/versionCode\s+\d+/, `versionCode ${dynamicVersionCode}`);
+
+    // 2. Gắn hook tự động chạy lại generate-icons.mjs ngay trước khi Gradle đóng gói tài nguyên APK
+    // (Phòng trường hợp file build-apk.yml cũ trên GitHub xóa mất mipmap-anydpi-v26 sau bước cap sync!)
+    const hookMarker = '// [FU-WAYPOINT-ICON-HOOK]';
+    if (!gradleContent.includes(hookMarker)) {
+      gradleContent += `\n${hookMarker}
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Resources") }.configureEach {
+    doFirst {
+        exec {
+            workingDir rootProject.projectDir.parentFile
+            commandLine "node", "scripts/generate-icons.mjs", "--from-gradle"
+        }
+    }
+}
+`;
+    }
+    fs.writeFileSync(gradlePath, gradleContent, 'utf8');
+    console.log(`[generate-icons] Đã cập nhật versionCode=${dynamicVersionCode} & gắn chốt chặn bảo vệ Icon vào android/app/build.gradle!`);
+  }
+
+  const manifestPath = path.join(ROOT_DIR, 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
+  if (fs.existsSync(manifestPath)) {
+    let manifest = fs.readFileSync(manifestPath, 'utf8');
+    if (!manifest.includes('android:icon="@mipmap/ic_launcher"')) {
+      manifest = manifest.replace('<application', '<application android:icon="@mipmap/ic_launcher"');
+    }
+    if (!manifest.includes('android:roundIcon="@mipmap/ic_launcher_round"')) {
+      manifest = manifest.replace('<application', '<application android:roundIcon="@mipmap/ic_launcher_round"');
+    }
+    fs.writeFileSync(manifestPath, manifest, 'utf8');
+  }
+}
+
 function main() {
+  const isFromGradle = process.argv.includes('--from-gradle');
   const srcIconPath = path.join(ROOT_DIR, 'public', 'icon.png');
   if (!fs.existsSync(srcIconPath)) {
     console.error(`[generate-icons] Không tìm thấy file nguồn: ${srcIconPath}`);
     process.exit(1);
   }
 
-  console.log(`[generate-icons] Đang đọc ảnh nguồn từ: public/icon.png ...`);
   const pngBuffer = fs.readFileSync(srcIconPath);
   const srcImg = decodePNG(pngBuffer);
-  console.log(`[generate-icons] Kích thước ảnh gốc: ${srcImg.width}x${srcImg.height}px`);
 
-  // 1. Chuẩn hóa public/icon.png & build/icon.png (512x512)
-  ensureDir(path.join(ROOT_DIR, 'build'));
-  const icon512 = resizeRGBA(srcImg, 512, 512);
-  const icon512Buf = encodePNG(512, 512, icon512.rgba);
-  fs.writeFileSync(path.join(ROOT_DIR, 'public', 'icon.png'), icon512Buf);
-  fs.writeFileSync(path.join(ROOT_DIR, 'build', 'icon.png'), icon512Buf);
-  fs.writeFileSync(path.join(ROOT_DIR, 'public', 'icon-512.png'), icon512Buf);
+  if (!isFromGradle) {
+    console.log(`[generate-icons] Đang đọc ảnh nguồn từ: public/icon.png (${srcImg.width}x${srcImg.height}px)...`);
 
-  // 2. Tạo icon PWA & iOS/Android Web App (192x192 & 180x180)
-  const icon192 = resizeRGBA(srcImg, 192, 192);
-  fs.writeFileSync(path.join(ROOT_DIR, 'public', 'icon-192.png'), encodePNG(192, 192, icon192.rgba));
+    // 1. Chuẩn hóa public/icon.png & build/icon.png (512x512)
+    ensureDir(path.join(ROOT_DIR, 'build'));
+    const icon512 = resizeRGBA(srcImg, 512, 512);
+    const icon512Buf = encodePNG(512, 512, icon512.rgba);
+    fs.writeFileSync(path.join(ROOT_DIR, 'public', 'icon.png'), icon512Buf);
+    fs.writeFileSync(path.join(ROOT_DIR, 'build', 'icon.png'), icon512Buf);
+    fs.writeFileSync(path.join(ROOT_DIR, 'public', 'icon-512.png'), icon512Buf);
 
-  const icon180 = resizeRGBA(srcImg, 180, 180);
-  fs.writeFileSync(path.join(ROOT_DIR, 'public', 'apple-touch-icon.png'), encodePNG(180, 180, icon180.rgba));
+    // 2. Tạo icon PWA & iOS/Android Web App (192x192 & 180x180)
+    const icon192 = resizeRGBA(srcImg, 192, 192);
+    fs.writeFileSync(path.join(ROOT_DIR, 'public', 'icon-192.png'), encodePNG(192, 192, icon192.rgba));
 
-  // 3. Tạo file .ICO chuẩn Win32 BMP/DIB cho PC (Electron Windows)
-  const icoBuf = encodeICO(srcImg, [16, 24, 32, 48, 64, 128, 256]);
-  fs.writeFileSync(path.join(ROOT_DIR, 'public', 'icon.ico'), icoBuf);
-  fs.writeFileSync(path.join(ROOT_DIR, 'build', 'icon.ico'), icoBuf);
-  console.log(`[generate-icons] Đã tạo public/icon.ico & build/icon.ico chuẩn Win32 BMP/DIB (${icoBuf.length} bytes).`);
+    const icon180 = resizeRGBA(srcImg, 180, 180);
+    fs.writeFileSync(path.join(ROOT_DIR, 'public', 'apple-touch-icon.png'), encodePNG(180, 180, icon180.rgba));
 
-  // 4. Tạo bộ nguồn 1024x1024 chuẩn trong thư mục assets/ cho @capacitor/assets
-  ensureDir(path.join(ROOT_DIR, 'assets'));
-  const icon1024 = resizeRGBA(srcImg, 1024, 1024);
-  const icon1024Buf = encodePNG(1024, 1024, icon1024.rgba);
-  fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'icon.png'), icon1024Buf);
-  fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'icon-only.png'), icon1024Buf);
-  fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'logo.png'), icon1024Buf);
+    // 3. Tạo file .ICO chuẩn Win32 BMP/DIB (16..128px) tương thích 100% NSIS makensis
+    const icoBuf = encodeICO(srcImg, [16, 24, 32, 48, 64, 128]);
+    fs.writeFileSync(path.join(ROOT_DIR, 'public', 'icon.ico'), icoBuf);
+    fs.writeFileSync(path.join(ROOT_DIR, 'build', 'icon.ico'), icoBuf);
+    console.log(`[generate-icons] Đã tạo public/icon.ico & build/icon.ico chuẩn NSIS Win32 BMP (${icoBuf.length} bytes).`);
 
-  const fg1024 = createPaddedIcon(srcImg, 1024, 0.52, null);
-  fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'icon-foreground.png'), encodePNG(1024, 1024, fg1024.rgba));
+    // 4. Tạo bộ nguồn 1024x1024 chuẩn trong thư mục assets/ cho @capacitor/assets
+    ensureDir(path.join(ROOT_DIR, 'assets'));
+    const icon1024 = resizeRGBA(srcImg, 1024, 1024);
+    const icon1024Buf = encodePNG(1024, 1024, icon1024.rgba);
+    fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'icon.png'), icon1024Buf);
+    fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'icon-only.png'), icon1024Buf);
+    fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'logo.png'), icon1024Buf);
 
-  const bg1024 = createSolidRGBA(1024, 1024, 17, 16, 21, 255);
-  fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'icon-background.png'), encodePNG(1024, 1024, bg1024.rgba));
+    const fg1024 = createPaddedIcon(srcImg, 1024, 0.56, null);
+    fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'icon-foreground.png'), encodePNG(1024, 1024, fg1024.rgba));
 
-  // 5. Nếu đã khởi tạo thư mục android/ (khi chạy npx cap add android), bơm trực tiếp bộ icon chuẩn vào res/
+    const bg1024 = createSolidRGBA(1024, 1024, 17, 16, 21, 255);
+    fs.writeFileSync(path.join(ROOT_DIR, 'assets', 'icon-background.png'), encodePNG(1024, 1024, bg1024.rgba));
+  }
+
+  // 5. Nếu đã khởi tạo thư mục android/, bơm trực tiếp bộ icon chuẩn vào android/app/src/main/res/
   const androidResDir = path.join(ROOT_DIR, 'android', 'app', 'src', 'main', 'res');
   if (fs.existsSync(androidResDir)) {
-    console.log(`[generate-icons] Phát hiện thư mục Android! Đang tạo bộ Mipmap & Adaptive Icon chuẩn...`);
+    console.log(`[generate-icons] Đang thiết lập bộ Mipmap & Adaptive Icon chuẩn cho Android...`);
 
     const densities = [
       { name: 'mipmap-mdpi', legacy: 48, adaptive: 108 },
@@ -528,7 +601,7 @@ function main() {
       const roundResized = resizeRGBA(roundImg, d.legacy, d.legacy);
       fs.writeFileSync(path.join(dir, 'ic_launcher_round.png'), encodePNG(d.legacy, d.legacy, roundResized.rgba));
 
-      const fgImg = createPaddedIcon(srcImg, d.adaptive, 0.52, null);
+      const fgImg = createPaddedIcon(srcImg, d.adaptive, 0.56, null);
       fs.writeFileSync(path.join(dir, 'ic_launcher_foreground.png'), encodePNG(d.adaptive, d.adaptive, fgImg.rgba));
 
       const bgImg = createSolidRGBA(d.adaptive, d.adaptive, 17, 16, 21, 255);
@@ -562,17 +635,19 @@ function main() {
     ensureDir(anydpiDir);
     const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background"/>
+    <background android:drawable="@mipmap/ic_launcher_background"/>
     <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
 </adaptive-icon>
 `;
     fs.writeFileSync(path.join(anydpiDir, 'ic_launcher.xml'), adaptiveXml, 'utf8');
     fs.writeFileSync(path.join(anydpiDir, 'ic_launcher_round.xml'), adaptiveXml, 'utf8');
 
+    if (!isFromGradle) {
+      patchAndroidGradleAndManifest();
+    }
+
     console.log(`[generate-icons] Đã cập nhật hoàn chỉnh bộ icon Android trong android/app/src/main/res/!`);
   }
-
-  console.log(`[generate-icons] Hoàn tất 100%!`);
 }
 
 main();

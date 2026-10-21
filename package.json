@@ -11,6 +11,8 @@
     "dev": "node scripts/generate-icons.mjs && vite",
     "build": "node scripts/generate-icons.mjs && vite build",
     "preview": "vite preview",
+    "capacitor:copy:after": "node scripts/generate-icons.mjs",
+    "capacitor:sync:after": "node scripts/generate-icons.mjs",
     "electron:start": "npm run build && electron .",
     "electron:build": "npm run build && node scripts/fix-wincodesign.mjs && electron-builder --win"
   },
@@ -41,16 +43,16 @@
     ],
     "extraResources": [
       {
-        "from": "build/icon.ico",
+        "from": "public/icon.ico",
         "to": "icon.ico"
       },
       {
-        "from": "build/icon.png",
+        "from": "public/icon.png",
         "to": "icon.png"
       }
     ],
     "win": {
-      "icon": "build/icon.ico",
+      "icon": "public/icon.png",
       "verifyUpdateCodeSignature": false,
       "target": [
         "portable"
