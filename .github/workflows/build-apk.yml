@@ -18,17 +18,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Nâng cấp lên Node.js 22 để đáp ứng yêu cầu của Capacitor CLI mới nhất
+      # Yêu cầu Node.js 22 cho Capacitor CLI mới nhất
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
+      # Nâng cấp lên Java 21 để sửa lỗi "invalid source release: 21"
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       # 1. Cài đặt các gói Capacitor cho Android
       - name: Install Dependencies
@@ -40,7 +41,7 @@ jobs:
       - name: Build Web App
         run: npm run build
 
-      # 3. Tạo sẵn file cấu hình Capacitor
+      # 3. Tạo file cấu hình Capacitor
       - name: Create Capacitor Config
         run: |
           cat << 'EOF' > capacitor.config.json
@@ -57,7 +58,7 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      # 5. Build file APK Debug
+      # 5. Build file APK Debug bằng Java 21
       - name: Build Android APK
         run: |
           cd android
