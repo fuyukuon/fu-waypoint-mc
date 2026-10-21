@@ -1,12 +1,16 @@
-name: Build Windows EXE
+name: Build & Release Windows EXE
 
 on:
-  push:
-    branches: [ main, master ]
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*' # Tự động chạy khi bạn gắn tag phiên bản như v2.0.0
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: windows-latest
 
     steps:
@@ -24,8 +28,10 @@ jobs:
       - name: Build Electron EXE
         run: npm run electron:build
 
-      - name: Upload EXE Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: fu-waypoint-windows-exe
-          path: dist-electron/*.exe
+          files: dist-electron/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
