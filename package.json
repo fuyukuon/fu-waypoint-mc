@@ -1,48 +1,26 @@
 {
   "name": "fu-waypoint",
   "private": true,
-  "version": "2.1.2",
-  "description": "fu-WAYPOINT v2.1.2 - Minecraft Waypoint Manager",
-  "author": "fu WAYPOINT",
+  "version": "2.2.0",
   "type": "module",
-  "main": "electron.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "electron:start": "vite build && electron .",
-    "electron:build": "vite build && electron-builder --win"
+    "electron": "electron electron.cjs"
   },
   "dependencies": {
-    "framer-motion": "^11.0.0",
-    "lucide-react": "^0.454.0",
+    "lucide-react": "^1.16.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
-    "electron": "^30.5.1",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "electron": "^30.0.0",
     "electron-builder": "^24.13.3",
-    "vite": "^5.4.8"
+    "vite": "^5.2.0"
   },
-  "build": {
-    "appId": "com.minecraft.fuwaypoint",
-    "productName": "fu-WAYPOINT",
-    "asar": true,
-    "directories": {
-      "output": "dist-electron"
-    },
-    "files": [
-      "dist/**/*",
-      "electron.cjs",
-      "package.json"
-    ],
-    "win": {
-      "icon": null,
-      "signAndEditExecutable": false,
-      "target": [
-        "portable"
-      ]
-    }
-  }
+  "main": "electron.cjs"
 }
