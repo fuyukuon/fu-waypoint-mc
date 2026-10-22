@@ -1,7 +1,7 @@
 {
   "name": "fu-waypoint",
   "private": true,
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "fu-WAYPOINT v2.2.0 - Minecraft Waypoint Manager",
   "author": "fu WAYPOINT",
   "type": "module",
@@ -17,7 +17,8 @@
     "framer-motion": "^11.0.0",
     "lucide-react": "^0.454.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "tesseract.js": "^5.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
