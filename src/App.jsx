@@ -57,14 +57,11 @@ import {
   ZoomIn,
   ZoomOut,
   ArrowUpDown,
-  Settings,
   MoreVertical,
-  FolderInput,
   FileSpreadsheet,
+  SlidersHorizontal,
   CheckCircle2,
-  Clock,
-  Eye,
-  EyeOff,
+  Hammer,
 } from 'lucide-react';
 
 // ==========================================
@@ -93,7 +90,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
     const now = ctx.currentTime;
 
     if (type === 'click') {
-      // Âm thanh bấm nút đá (random.click) chuẩn Minecraft
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'square';
@@ -106,7 +102,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.055);
     } else if (type === 'pop') {
-      // Âm thanh nhặt đồ (random.pop)
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
@@ -119,7 +114,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.08);
     } else if (type === 'orb') {
-      // Âm thanh nhặt kinh nghiệm XP (random.orb) có dao động cao độ nhẹ
       const pitchShift = 0.92 + Math.random() * 0.22;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -133,7 +127,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.24);
     } else if (type === 'levelup') {
-      // Âm thanh Level Up / Thành tựu (random.levelup)
       const notes = [523.25, 659.25, 783.99, 1046.5];
       notes.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
@@ -149,7 +142,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
         osc.stop(start + 0.24);
       });
     } else if (type === 'chest_open') {
-      // Âm thanh mở rương gỗ (random.chestopen) khi mở thư mục
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
@@ -163,7 +155,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.17);
     } else if (type === 'chest_close') {
-      // Âm thanh đóng rương gỗ (random.chestclosed)
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
@@ -176,7 +167,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.13);
     } else if (type === 'portal') {
-      // Âm thanh dịch chuyển cổng Nether / Enderman
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
@@ -190,7 +180,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.31);
     } else if (type === 'tnt') {
-      // Âm thanh phá block / TNT khi xóa vào thùng rác
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sawtooth';
@@ -203,7 +192,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.18);
     } else if (type === 'axolotl') {
-      // Tiếng kêu chíp bong bóng nước của Axolotl (mob.axolotl.idle)
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
@@ -218,7 +206,6 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.start(now);
       osc.stop(now + 0.22);
     } else if (type === 'chicken') {
-      // Tiếng gà cục tác (mob.chicken.say + plop)
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
@@ -233,7 +220,7 @@ function playMinecraftSound(type = 'click', enabled = true) {
       osc.stop(now + 0.16);
     }
   } catch {
-    // Bỏ qua nếu trình duyệt chặn autoplay trước tương tác đầu tiên
+    // Ignore autoplay errors
   }
 }
 
@@ -1989,22 +1976,17 @@ function PixelMobSprite({ species, variant, frame, isPecking, isPlayingHearts })
     return (
       <svg
         viewBox="0 0 20 20"
-        className="w-10 h-10 sm:w-11 sm:h-11 drop-shadow-[0_3px_0_rgba(0,0,0,0.65)]"
+        className="w-9 h-9 sm:w-11 sm:h-11 drop-shadow-[0_3px_0_rgba(0,0,0,0.65)]"
         shapeRendering="crispEdges"
       >
-        {/* Bóng dưới chân */}
         <rect x="5" y="18" width="10" height="2" fill="rgba(0,0,0,0.45)" />
-        {/* Chân gà bước đi */}
         <rect x={7 + legOffset} y="15" width="1" height="3" fill="#eab308" />
         <rect x={6 + legOffset} y="17" width="3" height="1" fill="#eab308" />
         <rect x={12 - legOffset} y="15" width="1" height="3" fill="#ca8a04" />
         <rect x={11 - legOffset} y="17" width="3" height="1" fill="#ca8a04" />
-        {/* Thân gà trắng */}
         <rect x="5" y="9" width="10" height="6" fill="#f8fafc" />
         <rect x="4" y="10" width="2" height="4" fill="#e2e8f0" />
-        {/* Cánh vỗ nhẹ */}
         <rect x="7" y={10 - legOffset} width="5" height="4" fill="#e2e8f0" />
-        {/* Đầu + Mào đỏ + Mỏ vàng + Yếm đỏ */}
         <g transform={isPecking ? 'translate(2, 3)' : 'translate(0, 0)'}>
           <rect x="12" y="4" width="5" height="6" fill="#ffffff" />
           <rect x="13" y="2" width="3" height="2" fill="#dc2626" />
@@ -2022,7 +2004,6 @@ function PixelMobSprite({ species, variant, frame, isPecking, isPlayingHearts })
     );
   }
 
-  // Mặc định: Axolotl (Kỳ nhông Minecraft với các biến thể màu)
   const palettes = {
     pink: { body: '#f9a8d4', shade: '#f472b6', gill: '#db2777', tail: '#ec4899' },
     cyan: { body: '#a5f3fc', shade: '#67e8f9', gill: '#0891b2', tail: '#06b6d4' },
@@ -2033,29 +2014,22 @@ function PixelMobSprite({ species, variant, frame, isPecking, isPlayingHearts })
   return (
     <svg
       viewBox="0 0 24 18"
-      className="w-11 h-9 sm:w-12 sm:h-10 drop-shadow-[0_3px_0_rgba(0,0,0,0.65)]"
+      className="w-10 h-8 sm:w-12 sm:h-10 drop-shadow-[0_3px_0_rgba(0,0,0,0.65)]"
       shapeRendering="crispEdges"
     >
-      {/* Bóng dưới bụng */}
       <rect x="4" y="16" width="16" height="2" fill="rgba(0,0,0,0.45)" />
-      {/* Đuôi vẫy */}
       <rect x="1" y={8 + (frame % 2 === 0 ? -1 : 1)} width="4" height="4" fill={pal.tail} />
       <rect x="0" y={9 + (frame % 2 === 0 ? -1 : 1)} width="2" height="2" fill={pal.gill} />
-      {/* Thân kỳ nhông */}
       <rect x="5" y="8" width="10" height="5" fill={pal.body} />
       <rect x="6" y="7" width="8" height="1" fill={pal.tail} />
       <rect x="5" y="12" width="10" height="1" fill={pal.shade} />
-      {/* 4 Chân bước đi */}
       <rect x={6 + legOffset} y="13" width="2" height="3" fill={pal.shade} />
       <rect x={12 - legOffset} y="13" width="2" height="3" fill={pal.shade} />
-      {/* Đầu Axolotl */}
       <rect x="14" y="5" width="7" height="7" fill={pal.body} />
-      {/* 3 Sừng mang (Gills) đặc trưng của Axolotl */}
       <rect x="13" y={3 + legOffset} width="2" height="2" fill={pal.gill} />
       <rect x="16" y="2" width="2" height="3" fill={pal.gill} />
       <rect x="21" y={4 - legOffset} width="2" height="2" fill={pal.gill} />
       <rect x="21" y="8" width="2" height="2" fill={pal.gill} />
-      {/* Mắt & Miệng cười */}
       <rect x="16" y="7" width="1" height="2" fill="#09090b" />
       <rect x="19" y="7" width="1" height="2" fill="#09090b" />
       <rect x="17" y="10" width="3" height="1" fill={pal.gill} />
@@ -2075,8 +2049,8 @@ function RoamingMinecraftMobs({ enabled, onInteractMob }) {
       id: 'mob-axo-pink',
       species: 'axolotl',
       variant: 'pink',
-      x: 12,
-      y: 88,
+      x: 15,
+      y: 72,
       vx: 0.28,
       vy: -0.05,
       facingRight: true,
@@ -2088,8 +2062,8 @@ function RoamingMinecraftMobs({ enabled, onInteractMob }) {
       id: 'mob-chicken-1',
       species: 'chicken',
       variant: 'white',
-      x: 74,
-      y: 86,
+      x: 78,
+      y: 68,
       vx: -0.24,
       vy: 0.04,
       facingRight: false,
@@ -2101,8 +2075,8 @@ function RoamingMinecraftMobs({ enabled, onInteractMob }) {
       id: 'mob-axo-cyan',
       species: 'axolotl',
       variant: 'cyan',
-      x: 42,
-      y: 91,
+      x: 45,
+      y: 76,
       vx: 0.22,
       vy: 0.03,
       facingRight: true,
@@ -2114,25 +2088,12 @@ function RoamingMinecraftMobs({ enabled, onInteractMob }) {
       id: 'mob-axo-gold',
       species: 'axolotl',
       variant: 'gold',
-      x: 85,
-      y: 22,
+      x: 82,
+      y: 28,
       vx: -0.18,
       vy: 0.08,
       facingRight: false,
       frame: 1,
-      pecking: false,
-      happyUntil: 0,
-    },
-    {
-      id: 'mob-chicken-2',
-      species: 'chicken',
-      variant: 'white',
-      x: 18,
-      y: 32,
-      vx: 0.2,
-      vy: 0.06,
-      facingRight: true,
-      frame: 0,
       pecking: false,
       happyUntil: 0,
     },
@@ -2144,7 +2105,6 @@ function RoamingMinecraftMobs({ enabled, onInteractMob }) {
       const now = Date.now();
       setMobs((prev) =>
         prev.map((m) => {
-          // Thỉnh thoảng dừng lại mổ thóc hoặc đổi hướng ngẫu nhiên
           const changeRoll = Math.random();
           let nextVx = m.vx;
           let nextVy = m.vy;
@@ -2161,19 +2121,20 @@ function RoamingMinecraftMobs({ enabled, onInteractMob }) {
           let nx = m.x + nextVx;
           let ny = m.y + nextVy;
 
-          if (nx < 3) {
-            nx = 3;
+          // Giới hạn vùng di chuyển an toàn trên cả Android & PC (Không đè lên Header hoặc Thanh đáy)
+          if (nx < 6) {
+            nx = 6;
             nextVx = Math.abs(nextVx);
-          } else if (nx > 92) {
-            nx = 92;
+          } else if (nx > 88) {
+            nx = 88;
             nextVx = -Math.abs(nextVx);
           }
 
-          if (ny < 12) {
-            ny = 12;
+          if (ny < 20) {
+            ny = 20;
             nextVy = Math.abs(nextVy);
-          } else if (ny > 92) {
-            ny = 92;
+          } else if (ny > 78) {
+            ny = 78;
             nextVy = -Math.abs(nextVy);
           }
 
@@ -2200,7 +2161,7 @@ function RoamingMinecraftMobs({ enabled, onInteractMob }) {
   const now = Date.now();
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[35]">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[25]">
       {mobs.map((mob) => {
         const isHappy = mob.happyUntil > now;
         return (
@@ -2294,6 +2255,12 @@ const TAG_CONFIG = {
     color: 'bg-[#132a3e] text-[#55ffff] border-2 border-[#00aaaa]',
     defaultIcon: 'grass',
     icon: Home,
+  },
+  Death: {
+    label: 'Điểm Chết (Death)',
+    color: 'bg-[#450a0a] text-[#fca5a5] border-2 border-[#ef4444]',
+    defaultIcon: 'recovery_compass',
+    icon: Skull,
   },
   Farm: {
     label: 'Farm (Máy farm)',
@@ -2846,7 +2813,7 @@ function formatCopyString(mode, wp) {
 }
 
 // ==========================================
-// 3. COMPONENT THẺ TỌA ĐỘ (GIAO DIỆN THẺ MINECRAFT HIỆN TẠI - ĐÃ FIX TRÀN CHỮ)
+// 3. COMPONENT THẺ TỌA ĐỘ (TỐI ƯU MOBILE ANDROID & WINDOWS, KHÔNG TRÀN CHỮ)
 // ==========================================
 function WaypointCard({
   waypoint,
@@ -2957,7 +2924,7 @@ function WaypointCard({
           onContextMenuItem(e, waypoint);
         }
       }}
-      className={`group relative w-full min-w-0 max-w-full overflow-hidden rounded-none p-3.5 sm:p-4 text-slate-100 transition-transform duration-150 sm:hover:-translate-y-0.5 flex flex-col justify-between mc-card ${dimStyle.border} ${
+      className={`group relative w-full min-w-0 max-w-full overflow-hidden rounded-none p-3 sm:p-4 text-slate-100 transition-transform duration-150 sm:hover:-translate-y-0.5 flex flex-col justify-between mc-card ${dimStyle.border} ${
         activatedBlock ? 'mc-block-flash' : ''
       }`}
     >
@@ -2969,25 +2936,25 @@ function WaypointCard({
       <span className="mc-corner mc-corner-br" />
 
       <div className="pt-1.5 min-w-0">
-        {/* Hàng 1: Badge Chiều không gian + Tag + Cụm nút công cụ nhỏ gọn */}
-        <div className="flex items-center justify-between gap-1.5 mb-2.5 flex-wrap">
-          <div className="flex items-center gap-1 min-w-0 flex-wrap">
+        {/* Hàng 1: Badge Chiều không gian + Tag + Cụm nút công cụ gọn trên cùng 1 hàng */}
+        <div className="flex items-center justify-between gap-1 mb-2.5 min-w-0">
+          <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${dimStyle.badge}`}
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 ${dimStyle.badge}`}
             >
               <DimensionIcon className="w-3 h-3 shrink-0" />
               <span className="truncate">{dimStyle.label}</span>
             </span>
 
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold ${tagStyle.color}`}
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold truncate min-w-0 ${tagStyle.color}`}
             >
               <TagIcon className="w-3 h-3 shrink-0" />
               <span className="truncate">{waypoint.tag}</span>
             </span>
 
             {isFolderItem && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold bg-[#332707] text-[#fde047] border border-[#eab308]">
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold bg-[#332707] text-[#fde047] border border-[#eab308] shrink-0">
                 <Folder className="w-2.5 h-2.5 shrink-0 fill-[#facc15] text-[#facc15]" />
                 <span>{totalDescendantCount || childWaypoints.length}</span>
               </span>
@@ -3001,7 +2968,7 @@ function WaypointCard({
               title="Đo khoảng cách"
               className="mc-btn mc-btn-stone p-1.5 text-slate-200 hover:text-[#ffff55] cursor-pointer"
             >
-              <Ruler className="w-3.5 h-3.5" />
+              <Ruler className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </button>
 
             <button
@@ -3014,7 +2981,7 @@ function WaypointCard({
                   : 'mc-btn-stone text-slate-300 hover:text-white'
               }`}
             >
-              <Star className={`w-3.5 h-3.5 ${waypoint.pinned ? 'fill-[#1f1400]' : ''}`} />
+              <Star className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${waypoint.pinned ? 'fill-[#1f1400]' : ''}`} />
             </button>
 
             <button
@@ -3028,9 +2995,9 @@ function WaypointCard({
               }`}
             >
               {waypoint.locked ? (
-                <Lock className="w-3.5 h-3.5" />
+                <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               ) : (
-                <Unlock className="w-3.5 h-3.5" />
+                <Unlock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               )}
             </button>
 
@@ -3040,7 +3007,7 @@ function WaypointCard({
               title="Chỉnh sửa / Di chuyển thư mục"
               className="mc-btn mc-btn-stone p-1.5 text-slate-200 hover:text-[#55ff55] cursor-pointer"
             >
-              <Edit3 className="w-3.5 h-3.5" />
+              <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </button>
 
             <button
@@ -3054,7 +3021,7 @@ function WaypointCard({
                   : 'mc-btn-tnt text-white cursor-pointer'
               }`}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </button>
           </div>
         </div>
@@ -3076,14 +3043,14 @@ function WaypointCard({
         )}
 
         {/* Hàng 2: Icon + Tên địa điểm + Cụm nút Copy / Share */}
-        <div className="flex items-start justify-between gap-2.5 mb-3 min-w-0">
+        <div className="flex items-start justify-between gap-2 mb-2.5 min-w-0">
           <div className="min-w-0 flex-1 overflow-hidden">
             <div className="flex items-center gap-2 min-w-0">
               <button
                 type="button"
                 onClick={() => onQuickChangeIcon(waypoint)}
                 title={`Đổi biểu tượng (${iconMeta.label})`}
-                className="mc-btn mc-btn-stone p-1.5 shrink-0 cursor-pointer relative"
+                className="mc-btn mc-btn-stone p-1.5 shrink-0 cursor-pointer"
               >
                 <VoxelBlockIcon type={resolvedIcon} className="w-6 h-6" />
               </button>
@@ -3106,12 +3073,12 @@ function WaypointCard({
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5 shrink-0">
+          <div className="flex flex-col gap-1 shrink-0">
             <button
               type="button"
               onClick={() => handleCopy()}
               title={`Copy: ${formatCopyString(copyMode, waypoint)}`}
-              className={`mc-btn inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-black uppercase cursor-pointer ${
+              className={`mc-btn inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-black uppercase whitespace-nowrap cursor-pointer ${
                 copied ? 'mc-btn-emerald text-[#041a06]' : 'mc-btn-stone text-white'
               }`}
             >
@@ -3133,7 +3100,7 @@ function WaypointCard({
               type="button"
               onClick={() => handleCopy('chat')}
               title="Copy định dạng tin nhắn"
-              className="mc-btn mc-btn-lapis inline-flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-bold text-white cursor-pointer"
+              className="mc-btn mc-btn-lapis inline-flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-bold text-white whitespace-nowrap cursor-pointer"
             >
               <Share2 className="w-3 h-3" />
               <span>Share</span>
@@ -3142,8 +3109,8 @@ function WaypointCard({
         </div>
 
         {/* Hàng 3: 3 Ô tọa độ X, Y, Z gọn gàng không tràn màn hình */}
-        <div className="grid grid-cols-3 gap-1.5 mc-slot p-2 font-mono">
-          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-x py-1 px-1.5 min-w-0">
+        <div className="grid grid-cols-3 gap-1.5 mc-slot p-1.5 sm:p-2 font-mono">
+          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-x py-1 px-1 min-w-0">
             <span className="text-[10px] uppercase font-extrabold text-[#ff5555] mc-text-shadow">
               X
             </span>
@@ -3152,7 +3119,7 @@ function WaypointCard({
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-y py-1 px-1.5 min-w-0">
+          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-y py-1 px-1 min-w-0">
             <span className="text-[10px] uppercase font-extrabold text-[#55ff55] mc-text-shadow">
               Y
             </span>
@@ -3165,7 +3132,7 @@ function WaypointCard({
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-z py-1 px-1.5 min-w-0">
+          <div className="flex flex-col items-center justify-center mc-coord-box mc-coord-z py-1 px-1 min-w-0">
             <span className="text-[10px] uppercase font-extrabold text-[#55ffff] mc-text-shadow">
               Z
             </span>
@@ -3175,73 +3142,71 @@ function WaypointCard({
           </div>
         </div>
 
-        {/* Hàng 3.2: KHU VỰC THƯ MỤC CON & TỌA ĐỘ CON (Tối ưu chống tràn chữ 100%) */}
+        {/* Hàng 3.2: KHU VỰC THƯ MỤC CON & TỌA ĐỘ CON — LƯỚI 3 CỘT CHUẨN TRÊN ANDROID */}
         <div className="mt-2.5 pt-2 border-t-2 border-black/60">
-          <div className="flex items-center justify-between gap-1 flex-wrap">
-            <div className="flex items-center gap-1 min-w-0 flex-1">
-              <button
-                type="button"
-                onClick={() => onEnterFolder(waypoint.id)}
-                title="Mở thư mục khu vực này như trên Windows"
-                className={`mc-btn inline-flex items-center gap-1.5 px-2 py-1 text-[11px] font-black cursor-pointer min-w-0 max-w-full ${
-                  childWaypoints.length > 0
-                    ? 'mc-btn-gold text-[#1f1300]'
-                    : 'mc-btn-stone text-zinc-200'
-                }`}
-              >
-                <FolderOpen className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">
-                  Mở Thư Mục ({childWaypoints.length})
-                </span>
-              </button>
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => onEnterFolder(waypoint.id)}
+              title="Mở thư mục khu vực này như trên Windows"
+              className={`mc-btn inline-flex items-center justify-center gap-1 px-1.5 py-1.5 text-[11px] font-black cursor-pointer min-w-0 ${
+                childWaypoints.length > 0
+                  ? 'mc-btn-gold text-[#1f1300]'
+                  : 'mc-btn-stone text-zinc-200'
+              }`}
+            >
+              <FolderOpen className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Mở ({childWaypoints.length})</span>
+            </button>
 
-              {childWaypoints.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowInlineChildren(!showInlineChildren)}
-                  title="Xem nhanh cây thư mục con"
-                  className="mc-btn mc-btn-stone px-1.5 py-1 text-xs font-bold text-[#55ffff] cursor-pointer shrink-0"
-                >
-                  {showInlineChildren ? (
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  ) : (
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => onCreateChildFolder(waypoint)}
+              title="Tạo thư mục con bên trong thư mục này"
+              className="mc-btn mc-btn-gold inline-flex items-center justify-center gap-1 px-1.5 py-1.5 text-[11px] font-black text-[#1f1300] cursor-pointer min-w-0"
+            >
+              <FolderPlus className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">+ Thư mục</span>
+            </button>
 
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => onCreateChildFolder(waypoint)}
-                title="Tạo thư mục con bên trong thư mục này"
-                className="mc-btn mc-btn-gold inline-flex items-center gap-1 px-2 py-1 text-[11px] font-black text-[#1f1300] cursor-pointer shrink-0"
-              >
-                <FolderPlus className="w-3 h-3 shrink-0" />
-                <span>+ Thư mục</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onCreateChildWaypoint(waypoint)}
-                title="Thêm điểm tọa độ con bên trong"
-                className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-2 py-1 text-[11px] font-black text-[#041a06] cursor-pointer shrink-0"
-              >
-                <Plus className="w-3 h-3 stroke-[3] shrink-0" />
-                <span>+ Điểm con</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => onCreateChildWaypoint(waypoint)}
+              title="Thêm điểm tọa độ con bên trong"
+              className="mc-btn mc-btn-emerald inline-flex items-center justify-center gap-1 px-1.5 py-1.5 text-[11px] font-black text-[#041a06] cursor-pointer min-w-0"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[3] shrink-0" />
+              <span className="truncate">+ Điểm con</span>
+            </button>
           </div>
 
+          {childWaypoints.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowInlineChildren(!showInlineChildren)}
+              className="mt-1.5 w-full mc-btn mc-btn-stone py-1 px-2 text-[11px] font-bold text-[#55ffff] flex items-center justify-center gap-1 cursor-pointer"
+            >
+              <span>
+                {showInlineChildren
+                  ? 'Thu gọn danh sách mục con'
+                  : `Xem nhanh ${childWaypoints.length} mục con bên trong`}
+              </span>
+              {showInlineChildren ? (
+                <ChevronUp className="w-3.5 h-3.5 shrink-0" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+              )}
+            </button>
+          )}
+
           {showInlineChildren && childWaypoints.length > 0 && (
-            <div className="mt-2 space-y-1.5 mc-slot p-2 max-h-44 overflow-y-auto overflow-x-hidden">
+            <div className="mt-1.5 space-y-1.5 mc-slot p-2 max-h-44 overflow-y-auto overflow-x-hidden">
               {childWaypoints.map((child) => {
                 const cIcon = child.icon || TAG_CONFIG[child.tag]?.defaultIcon || 'chest';
                 return (
                   <div
                     key={child.id}
-                    className="flex items-center justify-between gap-2 bg-[#1a1924] border border-zinc-700/80 px-2 py-1.5 text-xs min-w-0 max-w-full overflow-hidden"
+                    className="flex items-center justify-between gap-1.5 bg-[#1a1924] border border-zinc-700/80 px-2 py-1.5 text-xs min-w-0 max-w-full overflow-hidden"
                   >
                     <div
                       onClick={() => onEnterFolder(child.id)}
@@ -3353,7 +3318,7 @@ function WaypointCard({
 }
 
 // ==========================================
-// 3B. GIAO DIỆN FOLDER GIỐNG WINDOWS (WINDOWS 11 FILE EXPLORER UI)
+// 3B. GIAO DIỆN FOLDER GIỐNG WINDOWS (TỐI ƯU CHO CẢ ANDROID & PC)
 // ==========================================
 function FolderTreeNode({
   item,
@@ -3374,7 +3339,7 @@ function FolderTreeNode({
     <div className="min-w-0">
       <div
         style={{ paddingLeft: `${Math.min(depth * 12 + 6, 64)}px` }}
-        className={`flex items-center gap-1 py-1 pr-2 rounded-md text-xs cursor-pointer transition-colors min-w-0 ${
+        className={`flex items-center gap-1 py-1.5 pr-2 rounded-md text-xs cursor-pointer transition-colors min-w-0 ${
           isSelected
             ? 'bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40'
             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
@@ -3449,17 +3414,13 @@ function WindowsExplorerView({
   currentParentId,
   breadcrumbTrail,
   copyMode,
-  playerPos,
   trashedCount,
   onSelectFolder,
   onCreateFolder,
   onCreateWaypoint,
   onEdit,
   onSoftDelete,
-  onTogglePin,
-  onToggleLock,
   onQuickChangeIcon,
-  onSelectForDistance,
   onNotify,
   onOpenTrash,
   onOpenWorldManager,
@@ -3467,7 +3428,9 @@ function WindowsExplorerView({
 }) {
   const [explorerLayout, setExplorerLayout] = useState('tiles'); // 'tiles' | 'details'
   const [sidebarOpenMobile, setSidebarOpenMobile] = useState(false);
-  const [expandedNodeIds, setExpandedNodeIds] = useState(() => new Set(['wp-1', 'wp-4', 'wp-1-sub-1']));
+  const [expandedNodeIds, setExpandedNodeIds] = useState(
+    () => new Set(['wp-1', 'wp-4', 'wp-1-sub-1'])
+  );
   const [selectedItemId, setSelectedItemId] = useState(null);
 
   const rootItems = useMemo(
@@ -3475,7 +3438,6 @@ function WindowsExplorerView({
     [activeWaypoints]
   );
 
-  // Tự động mở rộng nhánh trên cây thư mục khi đi sâu vào thư mục con
   useEffect(() => {
     if (breadcrumbTrail.length > 0) {
       setExpandedNodeIds((prev) => {
@@ -3495,7 +3457,6 @@ function WindowsExplorerView({
     });
   };
 
-  // Tách danh sách hiện tại thành Nhóm Thư Mục (Folders) và Nhóm Tọa Độ (Waypoints) giống Windows
   const { folderItems, coordinateItems } = useMemo(() => {
     const folders = [];
     const coords = [];
@@ -3525,43 +3486,34 @@ function WindowsExplorerView({
 
   return (
     <div className="w-full max-w-full rounded-xl overflow-hidden border border-slate-700/90 bg-[#141720] shadow-2xl text-slate-100 mb-6">
-      {/* 1. THANH TIÊU ĐỀ & RIBBON KIỂU WINDOWS 11 EXPLORER */}
-      <div className="bg-[#1b202c] border-b border-slate-700/80 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+      {/* 1. THANH TIÊU ĐỀ & RIBBON KIỂU WINDOWS 11 EXPLORER (GỌN TRÊN ANDROID) */}
+      <div className="bg-[#1b202c] border-b border-slate-700/80 p-2 sm:px-3 sm:py-2 flex flex-wrap items-center justify-between gap-1.5">
         <div className="flex items-center gap-1.5 flex-wrap min-w-0">
           <button
             type="button"
             onClick={() => setSidebarOpenMobile(!sidebarOpenMobile)}
-            className="md:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-sky-300 border border-slate-700 cursor-pointer"
+            className="md:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-300 border border-slate-700 whitespace-nowrap cursor-pointer"
           >
-            <Folder className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <Folder className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
             <span>Cây thư mục</span>
           </button>
 
           <button
             type="button"
             onClick={() => onCreateFolder(currentFolderObj)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold whitespace-nowrap cursor-pointer transition-colors"
           >
-            <FolderPlus className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>+ Thư mục con</span>
+            <FolderPlus className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>+ Thư mục</span>
           </button>
 
           <button
             type="button"
             onClick={() => onCreateWaypoint(currentFolderObj)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold whitespace-nowrap cursor-pointer transition-colors"
           >
-            <Plus className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>+ Tọa độ mới</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenWorldManager}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold cursor-pointer transition-colors"
-          >
-            <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-            <span className="truncate max-w-[120px]">{currentWorld?.name || 'World'}</span>
+            <Plus className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>+ Tọa độ</span>
           </button>
         </div>
 
@@ -3570,7 +3522,7 @@ function WindowsExplorerView({
           <button
             type="button"
             onClick={() => setExplorerLayout('tiles')}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap cursor-pointer transition-colors ${
               explorerLayout === 'tiles'
                 ? 'bg-sky-500/25 text-sky-300 border border-sky-500/40'
                 : 'text-slate-400 hover:text-slate-200'
@@ -3582,20 +3534,20 @@ function WindowsExplorerView({
           <button
             type="button"
             onClick={() => setExplorerLayout('details')}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap cursor-pointer transition-colors ${
               explorerLayout === 'details'
                 ? 'bg-sky-500/25 text-sky-300 border border-sky-500/40'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <List className="w-3.5 h-3.5" />
-            <span>Bảng Chi Tiết</span>
+            <span>Chi Tiết</span>
           </button>
         </div>
       </div>
 
-      {/* 2. THANH ĐỊA CHỈ (WINDOWS ADDRESS BAR / BREADCRUMB) - CHỐNG TRÀN CHỮ TUYỆT ĐỐI */}
-      <div className="bg-[#161a24] border-b border-slate-800 px-3 py-2 flex items-center gap-2 min-w-0">
+      {/* 2. THANH ĐỊA CHỈ (WINDOWS ADDRESS BAR / BREADCRUMB) */}
+      <div className="bg-[#161a24] border-b border-slate-800 px-2.5 py-2 flex items-center gap-1.5 min-w-0">
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
@@ -3603,7 +3555,7 @@ function WindowsExplorerView({
             onClick={() =>
               onSelectFolder(currentFolderObj ? currentFolderObj.parentId || null : null)
             }
-            title="Lùi lại / Lên thư mục cha (Backspace)"
+            title="Lên thư mục cha"
             className={`p-1.5 rounded-lg border transition-colors ${
               currentParentId
                 ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 cursor-pointer'
@@ -3623,8 +3575,8 @@ function WindowsExplorerView({
           </button>
         </div>
 
-        {/* Ô đường dẫn kiểu Windows File Explorer */}
-        <div className="flex-1 min-w-0 flex items-center gap-1 bg-[#0e1118] border border-slate-700/90 rounded-lg px-2.5 py-1.5 overflow-x-auto no-scrollbar text-xs">
+        {/* Ô đường dẫn cuộn ngang mượt mà trên Android, không bao giờ vỡ dòng */}
+        <div className="flex-1 min-w-0 flex items-center gap-1 bg-[#0e1118] border border-slate-700/90 rounded-lg px-2 py-1 overflow-x-auto no-scrollbar text-xs">
           <button
             type="button"
             onClick={() => onSelectFolder(null)}
@@ -3633,7 +3585,7 @@ function WindowsExplorerView({
             }`}
           >
             <VoxelBlockIcon type={currentWorld?.icon || 'grass'} className="w-3.5 h-3.5" />
-            <span className="truncate max-w-[120px] sm:max-w-[180px]">
+            <span className="truncate max-w-[110px] sm:max-w-[180px]">
               {currentWorld?.name || 'World'}
             </span>
           </button>
@@ -3647,7 +3599,7 @@ function WindowsExplorerView({
                   type="button"
                   onClick={() => onSelectFolder(crumb.id)}
                   title={crumb.name}
-                  className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-slate-800 shrink-0 max-w-[150px] sm:max-w-[220px] cursor-pointer ${
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-slate-800 shrink-0 max-w-[130px] sm:max-w-[220px] cursor-pointer ${
                     isLast ? 'text-amber-300 font-bold bg-amber-500/10' : 'text-slate-300'
                   }`}
                 >
@@ -3661,20 +3613,29 @@ function WindowsExplorerView({
       </div>
 
       {/* 3. KHUNG CHIA 2 CỘT: CÂY THƯ MỤC BÊN TRÁI + NỘI DUNG BÊN PHẢI */}
-      <div className="flex flex-col md:flex-row min-h-[460px]">
+      <div className="flex flex-col md:flex-row min-h-[420px]">
         {/* Cột trái: Cây thư mục (Navigation Pane) */}
         <aside
           className={`${
             sidebarOpenMobile ? 'block' : 'hidden'
-          } md:block w-full md:w-64 lg:w-72 shrink-0 bg-[#11141c] border-b md:border-b-0 md:border-r border-slate-800 p-2.5 overflow-y-auto max-h-[320px] md:max-h-[640px]`}
+          } md:block w-full md:w-64 lg:w-72 shrink-0 bg-[#11141c] border-b md:border-b-0 md:border-r border-slate-800 p-2.5 overflow-y-auto max-h-[280px] md:max-h-[640px]`}
         >
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 mb-1.5 flex items-center justify-between">
             <span>Cây Thư Mục World</span>
-            <span className="text-sky-400 font-mono">{activeWaypoints.length} mục</span>
+            <button
+              type="button"
+              onClick={onOpenWorldManager}
+              className="text-sky-400 hover:underline font-mono cursor-pointer"
+            >
+              Đổi World
+            </button>
           </div>
 
           <div
-            onClick={() => onSelectFolder(null)}
+            onClick={() => {
+              onSelectFolder(null);
+              setSidebarOpenMobile(false);
+            }}
             className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer mb-1 ${
               !currentParentId
                 ? 'bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40'
@@ -3705,7 +3666,7 @@ function WindowsExplorerView({
             ))}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-800/90 space-y-1">
+          <div className="mt-3 pt-2.5 border-t border-slate-800/90">
             <button
               type="button"
               onClick={onOpenTrash}
@@ -3723,42 +3684,35 @@ function WindowsExplorerView({
         </aside>
 
         {/* Cột phải: Nội dung Thư mục & Tọa độ */}
-        <div className="flex-1 min-w-0 p-3 sm:p-4 bg-[#141720] overflow-x-hidden">
+        <div className="flex-1 min-w-0 p-2.5 sm:p-4 bg-[#141720] overflow-x-hidden">
           {/* Header thông tin của Thư mục đang mở */}
           {currentFolderObj && (
-            <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-800/60 to-slate-900 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0">
+            <div className="mb-3.5 p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-800/60 to-slate-900 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0">
                   <VoxelBlockIcon
                     type={currentFolderObj.icon || 'win_folder'}
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                   />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <h3
-                      className="text-sm sm:text-base font-bold text-white truncate"
-                      title={currentFolderObj.name}
-                    >
-                      {currentFolderObj.name}
-                    </h3>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-amber-300 border border-slate-700 shrink-0">
-                      X:{currentFolderObj.x} Y:{currentFolderObj.y ?? '~'} Z:{currentFolderObj.z}
-                    </span>
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <h3
+                    className="text-sm font-bold text-white truncate"
+                    title={currentFolderObj.name}
+                  >
+                    {currentFolderObj.name}
+                  </h3>
+                  <div className="text-[11px] font-mono text-amber-300 truncate">
+                    X:{currentFolderObj.x} • Y:{currentFolderObj.y ?? '~'} • Z:{currentFolderObj.z}
                   </div>
-                  {currentFolderObj.notes && (
-                    <p className="text-xs text-slate-300 truncate mt-0.5">
-                      {currentFolderObj.notes}
-                    </p>
-                  )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => handleCopyItem(currentFolderObj)}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-semibold inline-flex items-center gap-1 whitespace-nowrap cursor-pointer"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   <span>Copy tọa độ</span>
@@ -3766,7 +3720,7 @@ function WindowsExplorerView({
                 <button
                   type="button"
                   onClick={() => onEdit(currentFolderObj)}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold inline-flex items-center gap-1 whitespace-nowrap cursor-pointer"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>Sửa</span>
@@ -3776,19 +3730,19 @@ function WindowsExplorerView({
           )}
 
           {filteredWaypoints.length === 0 ? (
-            <div className="py-16 text-center border-2 border-dashed border-slate-800 rounded-xl p-6">
-              <FolderOpen className="w-12 h-12 text-amber-400/70 mx-auto mb-3" />
-              <h4 className="text-sm sm:text-base font-bold text-slate-200 mb-1">
+            <div className="py-12 text-center border-2 border-dashed border-slate-800 rounded-xl p-4">
+              <FolderOpen className="w-10 h-10 text-amber-400/70 mx-auto mb-2.5" />
+              <h4 className="text-sm font-bold text-slate-200 mb-1">
                 Thư mục này đang trống
               </h4>
               <p className="text-xs text-slate-400 mb-4 max-w-md mx-auto">
-                Bạn có thể tạo thêm thư mục con nhỏ hơn bên trong hoặc lưu điểm tọa độ mới giống như trên Windows Explorer.
+                Tạo thêm thư mục con nhỏ hơn bên trong hoặc lưu điểm tọa độ mới giống như trên Windows.
               </p>
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => onCreateFolder(currentFolderObj)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs whitespace-nowrap cursor-pointer"
                 >
                   <FolderPlus className="w-4 h-4" />
                   <span>+ Tạo Thư Mục Con</span>
@@ -3796,7 +3750,7 @@ function WindowsExplorerView({
                 <button
                   type="button"
                   onClick={() => onCreateWaypoint(currentFolderObj)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs whitespace-nowrap cursor-pointer"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>+ Thêm Điểm Tọa Độ</span>
@@ -3804,21 +3758,18 @@ function WindowsExplorerView({
               </div>
             </div>
           ) : explorerLayout === 'tiles' ? (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {/* PHẦN 1: CÁC THƯ MỤC CON (FOLDERS) */}
               {folderItems.length > 0 && (
                 <div>
-                  <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center justify-between mb-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
                       <Folder className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       <span>Thư mục khu vực ({folderItems.length})</span>
                     </h4>
-                    <span className="text-[11px] text-slate-400">
-                      Bấm vào thư mục để mở các điểm bên trong
-                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     {folderItems.map((folder) => {
                       const subKids = childrenByParentId[folder.id] || [];
                       const totalSub = descendantCountMap[folder.id] || subKids.length;
@@ -3835,32 +3786,31 @@ function WindowsExplorerView({
                             e.preventDefault();
                             onContextMenuItem(e, folder);
                           }}
-                          className="group relative flex items-center justify-between gap-2.5 p-3 rounded-xl bg-[#1b202e] hover:bg-[#232a3b] border border-slate-700/80 hover:border-amber-400/60 transition-all cursor-pointer min-w-0 overflow-hidden shadow-sm"
+                          className="group relative flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-xl bg-[#1b202e] hover:bg-[#232a3b] border border-slate-700/80 hover:border-amber-400/60 transition-all cursor-pointer min-w-0 overflow-hidden shadow-sm"
                         >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {/* Icon Folder kiểu Windows kết hợp Voxel Icon */}
-                            <div className="relative w-11 h-11 rounded-lg bg-amber-500/15 border border-amber-400/40 flex items-center justify-center shrink-0">
-                              <Folder className="w-7 h-7 text-amber-400 fill-amber-400/85" />
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="relative w-10 h-10 rounded-lg bg-amber-500/15 border border-amber-400/40 flex items-center justify-center shrink-0">
+                              <Folder className="w-6 h-6 text-amber-400 fill-amber-400/85" />
                               <div className="absolute -bottom-1 -right-1 bg-[#141720] p-0.5 rounded border border-slate-700">
-                                <VoxelBlockIcon type={rIcon} className="w-3.5 h-3.5" />
+                                <VoxelBlockIcon type={rIcon} className="w-3 h-3" />
                               </div>
                             </div>
 
                             <div className="min-w-0 flex-1 overflow-hidden">
-                              <div className="flex items-center gap-1.5 min-w-0">
+                              <div className="flex items-center gap-1 min-w-0">
                                 {folder.pinned && (
                                   <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
                                 )}
                                 <span
-                                  className="text-sm font-bold text-white truncate group-hover:text-amber-300"
+                                  className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-amber-300"
                                   title={folder.name}
                                 >
                                   {folder.name}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono mt-0.5 truncate">
-                                <span className="text-amber-300 font-semibold">
-                                  {totalSub} mục con
+                              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono mt-0.5 truncate">
+                                <span className="text-amber-300 font-semibold shrink-0">
+                                  {totalSub} mục
                                 </span>
                                 <span>•</span>
                                 <span className="truncate">
@@ -3870,7 +3820,6 @@ function WindowsExplorerView({
                             </div>
                           </div>
 
-                          {/* Nút thao tác nhanh trên Folder Tile */}
                           <div
                             onClick={(e) => e.stopPropagation()}
                             className="flex items-center gap-1 shrink-0"
@@ -3902,12 +3851,12 @@ function WindowsExplorerView({
               {/* PHẦN 2: CÁC ĐIỂM TỌA ĐỘ (WAYPOINT FILES) */}
               {coordinateItems.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-sky-300 flex items-center gap-1.5 mb-2.5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-sky-300 flex items-center gap-1.5 mb-2">
                     <Compass className="w-3.5 h-3.5 text-sky-400" />
                     <span>Điểm tọa độ ({coordinateItems.length})</span>
                   </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     {coordinateItems.map((wp) => {
                       const dimStyle =
                         DIMENSION_CONFIG[wp.dimension] || DIMENSION_CONFIG.overworld;
@@ -3924,14 +3873,14 @@ function WindowsExplorerView({
                             e.preventDefault();
                             onContextMenuItem(e, wp);
                           }}
-                          className={`group flex flex-col justify-between p-3 rounded-xl border transition-all min-w-0 overflow-hidden ${
+                          className={`group flex flex-col justify-between p-2.5 sm:p-3 rounded-xl border transition-all min-w-0 overflow-hidden ${
                             selectedItemId === wp.id
                               ? 'bg-sky-500/15 border-sky-400/70'
                               : 'bg-[#191d28] hover:bg-[#202636] border-slate-800 hover:border-slate-600'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2 min-w-0">
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -3941,7 +3890,7 @@ function WindowsExplorerView({
                                 title="Đổi icon nhanh"
                                 className="p-1 rounded-lg bg-slate-900 border border-slate-700 shrink-0 cursor-pointer"
                               >
-                                <VoxelBlockIcon type={rIcon} className="w-6 h-6" />
+                                <VoxelBlockIcon type={rIcon} className="w-5 h-5 sm:w-6 sm:h-6" />
                               </button>
 
                               <div className="min-w-0 flex-1 overflow-hidden">
@@ -3978,7 +3927,7 @@ function WindowsExplorerView({
                                   handleCopyItem(wp);
                                 }}
                                 title="Copy tọa độ"
-                                className="px-2 py-1 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold cursor-pointer"
+                                className="px-2 py-1 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold whitespace-nowrap cursor-pointer"
                               >
                                 Copy
                               </button>
@@ -3996,9 +3945,8 @@ function WindowsExplorerView({
                             </div>
                           </div>
 
-                          {/* Dải tọa độ gọn kiểu Windows */}
-                          <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2 text-xs font-mono min-w-0">
-                            <div className="flex items-center gap-2 truncate">
+                          <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between gap-1.5 text-xs font-mono min-w-0">
+                            <div className="flex items-center gap-2 truncate min-w-0">
                               <span className="text-rose-400 font-bold">X:{wp.x}</span>
                               <span className="text-emerald-400 font-bold">
                                 Y:{wp.y ?? '~'}
@@ -4019,7 +3967,7 @@ function WindowsExplorerView({
                                     );
                                   }}
                                   title={`Copy cổng ${portal.targetDim}`}
-                                  className="px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] cursor-pointer"
+                                  className="px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] whitespace-nowrap cursor-pointer"
                                 >
                                   {portal.ratioText}: {portal.x},{portal.z}
                                 </button>
@@ -4045,17 +3993,15 @@ function WindowsExplorerView({
               )}
             </div>
           ) : (
-            /* CHẾ ĐỘ BẢNG CHI TIẾT (WINDOWS DETAILS TABLE VIEW) */
+            /* CHẾ ĐỘ BẢNG CHI TIẾT (WINDOWS DETAILS TABLE VIEW - TỐI ƯU MOBILE) */
             <div className="overflow-x-auto rounded-lg border border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-[#1b202e] text-slate-300 border-b border-slate-700 text-[11px] uppercase">
-                    <th className="py-2.5 px-3 font-bold">Tên Thư Mục / Tọa Độ</th>
-                    <th className="py-2.5 px-2.5 font-bold">Loại</th>
-                    <th className="py-2.5 px-2.5 font-bold font-mono">Tọa Độ (X / Y / Z)</th>
-                    <th className="py-2.5 px-2.5 font-bold hidden sm:table-cell">Chiều</th>
-                    <th className="py-2.5 px-2.5 font-bold hidden lg:table-cell">Cổng Nether / Mục con</th>
-                    <th className="py-2.5 px-3 font-bold text-right">Thao tác</th>
+                    <th className="py-2 px-2.5 font-bold">Tên Mục</th>
+                    <th className="py-2 px-2 font-bold font-mono">Tọa Độ</th>
+                    <th className="py-2 px-2 font-bold hidden sm:table-cell">Loại / Chiều</th>
+                    <th className="py-2 px-2.5 font-bold text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -4068,7 +4014,6 @@ function WindowsExplorerView({
                       DIMENSION_CONFIG[item.dimension] || DIMENSION_CONFIG.overworld;
                     const rIcon =
                       item.icon || TAG_CONFIG[item.tag]?.defaultIcon || 'grass';
-                    const portal = getLinkedPortalCoords(item.x, item.z, item.dimension);
 
                     return (
                       <tr
@@ -4080,8 +4025,8 @@ function WindowsExplorerView({
                         }}
                         className="hover:bg-slate-800/60 transition-colors cursor-pointer"
                       >
-                        <td className="py-2 px-3 max-w-[180px] sm:max-w-[260px]">
-                          <div className="flex items-center gap-2 min-w-0">
+                        <td className="py-2 px-2.5 max-w-[130px] sm:max-w-[240px]">
+                          <div className="flex items-center gap-1.5 min-w-0">
                             {isFld ? (
                               <Folder className="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
                             ) : (
@@ -4095,41 +4040,30 @@ function WindowsExplorerView({
                             >
                               {item.name}
                             </span>
-                            {item.pinned && (
-                              <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
-                            )}
                           </div>
                         </td>
-                        <td className="py-2 px-2.5 text-slate-400 whitespace-nowrap">
-                          {isFld ? `Thư mục (${kids.length})` : item.tag}
-                        </td>
-                        <td className="py-2 px-2.5 font-mono whitespace-nowrap">
+                        <td className="py-2 px-2 font-mono whitespace-nowrap text-[11px]">
                           <span className="text-rose-400 font-bold">{item.x}</span>
-                          <span className="text-slate-500 mx-1">/</span>
+                          <span className="text-slate-500 mx-0.5">/</span>
                           <span className="text-emerald-400 font-bold">{item.y ?? '~'}</span>
-                          <span className="text-slate-500 mx-1">/</span>
+                          <span className="text-slate-500 mx-0.5">/</span>
                           <span className="text-sky-400 font-bold">{item.z}</span>
                         </td>
-                        <td className="py-2 px-2.5 hidden sm:table-cell whitespace-nowrap">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-200 border border-slate-700">
-                            {dimStyle.label}
+                        <td className="py-2 px-2 hidden sm:table-cell whitespace-nowrap">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-200 border border-slate-700">
+                            {dimStyle.label} • {isFld ? `Thư mục (${kids.length})` : item.tag}
                           </span>
-                        </td>
-                        <td className="py-2 px-2.5 hidden lg:table-cell font-mono text-[11px] text-purple-300 whitespace-nowrap">
-                          {portal
-                            ? `${portal.targetDim}: ${portal.x}, ${portal.z}`
-                            : `Chunk [${Math.floor(item.x / 16)}, ${Math.floor(item.z / 16)}]`}
                         </td>
                         <td
                           onClick={(e) => e.stopPropagation()}
-                          className="py-2 px-3 text-right whitespace-nowrap"
+                          className="py-2 px-2.5 text-right whitespace-nowrap"
                         >
                           <div className="inline-flex items-center justify-end gap-1">
                             <button
                               type="button"
                               onClick={() => onSelectFolder(item.id)}
                               title="Mở thư mục"
-                              className="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[11px] font-bold cursor-pointer"
+                              className="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold cursor-pointer"
                             >
                               Mở
                             </button>
@@ -4137,30 +4071,17 @@ function WindowsExplorerView({
                               type="button"
                               onClick={() => handleCopyItem(item)}
                               title="Copy tọa độ"
-                              className="px-2 py-1 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-[11px] font-bold cursor-pointer"
+                              className="px-2 py-1 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-[10px] font-bold cursor-pointer"
                             >
                               Copy
                             </button>
                             <button
                               type="button"
-                              onClick={() => onEdit(item)}
-                              title="Chỉnh sửa"
+                              onClick={(e) => onContextMenuItem(e, item)}
+                              title="Menu tùy chọn"
                               className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
                             >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onSoftDelete(item)}
-                              disabled={item.locked}
-                              title={item.locked ? 'Đang khóa' : 'Xóa vào thùng rác'}
-                              className={`p-1 rounded ${
-                                item.locked
-                                  ? 'text-slate-600 cursor-not-allowed'
-                                  : 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 cursor-pointer'
-                              }`}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <MoreVertical className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
@@ -4176,13 +4097,13 @@ function WindowsExplorerView({
 
       {/* 4. THANH TRẠNG THÁI CHÂN CỬA SỔ WINDOWS EXPLORER */}
       <div className="bg-[#11141d] border-t border-slate-800 px-3 py-1.5 flex items-center justify-between text-[11px] text-slate-400 font-mono">
-        <div className="flex items-center gap-3 truncate">
+        <div className="flex items-center gap-2 truncate">
           <span>{folderItems.length} thư mục</span>
           <span>•</span>
-          <span>{coordinateItems.length} điểm tọa độ</span>
+          <span>{coordinateItems.length} tọa độ</span>
         </div>
-        <div className="hidden sm:block truncate">
-          Mẹo: Chuột phải (PC) hoặc bấm nút ⋮ để mở menu thao tác nhanh kiểu Windows
+        <div className="truncate text-right">
+          Bấm ⋮ hoặc chuột phải để mở menu
         </div>
       </div>
     </div>
@@ -4220,7 +4141,7 @@ function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
   };
 
   return (
-    <div className="mc-panel p-3.5 sm:p-4 mb-5 w-full max-w-full overflow-hidden">
+    <div className="mc-panel p-3 sm:p-4 mb-5 w-full max-w-full overflow-hidden">
       <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
           <MapIcon className="w-4 h-4 text-[#55ff55] shrink-0" />
@@ -4308,7 +4229,7 @@ function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
 }
 
 // ==========================================
-// 4. ỨNG DỤNG CHÍNH (fu WAYPOINT v2.2.0)
+// 4. ỨNG DỤNG CHÍNH (fu WAYPOINT v2.2.1 - TỐI ƯU ANDROID & WINDOWS)
 // ==========================================
 export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -4329,7 +4250,6 @@ export default function App() {
     }
   });
 
-  // Giao diện chính: 'mc-cards' (Giao diện hiện tại) | 'win-folder' (Giao diện Folder giống Win)
   const [uiStyle, setUiStyle] = useState(() => {
     try {
       return localStorage.getItem('fu_wp_ui_style') || 'mc-cards';
@@ -4338,6 +4258,7 @@ export default function App() {
     }
   });
 
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [particles, setParticles] = useState([]);
   const searchInputRef = useRef(null);
 
@@ -4440,7 +4361,6 @@ export default function App() {
     }
   });
 
-  // Đảm bảo selectedWorldId luôn trỏ tới 1 world đang hoạt động nếu có
   useEffect(() => {
     if (activeWorlds.length > 0 && !activeWorlds.some((w) => w.id === selectedWorldId)) {
       setSelectedWorldId(activeWorlds[0].id);
@@ -4568,10 +4488,10 @@ export default function App() {
   const [activeTag, setActiveTag] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copyMode, setCopyMode] = useState('chat');
-  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'name' | 'children'
+  const [sortBy, setSortBy] = useState('newest');
   const [viewTrash, setViewTrash] = useState(false);
-  const [trashSubTab, setTrashSubTab] = useState('waypoints'); // 'waypoints' | 'worlds'
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'radar'
+  const [trashSubTab, setTrashSubTab] = useState('waypoints');
+  const [viewMode, setViewMode] = useState('grid');
   const [currentParentId, setCurrentParentId] = useState(null);
 
   useEffect(() => {
@@ -4630,7 +4550,6 @@ export default function App() {
   });
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
 
-  // Quản lý World (Tạo mới, Đổi tên, Xóa vào Thùng Rác, Khôi phục, Xóa hẳn)
   const [isWorldModalOpen, setIsWorldModalOpen] = useState(false);
   const [newWorldName, setNewWorldName] = useState('');
   const [newWorldSeed, setNewWorldSeed] = useState('');
@@ -4641,7 +4560,7 @@ export default function App() {
   const [confirmPermanentDeleteWorldId, setConfirmPermanentDeleteWorldId] = useState(null);
 
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [contextMenu, setContextMenu] = useState(null); // { x, y, item }
+  const [contextMenu, setContextMenu] = useState(null);
 
   const [isMiniOverlayOpen, setIsMiniOverlayOpen] = useState(false);
   const [floatingBubbleVisible, setFloatingBubbleVisible] = useState(true);
@@ -4669,7 +4588,6 @@ export default function App() {
     [soundEnabled]
   );
 
-  // Đóng context menu khi bấm ra ngoài
   useEffect(() => {
     const closeMenu = () => setContextMenu(null);
     window.addEventListener('click', closeMenu);
@@ -4702,7 +4620,6 @@ export default function App() {
     return map;
   }, [activeWaypoints]);
 
-  // Đếm tổng số mục con nhiều cấp bên trong mỗi thư mục
   const descendantCountMap = useMemo(() => {
     const memo = {};
     const countRec = (id, visited = new Set()) => {
@@ -4721,7 +4638,6 @@ export default function App() {
     return memo;
   }, [activeWaypoints, childrenByParentId]);
 
-  // Kiểm tra xem targetId có phải là con/cháu của sourceId không (chống vòng lặp thư mục)
   const isDescendantOrSelf = useCallback(
     (sourceId, candidateParentId) => {
       if (!sourceId || !candidateParentId) return false;
@@ -4739,7 +4655,6 @@ export default function App() {
     [activeWaypoints]
   );
 
-  // Tạo nhãn đường dẫn thư mục gọn gàng cho ô chọn thư mục cha
   const getFolderPathLabel = useCallback(
     (wp) => {
       const parts = [wp.name];
@@ -4756,7 +4671,7 @@ export default function App() {
         }
       }
       const joined = parts.join(' ▸ ');
-      return joined.length > 52 ? `...${joined.slice(-49)}` : joined;
+      return joined.length > 48 ? `…${joined.slice(-45)}` : joined;
     },
     [activeWaypoints]
   );
@@ -4933,7 +4848,7 @@ export default function App() {
   };
 
   const openCreateForm = useCallback(
-    (overrideParentWp = null, asFolder = false) => {
+    (overrideParentWp = null, asFolder = false, presetTag = null) => {
       const validParent =
         overrideParentWp && typeof overrideParentWp === 'object' && 'id' in overrideParentWp
           ? overrideParentWp
@@ -4951,7 +4866,9 @@ export default function App() {
         ? 'overworld'
         : activeDimension;
 
-      const defaultTag = asFolder
+      const defaultTag = presetTag
+        ? presetTag
+        : asFolder
         ? 'Folder'
         : targetParent
         ? 'Storage'
@@ -4963,7 +4880,7 @@ export default function App() {
         : TAG_CONFIG[defaultTag]?.defaultIcon || 'grass';
 
       setFormData({
-        name: '',
+        name: presetTag === 'Death' ? 'Điểm Chết (Cần nhặt đồ)' : '',
         x: targetParent ? String(targetParent.x) : asFolder ? '0' : '',
         y: targetParent && targetParent.y !== null ? String(targetParent.y) : '',
         z: targetParent ? String(targetParent.z) : asFolder ? '0' : '',
@@ -4975,7 +4892,7 @@ export default function App() {
         notes: '',
         screenshots: [],
         locked: true,
-        pinned: false,
+        pinned: presetTag === 'Death',
       });
       setIsFormOpen(true);
     },
@@ -4988,6 +4905,10 @@ export default function App() {
 
   const handleOpenCreateFolder = useCallback(() => {
     openCreateForm(null, true);
+  }, [openCreateForm]);
+
+  const handleOpenCreateDeathPoint = useCallback(() => {
+    openCreateForm(null, false, 'Death');
   }, [openCreateForm]);
 
   const handleOpenCreateChildInCurrent = useCallback(() => {
@@ -5020,7 +4941,6 @@ export default function App() {
     setIsFormOpen(true);
   };
 
-  // Phím tắt cho Windows / PC
   useEffect(() => {
     const handleKeyDown = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -5246,7 +5166,6 @@ export default function App() {
     );
   };
 
-  // Xóa mềm Tọa độ / Thư mục (Đưa cả các điểm con bên trong vào thùng rác)
   const handleSoftDelete = (wp) => {
     if (wp.locked) {
       showToast('Hãy mở khóa trước khi xóa.');
@@ -5326,9 +5245,6 @@ export default function App() {
     showToast('Đã dọn sạch tọa độ trong Thùng rác!', 'tnt');
   };
 
-  // ==========================================
-  // QUẢN LÝ WORLD: TẠO MỚI, SỬA, CHO VÀO THÙNG RÁC, KHÔI PHỤC, XÓA HẲN
-  // ==========================================
   const handleCreateWorld = (e) => {
     e.preventDefault();
     if (!newWorldName.trim()) return;
@@ -5361,14 +5277,12 @@ export default function App() {
     showToast('Đã cập nhật thông tin World!', 'orb');
   };
 
-  // Xóa mềm World (Cho vào Thùng Rác trước rồi mới xóa hẳn)
   const handleSoftDeleteWorld = (worldObj) => {
     if (!worldObj) return;
     const remainingActive = activeWorlds.filter((w) => w.id !== worldObj.id);
     const now = Date.now();
 
     if (remainingActive.length === 0) {
-      // Nếu người dùng xóa World cuối cùng, tự tạo 1 World mặc định mới để app luôn hoạt động mượt
       const fallbackWorld = {
         id: 'world-' + (now + 1),
         name: 'Thế Giới Mới',
@@ -5394,7 +5308,6 @@ export default function App() {
     showToast(`Đã chuyển World "${worldObj.name}" vào Thùng rác!`, 'tnt');
   };
 
-  // Khôi phục World từ Thùng Rác
   const handleRestoreWorld = (worldId) => {
     const target = worlds.find((w) => w.id === worldId);
     setWorlds((prev) =>
@@ -5404,7 +5317,6 @@ export default function App() {
     showToast(`Đã khôi phục World "${target?.name || ''}"!`, 'levelup');
   };
 
-  // Xóa hẳn World vĩnh viễn khỏi Thùng Rác (kèm các tọa độ bên trong World đó)
   const handlePermanentDeleteWorld = (worldId) => {
     const target = worlds.find((w) => w.id === worldId);
     setWorlds((prev) => prev.filter((w) => w.id !== worldId));
@@ -5426,7 +5338,7 @@ export default function App() {
 
   const openBackupModal = () => {
     const payload = {
-      version: '2.2.0',
+      version: '2.2.1',
       exportedAt: new Date().toISOString(),
       appIconConfig,
       worlds,
@@ -5532,9 +5444,7 @@ export default function App() {
         return true;
       })
       .sort((a, b) => {
-        // Ưu tiên mục đã ghim
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-        // Ưu tiên thư mục lên trước nếu cùng trạng thái ghim
         const aIsFld = Boolean(
           a.isFolder || a.tag === 'Folder' || (childrenByParentId[a.id] || []).length > 0
         );
@@ -5647,7 +5557,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden mc-deepslate-bg text-slate-100 pb-28 sm:pb-24 selection:bg-[#55ff55]/30 selection:text-white">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden mc-deepslate-bg text-slate-100 pb-32 sm:pb-24 selection:bg-[#55ff55]/30 selection:text-white">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Silkscreen:wght@400;700&display=swap');
 
@@ -5679,6 +5589,14 @@ export default function App() {
           scrollbar-width: none;
         }
 
+        .mc-safe-header {
+          padding-top: env(safe-area-inset-top, 0px);
+        }
+
+        .mc-safe-bottom-nav {
+          padding-bottom: max(0.45rem, env(safe-area-inset-bottom, 0.45rem));
+        }
+
         .mc-deepslate-bg {
           font-family: var(--mc-font-ui);
           background-color: #111015;
@@ -5693,7 +5611,7 @@ export default function App() {
 
         .mc-logo-title {
           font-family: var(--mc-font-pixel);
-          letter-spacing: 0.04em;
+          letter-spacing: 0.03em;
           color: #55ff55;
           text-shadow:
             0 2px 0 #1b5e20,
@@ -5854,7 +5772,7 @@ export default function App() {
           filter: brightness(1.12);
         }
         .mc-btn:active:not(:disabled) {
-          transform: translateY(3px) !important;
+          transform: translateY(2px) !important;
         }
 
         .mc-btn-stone {
@@ -5862,8 +5780,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #68677a,
             inset -2px -2px 0px #1e1d26,
-            0 3px 0px #0d0c12,
-            0 5px 0px #000000;
+            0 2px 0px #0d0c12,
+            0 4px 0px #000000;
         }
         .mc-btn-stone:active:not(:disabled) {
           box-shadow:
@@ -5877,8 +5795,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #bbf7d0,
             inset -2px -2px 0px #14532d,
-            0 3px 0px #0c3b1e,
-            0 5px 0px #000000;
+            0 2px 0px #0c3b1e,
+            0 4px 0px #000000;
         }
         .mc-btn-emerald:active:not(:disabled) {
           box-shadow:
@@ -5892,8 +5810,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #fca5a5,
             inset -2px -2px 0px #450a0a,
-            0 3px 0px #450a0a,
-            0 5px 0px #000000;
+            0 2px 0px #450a0a,
+            0 4px 0px #000000;
         }
         .mc-btn-redstone:active:not(:disabled) {
           box-shadow:
@@ -5907,8 +5825,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #f87171,
             inset -2px -2px 0px #450a0a,
-            0 3px 0px #300707,
-            0 5px 0px #000000;
+            0 2px 0px #300707,
+            0 4px 0px #000000;
         }
         .mc-btn-tnt:active:not(:disabled) {
           box-shadow:
@@ -5922,8 +5840,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #fef08a,
             inset -2px -2px 0px #713f12,
-            0 3px 0px #522d0b,
-            0 5px 0px #000000;
+            0 2px 0px #522d0b,
+            0 4px 0px #000000;
         }
         .mc-btn-gold:active:not(:disabled) {
           box-shadow:
@@ -5937,8 +5855,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #bae6fd,
             inset -2px -2px 0px #0c4a6e,
-            0 3px 0px #082f49,
-            0 5px 0px #000000;
+            0 2px 0px #082f49,
+            0 4px 0px #000000;
         }
         .mc-btn-diamond:active:not(:disabled) {
           box-shadow:
@@ -5952,8 +5870,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #93c5fd,
             inset -2px -2px 0px #1e3a8a,
-            0 3px 0px #172554,
-            0 5px 0px #000000;
+            0 2px 0px #172554,
+            0 4px 0px #000000;
         }
         .mc-btn-lapis:active:not(:disabled) {
           box-shadow:
@@ -5967,8 +5885,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #e9d5ff,
             inset -2px -2px 0px #3b0764,
-            0 3px 0px #2e054e,
-            0 5px 0px #000000;
+            0 2px 0px #2e054e,
+            0 4px 0px #000000;
         }
         .mc-btn-purpur:active:not(:disabled) {
           box-shadow:
@@ -5982,8 +5900,8 @@ export default function App() {
           box-shadow:
             inset 2px 2px 0px #fde68a,
             inset -2px -2px 0px #451a03,
-            0 3px 0px #2e1002,
-            0 5px 0px #000000;
+            0 2px 0px #2e1002,
+            0 4px 0px #000000;
         }
 
         .mc-btn-disabled {
@@ -6079,7 +5997,7 @@ export default function App() {
         }}
       />
 
-      {/* MENU CHUỘT PHẢI KIỂU WINDOWS (CONTEXT MENU) */}
+      {/* MENU CHUỘT PHẢI / MENU TÙY CHỌN NHANH */}
       {contextMenu && (
         <div
           onClick={(e) => e.stopPropagation()}
@@ -6199,7 +6117,7 @@ export default function App() {
 
       {/* Khối nhập nhanh nổi góc phải dưới */}
       {floatingBubbleVisible && (
-        <div className="fixed bottom-16 sm:bottom-4 right-4 z-40 flex flex-col items-end gap-2 max-w-[calc(100vw-2rem)]">
+        <div className="fixed bottom-20 sm:bottom-4 right-3 sm:right-4 z-40 flex flex-col items-end gap-2 max-w-[calc(100vw-1.5rem)]">
           {isMiniOverlayOpen && (
             <div className="w-80 max-w-full mc-panel p-3.5 mb-1">
               <div className="flex items-center justify-between pb-2 mb-2.5 border-b-2 border-black">
@@ -6319,7 +6237,7 @@ export default function App() {
             type="button"
             onClick={() => setIsMiniOverlayOpen(!isMiniOverlayOpen)}
             title="Lưu nhanh tọa độ"
-            className="mc-btn mc-btn-command w-11 h-11 sm:w-12 sm:h-12 p-2.5 text-white flex items-center justify-center cursor-pointer"
+            className="mc-btn mc-btn-command w-10 h-10 sm:w-12 sm:h-12 p-2 text-white flex items-center justify-center cursor-pointer shadow-lg"
           >
             {isMiniOverlayOpen ? (
               <X className="w-5 h-5 stroke-[3]" />
@@ -6330,41 +6248,123 @@ export default function App() {
         </div>
       )}
 
-      {/* HEADER BAR (Tối ưu gọn cho cả Android & Windows) */}
-      <header className="sticky top-0 z-30 bg-[#181720] border-b-4 border-black shadow-[0_4px_0_#09080c] w-full">
+      {/* ==========================================
+          HEADER BAR (THIẾT KẾ 2 HÀNG GỌN GÀNG CHO ANDROID, KHÔNG BỊ CẮT NÚT)
+      ========================================== */}
+      <header className="sticky top-0 z-30 bg-[#181720] border-b-4 border-black shadow-[0_4px_0_#09080c] w-full mc-safe-header">
         <div className="h-2 w-full mc-turf-overworld" />
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-2">
-          {/* Logo & Tên App */}
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              type="button"
-              onClick={() => setIsAppIconModalOpen(true)}
-              title="Đổi biểu tượng ứng dụng"
-              className="w-9 h-9 sm:w-10 sm:h-10 mc-btn mc-btn-stone flex items-center justify-center p-1 cursor-pointer shrink-0"
-            >
-              <VoxelBlockIcon
-                type={appIconConfig.iconId}
-                customImage={appIconConfig.customImage}
-                className="w-6 h-6 sm:w-7 sm:h-7"
-              />
-            </button>
-            <h1
-              onClick={() => handleEnterFolder(null)}
-              className="text-base sm:text-xl font-black tracking-wider mc-logo-title cursor-pointer truncate"
-            >
-              fu WAYPOINT
-            </h1>
+        <div className="max-w-6xl mx-auto px-2.5 sm:px-4 py-2 space-y-2">
+          {/* HÀNG HEADER 1: Logo + Tên App (Không bao giờ gãy dòng) + Cụm nút Âm thanh / Hiệu ứng / Sao lưu */}
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={() => setIsAppIconModalOpen(true)}
+                title="Đổi biểu tượng ứng dụng"
+                className="w-8 h-8 sm:w-9 sm:h-9 mc-btn mc-btn-stone flex items-center justify-center p-1 cursor-pointer shrink-0"
+              >
+                <VoxelBlockIcon
+                  type={appIconConfig.iconId}
+                  customImage={appIconConfig.customImage}
+                  className="w-5 h-5 sm:w-6 sm:h-6"
+                />
+              </button>
+              <h1
+                onClick={() => handleEnterFolder(null)}
+                className="text-sm sm:text-xl font-black tracking-wider mc-logo-title cursor-pointer whitespace-nowrap truncate"
+              >
+                fu WAYPOINT
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsAppIconModalOpen(true)}
+                title="Đổi biểu tượng App"
+                className="mc-btn mc-btn-stone inline-flex items-center gap-1 px-2 py-1 text-[11px] font-black text-[#55ff55] cursor-pointer"
+              >
+                <Palette className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Icon App</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={openBackupModal}
+                title="Sao lưu / Đồng bộ"
+                className="mc-btn mc-btn-diamond inline-flex items-center gap-1 px-2 py-1 text-[11px] font-black text-[#041924] cursor-pointer"
+              >
+                <Cloud className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sao lưu / Đồng bộ</span>
+              </button>
+
+              {/* Nút Bật / Tắt Âm thanh Minecraft */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !soundEnabled;
+                  setSoundEnabled(next);
+                  if (next) playMinecraftSound('orb', true);
+                }}
+                title={soundEnabled ? 'Đang bật âm thanh Minecraft' : 'Đang tắt âm thanh'}
+                className={`mc-btn p-1.5 cursor-pointer ${
+                  soundEnabled ? 'mc-btn-stone text-[#55ff55]' : 'mc-btn-stone text-zinc-500'
+                }`}
+              >
+                {soundEnabled ? (
+                  <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                ) : (
+                  <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                )}
+              </button>
+
+              {/* Nút Bật / Tắt Hiệu ứng & Thú cưng Axolotl / Gà đi dạo */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !effectsEnabled;
+                  setEffectsEnabled(next);
+                  showToast(
+                    next
+                      ? 'Đã bật hiệu ứng & thú cưng Axolotl, Gà đi dạo!'
+                      : 'Đã tắt hiệu ứng & thú cưng đi dạo',
+                    'axolotl'
+                  );
+                }}
+                title={
+                  effectsEnabled
+                    ? 'Tắt hiệu ứng & thú cưng Axolotl / Gà'
+                    : 'Bật hiệu ứng & thú cưng Axolotl / Gà'
+                }
+                className={`mc-btn px-1.5 py-1 inline-flex items-center gap-1 text-[11px] font-bold cursor-pointer ${
+                  effectsEnabled ? 'mc-btn-stone text-[#f472b6]' : 'mc-btn-stone text-zinc-500'
+                }`}
+              >
+                <VoxelBlockIcon type="axolotl" className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden lg:inline">
+                  {effectsEnabled ? 'Hiệu ứng: Bật' : 'Hiệu ứng: Tắt'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsGuideOpen(true)}
+                title="Thông tin phiên bản & mẹo"
+                className="mc-btn mc-btn-stone p-1.5 text-slate-200 cursor-pointer"
+              >
+                <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
           </div>
 
-          {/* Cụm công cụ trên Header */}
-          <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            {/* Thanh chọn World + Nút thêm / xóa / quản lý World */}
-            <div className="flex items-center mc-slot p-0.5 sm:p-1 max-w-[230px] sm:max-w-none">
+          {/* HÀNG HEADER 2: Thanh chọn World (Co giãn linh hoạt) + Nút chuyển Giao diện Win / Thẻ MC */}
+          <div className="flex items-center justify-between gap-1.5 min-w-0">
+            <div className="flex-1 min-w-0 flex items-center mc-slot p-0.5 sm:p-1">
               <Globe className="w-3.5 h-3.5 text-[#55ff55] ml-1.5 mr-1 shrink-0" />
               <select
                 value={selectedWorldId}
                 onChange={(e) => setSelectedWorldId(e.target.value)}
-                className="bg-transparent text-xs font-extrabold text-white pr-1 py-1 focus:outline-none cursor-pointer truncate max-w-[100px] sm:max-w-[150px]"
+                className="flex-1 min-w-0 bg-transparent text-xs font-extrabold text-white pr-1 py-1 focus:outline-none cursor-pointer truncate"
               >
                 {activeWorlds.map((w) => (
                   <option key={w.id} value={w.id} className="bg-[#161922] text-slate-100">
@@ -6392,7 +6392,7 @@ export default function App() {
               )}
             </div>
 
-            {/* NÚT CHUYỂN ĐỔI GIAO DIỆN: HIỆN TẠI (MC CARDS) <-> FOLDER GIỐNG WIN */}
+            {/* Nút chuyển đổi giao diện Hiện tại <-> Giao diện Folder Win (Không bao giờ tràn) */}
             <button
               type="button"
               onClick={() => {
@@ -6407,7 +6407,7 @@ export default function App() {
                 );
               }}
               title="Chuyển đổi giữa Giao diện hiện tại và Giao diện Folder giống Windows"
-              className={`mc-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-black cursor-pointer ${
+              className={`mc-btn inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black whitespace-nowrap shrink-0 cursor-pointer ${
                 uiStyle === 'win-folder'
                   ? 'mc-btn-gold text-[#1f1300]'
                   : 'mc-btn-lapis text-white'
@@ -6415,275 +6415,120 @@ export default function App() {
             >
               {uiStyle === 'win-folder' ? (
                 <>
-                  <Folder className="w-3.5 h-3.5 fill-[#1f1300]" />
+                  <Folder className="w-3.5 h-3.5 fill-[#1f1300] shrink-0" />
                   <span>Folder Win</span>
                 </>
               ) : (
                 <>
-                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
                   <span>Giao diện Win</span>
                 </>
               )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsAppIconModalOpen(true)}
-              title="Đổi biểu tượng App"
-              className="mc-btn mc-btn-stone inline-flex items-center gap-1 px-2 py-1.5 text-xs font-black text-[#55ff55] cursor-pointer"
-            >
-              <Palette className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Icon App</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsDistanceOpen(true)}
-              title="Đo khoảng cách 2 điểm"
-              className="mc-btn mc-btn-gold inline-flex items-center gap-1 px-2 py-1.5 text-xs font-black text-[#1f1300] cursor-pointer"
-            >
-              <Ruler className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Đo khoảng cách</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsCalcOpen(true)}
-              title="Máy tính cổng Nether (÷8)"
-              className="mc-btn mc-btn-purpur inline-flex items-center gap-1 px-2 py-1.5 text-xs font-black text-white cursor-pointer"
-            >
-              <Calculator className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Nether (÷8)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={openBackupModal}
-              title="Sao lưu / Đồng bộ"
-              className="mc-btn mc-btn-diamond inline-flex items-center gap-1 px-2 py-1.5 text-xs font-black text-[#041924] cursor-pointer"
-            >
-              <Cloud className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Sao lưu / Đồng bộ</span>
-            </button>
-
-            {/* Nút Bật / Tắt Âm thanh Minecraft */}
-            <button
-              type="button"
-              onClick={() => {
-                const next = !soundEnabled;
-                setSoundEnabled(next);
-                if (next) playMinecraftSound('orb', true);
-              }}
-              title={soundEnabled ? 'Đang bật âm thanh Minecraft' : 'Đang tắt âm thanh'}
-              className={`mc-btn p-1.5 cursor-pointer ${
-                soundEnabled ? 'mc-btn-stone text-[#55ff55]' : 'mc-btn-stone text-zinc-500'
-              }`}
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </button>
-
-            {/* Nút Bật / Tắt Hiệu ứng & Thú cưng Axolotl / Gà đi dạo */}
-            <button
-              type="button"
-              onClick={() => {
-                const next = !effectsEnabled;
-                setEffectsEnabled(next);
-                showToast(
-                  next
-                    ? 'Đã bật hiệu ứng & thú cưng Axolotl, Gà đi dạo!'
-                    : 'Đã tắt hiệu ứng & thú cưng đi dạo',
-                  'axolotl'
-                );
-              }}
-              title={
-                effectsEnabled
-                  ? 'Tắt hiệu ứng & thú cưng Axolotl / Gà'
-                  : 'Bật hiệu ứng & thú cưng Axolotl / Gà'
-              }
-              className={`mc-btn px-2 py-1.5 inline-flex items-center gap-1 text-xs font-bold cursor-pointer ${
-                effectsEnabled ? 'mc-btn-stone text-[#f472b6]' : 'mc-btn-stone text-zinc-500'
-              }`}
-            >
-              <VoxelBlockIcon type="axolotl" className="w-4 h-4" />
-              <span className="hidden sm:inline">{effectsEnabled ? 'Hiệu ứng: Bật' : 'Hiệu ứng: Tắt'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsGuideOpen(true)}
-              title="Thông tin phiên bản & mẹo"
-              className="mc-btn mc-btn-stone p-1.5 text-slate-200 cursor-pointer"
-            >
-              <HelpCircle className="w-4 h-4" />
             </button>
           </div>
         </div>
       </header>
 
       {/* NỘI DUNG CHÍNH */}
-      <main className="max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-5 w-full">
-        {/* THANH BREADCRUMB PHÂN TẦNG CHO GIAO DIỆN THẺ MC (ĐÃ FIX LỖI CHỮ DÀI TRÀN KHUNG) */}
+      <main className="max-w-6xl mx-auto px-2.5 sm:px-4 pt-3 sm:pt-5 w-full">
+        {/* THANH BREADCRUMB PHÂN TẦNG CHO GIAO DIỆN THẺ MC */}
         {uiStyle === 'mc-cards' && currentParentWaypoint && !viewTrash && (
-          <div className="mc-panel p-3 sm:p-3.5 mb-4 border-2 border-[#55ff55] w-full max-w-full overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0">
-              {/* Cụm đường dẫn Breadcrumb tự động cắt gọn chữ dài */}
-              <div className="flex items-center gap-1.5 flex-wrap text-xs font-extrabold min-w-0 flex-1 overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleEnterFolder(currentParentWaypoint.parentId || null)
-                  }
-                  className="mc-btn mc-btn-stone inline-flex items-center gap-1 px-2.5 py-1 text-white cursor-pointer shrink-0"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 text-[#55ff55]" />
-                  <span>Quay lại</span>
-                </button>
+          <div className="mc-panel p-2.5 sm:p-3.5 mb-3.5 border-2 border-[#55ff55] w-full max-w-full overflow-hidden space-y-2">
+            {/* Dòng 1: Nút Quay lại + Đường dẫn cuộn ngang mượt trên Android */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs font-extrabold min-w-0">
+              <button
+                type="button"
+                onClick={() =>
+                  handleEnterFolder(currentParentWaypoint.parentId || null)
+                }
+                className="mc-btn mc-btn-stone inline-flex items-center gap-1 px-2 py-1 text-white cursor-pointer shrink-0"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-[#55ff55]" />
+                <span>Quay lại</span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleEnterFolder(null)}
-                  className="text-zinc-400 hover:text-white cursor-pointer font-mono shrink-0 px-1"
-                >
-                  Ngoài cùng
-                </button>
+              <button
+                type="button"
+                onClick={() => handleEnterFolder(null)}
+                className="text-zinc-400 hover:text-white cursor-pointer font-mono shrink-0 px-1"
+              >
+                Ngoài cùng
+              </button>
 
-                {breadcrumbTrail.map((crumb, idx) => (
-                  <React.Fragment key={crumb.id}>
-                    <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                    <button
-                      type="button"
-                      onClick={() => handleEnterFolder(crumb.id)}
-                      title={crumb.name}
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 mc-slot cursor-pointer min-w-0 max-w-[160px] sm:max-w-[220px] ${
-                        idx === breadcrumbTrail.length - 1
-                          ? 'text-[#55ff55] border-[#55ff55]'
-                          : 'text-zinc-200'
-                      }`}
-                    >
-                      <VoxelBlockIcon
-                        type={crumb.icon || TAG_CONFIG[crumb.tag]?.defaultIcon || 'grass'}
-                        className="w-3.5 h-3.5 shrink-0"
-                      />
-                      <span className="truncate">{crumb.name}</span>
-                    </button>
-                  </React.Fragment>
-                ))}
-              </div>
+              {breadcrumbTrail.map((crumb, idx) => (
+                <React.Fragment key={crumb.id}>
+                  <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                  <button
+                    type="button"
+                    onClick={() => handleEnterFolder(crumb.id)}
+                    title={crumb.name}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 mc-slot cursor-pointer shrink-0 max-w-[140px] sm:max-w-[220px] ${
+                      idx === breadcrumbTrail.length - 1
+                        ? 'text-[#55ff55] border-[#55ff55]'
+                        : 'text-zinc-200'
+                    }`}
+                  >
+                    <VoxelBlockIcon
+                      type={crumb.icon || TAG_CONFIG[crumb.tag]?.defaultIcon || 'grass'}
+                      className="w-3.5 h-3.5 shrink-0"
+                    />
+                    <span className="truncate">{crumb.name}</span>
+                  </button>
+                </React.Fragment>
+              ))}
+            </div>
 
-              {/* Cụm nút Tạo thư mục con & Tạo điểm con gọn gàng, không nhồi chữ dài gây tràn */}
-              <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleOpenCreateSubfolderInCurrent}
-                  className="mc-btn mc-btn-gold inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#1f1300] uppercase cursor-pointer shrink-0"
-                >
-                  <FolderPlus className="w-3.5 h-3.5 shrink-0" />
-                  <span>+ Thư mục con</span>
-                </button>
+            {/* Dòng 2: 2 Nút chia đều 2 cột trên Android, không bao giờ tràn chữ */}
+            <div className="grid grid-cols-2 sm:flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleOpenCreateSubfolderInCurrent}
+                className="mc-btn mc-btn-gold inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#1f1300] uppercase whitespace-nowrap cursor-pointer min-w-0"
+              >
+                <FolderPlus className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">+ Thư mục con</span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={handleOpenCreateChildInCurrent}
-                  className="mc-btn mc-btn-emerald inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#041a06] uppercase cursor-pointer shrink-0"
-                >
-                  <Plus className="w-3.5 h-3.5 stroke-[3] shrink-0" />
-                  <span>+ Thêm Điểm Con</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleOpenCreateChildInCurrent}
+                className="mc-btn mc-btn-emerald inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#041a06] uppercase whitespace-nowrap cursor-pointer min-w-0"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3] shrink-0" />
+                <span className="truncate">+ Thêm Điểm Con</span>
+              </button>
             </div>
           </div>
         )}
 
-        {/* THANH ĐIỀU KHIỂN CHIỀU KHÔNG GIAN & NÚT TẠO MỚI */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 mb-4">
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 mc-panel p-1.5">
+        {/* ==========================================
+            KHU VỰC NÚT HÀNH ĐỘNG CHÍNH & CHIỀU KHÔNG GIAN (TỐI ƯU ANDROID: KHÔNG BỊ TRÀN HAY CẮT NÚT)
+        ========================================== */}
+        <div className="space-y-2.5 mb-3.5">
+          {/* Hàng 1: 2 Nút Chính (Lưu Tọa Độ Mới & + Tạo Thư Mục) chia 2 cột cân đối trên Android */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               type="button"
-              onClick={() => {
-                setActiveDimension('all');
-                setViewTrash(false);
-              }}
-              className={`mc-btn px-2.5 py-2 text-xs cursor-pointer flex items-center justify-center gap-1 font-extrabold min-w-0 ${
-                !viewTrash && activeDimension === 'all'
-                  ? 'mc-btn-gold text-[#1f1300]'
-                  : 'mc-btn-stone text-slate-200'
-              }`}
+              onClick={handleOpenCreateWaypoint}
+              className="mc-btn mc-btn-emerald inline-flex items-center justify-center gap-1.5 px-2.5 py-2.5 text-[#041a06] font-black text-xs uppercase whitespace-nowrap cursor-pointer min-w-0"
             >
-              <Layers className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Tất cả ({counts.all})</span>
-            </button>
-
-            {Object.values(DIMENSION_CONFIG).map((dim) => {
-              const Icon = dim.icon;
-              const isActive = !viewTrash && activeDimension === dim.id;
-              return (
-                <button
-                  key={dim.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveDimension(dim.id);
-                    setViewTrash(false);
-                  }}
-                  className={`mc-btn px-2.5 py-2 text-xs cursor-pointer flex items-center justify-center gap-1 font-extrabold min-w-0 ${
-                    isActive ? dim.activeTab : 'mc-btn-stone text-slate-200'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">
-                    {dim.label} ({counts[dim.id]})
-                  </span>
-                </button>
-              );
-            })}
-
-            <button
-              type="button"
-              onClick={() => setViewTrash(!viewTrash)}
-              className={`mc-btn col-span-2 sm:col-span-1 px-2.5 py-2 text-xs cursor-pointer flex items-center justify-center gap-1 font-extrabold min-w-0 ${
-                viewTrash ? 'mc-btn-tnt text-white' : 'mc-btn-stone text-rose-300'
-              }`}
-            >
-              <Trash2 className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Thùng rác ({totalTrashCount})</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0 flex-wrap">
-            <button
-              type="button"
-              onClick={() => setViewMode(viewMode === 'grid' ? 'radar' : 'grid')}
-              className={`mc-btn inline-flex items-center justify-center gap-1 px-2.5 py-2.5 text-xs font-black uppercase cursor-pointer ${
-                viewMode === 'radar'
-                  ? 'mc-btn-diamond text-[#041924]'
-                  : 'mc-btn-stone text-[#55ffff]'
-              }`}
-            >
-              {viewMode === 'radar' ? (
-                <>
-                  <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Dạng Thẻ</span>
-                </>
-              ) : (
-                <>
-                  <MapIcon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Radar 2D</span>
-                </>
-              )}
+              <Plus className="w-4 h-4 stroke-[3] shrink-0" />
+              <span className="truncate">Lưu Tọa Độ Mới</span>
             </button>
 
             <button
               type="button"
               onClick={handleOpenCreateFolder}
-              className="mc-btn mc-btn-gold inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2.5 text-[#1f1300] font-black text-xs uppercase cursor-pointer"
+              className="mc-btn mc-btn-gold inline-flex items-center justify-center gap-1.5 px-2.5 py-2.5 text-[#1f1300] font-black text-xs uppercase whitespace-nowrap cursor-pointer min-w-0"
             >
-              <FolderPlus className="w-3.5 h-3.5 shrink-0" />
+              <FolderPlus className="w-4 h-4 shrink-0" />
               <span className="truncate">+ Tạo Thư Mục</span>
             </button>
 
             <button
               type="button"
               onClick={handleOpenCreateWaypoint}
-              className="mc-btn mc-btn-command inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2.5 text-white font-black text-xs uppercase cursor-pointer mc-text-shadow"
+              className="mc-btn mc-btn-command inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-white font-black text-xs uppercase whitespace-nowrap cursor-pointer mc-text-shadow min-w-0"
             >
               <ScanLine className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Quét Ảnh F3 / MCPE (OCR)</span>
@@ -6691,48 +6536,157 @@ export default function App() {
 
             <button
               type="button"
-              onClick={handleOpenCreateWaypoint}
-              className="mc-btn mc-btn-emerald inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 text-[#041a06] font-black text-xs uppercase cursor-pointer"
+              onClick={handleOpenCreateDeathPoint}
+              className="mc-btn mc-btn-tnt inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-white font-black text-xs uppercase whitespace-nowrap cursor-pointer mc-text-shadow min-w-0"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[3] shrink-0" />
-              <span className="truncate">Lưu Tọa Độ Mới</span>
+              <Skull className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">+ Điểm Chết</span>
             </button>
+          </div>
+
+          {/* Hàng 2: Thanh Chiều Không Gian (4 cột gọn gàng trên 1 hàng duy nhất ở Android) + Các công cụ phụ */}
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2">
+            <div className="grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-1 mc-panel p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveDimension('all');
+                  setViewTrash(false);
+                }}
+                className={`mc-btn px-1.5 sm:px-2.5 py-1.5 text-[11px] sm:text-xs cursor-pointer flex items-center justify-center gap-1 font-extrabold min-w-0 ${
+                  !viewTrash && activeDimension === 'all'
+                    ? 'mc-btn-gold text-[#1f1300]'
+                    : 'mc-btn-stone text-slate-200'
+                }`}
+              >
+                <Layers className="w-3 h-3 shrink-0 hidden sm:inline" />
+                <span className="truncate">Tất cả ({counts.all})</span>
+              </button>
+
+              {Object.values(DIMENSION_CONFIG).map((dim) => {
+                const Icon = dim.icon;
+                const isActive = !viewTrash && activeDimension === dim.id;
+                const shortLabel = dim.id === 'end' ? 'End' : dim.label;
+                return (
+                  <button
+                    key={dim.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveDimension(dim.id);
+                      setViewTrash(false);
+                    }}
+                    className={`mc-btn px-1.5 sm:px-2.5 py-1.5 text-[11px] sm:text-xs cursor-pointer flex items-center justify-center gap-1 font-extrabold min-w-0 ${
+                      isActive ? dim.activeTab : 'mc-btn-stone text-slate-200'
+                    }`}
+                  >
+                    <Icon className="w-3 h-3 shrink-0 hidden sm:inline" />
+                    <span className="truncate">
+                      {shortLabel} ({counts[dim.id]})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Dải công cụ phụ: Cuộn ngang mượt mà trên Android, không bao giờ tràn màn hình */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode(viewMode === 'grid' ? 'radar' : 'grid')}
+                className={`mc-btn inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-black uppercase whitespace-nowrap shrink-0 cursor-pointer ${
+                  viewMode === 'radar'
+                    ? 'mc-btn-diamond text-[#041924]'
+                    : 'mc-btn-stone text-[#55ffff]'
+                }`}
+              >
+                {viewMode === 'radar' ? (
+                  <>
+                    <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+                    <span>Dạng Thẻ</span>
+                  </>
+                ) : (
+                  <>
+                    <MapIcon className="w-3.5 h-3.5 shrink-0" />
+                    <span>Radar 2D</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsDistanceOpen(true)}
+                className="mc-btn mc-btn-gold inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#1f1300] whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <Ruler className="w-3.5 h-3.5 shrink-0" />
+                <span>Đo khoảng cách</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsCalcOpen(true)}
+                className="mc-btn mc-btn-purpur inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-white whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <Calculator className="w-3.5 h-3.5 shrink-0" />
+                <span>Nether (÷8)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewTrash(!viewTrash)}
+                className={`mc-btn px-2.5 py-1.5 text-xs cursor-pointer inline-flex items-center justify-center gap-1 font-extrabold whitespace-nowrap shrink-0 ${
+                  viewTrash ? 'mc-btn-tnt text-white' : 'mc-btn-stone text-rose-300'
+                }`}
+              >
+                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                <span>Thùng rác ({totalTrashCount})</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* KHỐI BẢNG LỌC & TÌM KIẾM */}
+        {/* KHỐI BẢNG LỌC & TÌM KIẾM (GỌN GÀNG TRÊN ANDROID VỚI NÚT ĐÓNG/MỞ BỘ LỌC) */}
         {!viewTrash && (
-          <div className="mc-panel p-3 sm:p-4 mb-5 space-y-3 w-full overflow-hidden">
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+          <div className="mc-panel p-2.5 sm:p-3.5 mb-4 space-y-2.5 w-full overflow-hidden">
+            <div className="flex items-center gap-2">
               <div className="relative flex-1 min-w-0">
-                <Search className="w-4 h-4 text-[#55ff55] absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-[#55ff55] absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm tên địa điểm, thư mục, ghi chú, tọa độ (Ctrl+F)..."
-                  className="w-full mc-slot text-white placeholder-zinc-500 pl-9 pr-8 py-2 text-xs sm:text-sm font-mono focus:outline-none"
+                  placeholder="Tìm tên địa điểm, thư mục, tọa độ..."
+                  className="w-full mc-slot text-white placeholder-zinc-500 pl-8 pr-7 py-1.5 text-xs sm:text-sm font-mono focus:outline-none"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
 
-              {/* Cụm chọn chế độ Copy & Sắp xếp + Chuyển đổi giao diện */}
-              <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0">
+              {/* Nút bật/tắt tùy chọn lọc nâng cao trên Android */}
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className="sm:hidden mc-btn mc-btn-stone px-2.5 py-1.5 text-xs font-bold text-[#ffff55] inline-flex items-center gap-1 shrink-0 cursor-pointer"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Lọc</span>
+              </button>
+
+              {/* Trên PC hiển thị luôn Copy & Sort */}
+              <div className="hidden sm:flex items-center gap-2 shrink-0">
                 <div className="flex items-center gap-1.5 mc-slot px-2.5 py-1.5 min-w-0">
                   <span className="text-[11px] text-zinc-400 font-bold shrink-0">Copy:</span>
                   <select
                     value={copyMode}
                     onChange={(e) => setCopyMode(e.target.value)}
-                    className="bg-transparent text-xs font-extrabold text-[#55ffff] focus:outline-none cursor-pointer font-mono truncate w-full"
+                    className="bg-transparent text-xs font-extrabold text-[#55ffff] focus:outline-none cursor-pointer font-mono truncate"
                   >
                     <option value="chat" className="bg-[#141720] text-slate-100">
                       Chat ([Tên] X Y Z)
@@ -6754,7 +6708,7 @@ export default function App() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-transparent text-xs font-extrabold text-[#ffff55] focus:outline-none cursor-pointer font-mono truncate w-full"
+                    className="bg-transparent text-xs font-extrabold text-[#ffff55] focus:outline-none cursor-pointer font-mono truncate"
                   >
                     <option value="newest" className="bg-[#141720] text-slate-100">
                       Mới nhất
@@ -6770,12 +6724,12 @@ export default function App() {
               </div>
             </div>
 
-            {/* Thanh lọc Tag */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
+            {/* Thanh lọc Tag cuộn ngang gọn trên 1 dòng */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
               <button
                 type="button"
                 onClick={() => setActiveTag('all')}
-                className={`mc-btn px-2.5 py-1 text-xs font-extrabold shrink-0 cursor-pointer ${
+                className={`mc-btn px-2 py-1 text-[11px] font-extrabold shrink-0 cursor-pointer ${
                   activeTag === 'all'
                     ? 'mc-btn-gold text-[#1f1300]'
                     : 'mc-btn-stone text-zinc-300'
@@ -6791,7 +6745,7 @@ export default function App() {
                     key={tagKey}
                     type="button"
                     onClick={() => setActiveTag(isSelected ? 'all' : tagKey)}
-                    className={`mc-btn inline-flex items-center gap-1 px-2.5 py-1 text-xs font-extrabold shrink-0 cursor-pointer ${
+                    className={`mc-btn inline-flex items-center gap-1 px-2 py-1 text-[11px] font-extrabold shrink-0 cursor-pointer ${
                       isSelected
                         ? 'mc-btn-emerald text-[#041a06]'
                         : 'mc-btn-stone text-zinc-300'
@@ -6804,66 +6758,84 @@ export default function App() {
               })}
             </div>
 
-            {/* Đo khoảng cách từ vị trí người chơi & Chuyển nhanh giao diện */}
-            <div className="pt-2 border-t-2 border-black/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <label className="inline-flex items-center gap-2 cursor-pointer text-zinc-200 font-bold">
-                <input
-                  type="checkbox"
-                  checked={playerPos.enabled}
-                  onChange={(e) =>
-                    setPlayerPos((prev) => ({ ...prev, enabled: e.target.checked }))
-                  }
-                  className="w-4 h-4 accent-[#55ff55]"
-                />
-                <Navigation className="w-3.5 h-3.5 text-[#55ffff] shrink-0" />
-                <span>Đo khoảng cách từ vị trí đang đứng</span>
-              </label>
-
-              {playerPos.enabled ? (
-                <div className="flex items-center gap-1.5 flex-wrap font-mono">
-                  <input
-                    type="number"
-                    value={playerPos.x}
-                    onChange={(e) =>
-                      setPlayerPos((prev) => ({ ...prev, x: Number(e.target.value) }))
-                    }
-                    placeholder="X"
-                    className="w-16 sm:w-20 mc-slot px-2 py-1 text-xs text-[#ff5555] font-bold"
-                  />
-                  <input
-                    type="number"
-                    value={playerPos.z}
-                    onChange={(e) =>
-                      setPlayerPos((prev) => ({ ...prev, z: Number(e.target.value) }))
-                    }
-                    placeholder="Z"
-                    className="w-16 sm:w-20 mc-slot px-2 py-1 text-xs text-[#55ffff] font-bold"
-                  />
+            {/* Khối tùy chọn mở rộng (Trên PC luôn hiện, trên Android bấm nút Lọc mới bung ra để tiết kiệm diện tích) */}
+            <div className={`${showMobileFilters ? 'block' : 'hidden'} sm:block space-y-2 pt-2 border-t-2 border-black/80`}>
+              <div className="grid grid-cols-2 gap-2 sm:hidden">
+                <div className="flex items-center gap-1 mc-slot px-2 py-1.5 min-w-0">
+                  <span className="text-[10px] text-zinc-400 font-bold shrink-0">Copy:</span>
                   <select
-                    value={playerPos.dimension}
-                    onChange={(e) =>
-                      setPlayerPos((prev) => ({ ...prev, dimension: e.target.value }))
-                    }
-                    className="mc-slot px-2 py-1 text-xs text-white font-bold"
+                    value={copyMode}
+                    onChange={(e) => setCopyMode(e.target.value)}
+                    className="bg-transparent text-[11px] font-extrabold text-[#55ffff] focus:outline-none cursor-pointer font-mono truncate w-full"
                   >
-                    <option value="overworld" className="bg-[#141720]">Overworld</option>
-                    <option value="nether" className="bg-[#141720]">Nether</option>
-                    <option value="end" className="bg-[#141720]">The End</option>
+                    <option value="chat" className="bg-[#141720]">Chat</option>
+                    <option value="raw" className="bg-[#141720]">Số X Y Z</option>
+                    <option value="tp" className="bg-[#141720]">/tp @s</option>
+                    <option value="execute" className="bg-[#141720]">/execute</option>
                   </select>
                 </div>
-              ) : (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setUiStyle(uiStyle === 'mc-cards' ? 'win-folder' : 'mc-cards')
-                    }
-                    className="mc-btn mc-btn-stone px-2 py-0.5 text-[11px] text-[#fde047] font-bold cursor-pointer"
+
+                <div className="flex items-center gap-1 mc-slot px-2 py-1.5 min-w-0">
+                  <ArrowUpDown className="w-3 h-3 text-[#ffff55] shrink-0" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent text-[11px] font-extrabold text-[#ffff55] focus:outline-none cursor-pointer font-mono truncate w-full"
                   >
-                    {uiStyle === 'mc-cards'
-                      ? '📁 Đổi sang Giao diện Folder Win'
-                      : '🃏 Đổi về Giao diện Thẻ Minecraft'}
-                  </button>
+                    <option value="newest" className="bg-[#141720]">Mới nhất</option>
+                    <option value="name" className="bg-[#141720]">Tên A → Z</option>
+                    <option value="children" className="bg-[#141720]">Thư mục</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <label className="inline-flex items-center gap-2 cursor-pointer text-zinc-200 font-bold">
+                  <input
+                    type="checkbox"
+                    checked={playerPos.enabled}
+                    onChange={(e) =>
+                      setPlayerPos((prev) => ({ ...prev, enabled: e.target.checked }))
+                    }
+                    className="w-4 h-4 accent-[#55ff55]"
+                  />
+                  <Navigation className="w-3.5 h-3.5 text-[#55ffff] shrink-0" />
+                  <span>Đo khoảng cách từ vị trí đang đứng</span>
+                </label>
+
+                {playerPos.enabled ? (
+                  <div className="flex items-center gap-1.5 flex-wrap font-mono">
+                    <input
+                      type="number"
+                      value={playerPos.x}
+                      onChange={(e) =>
+                        setPlayerPos((prev) => ({ ...prev, x: Number(e.target.value) }))
+                      }
+                      placeholder="X"
+                      className="w-16 sm:w-20 mc-slot px-2 py-1 text-xs text-[#ff5555] font-bold"
+                    />
+                    <input
+                      type="number"
+                      value={playerPos.z}
+                      onChange={(e) =>
+                        setPlayerPos((prev) => ({ ...prev, z: Number(e.target.value) }))
+                      }
+                      placeholder="Z"
+                      className="w-16 sm:w-20 mc-slot px-2 py-1 text-xs text-[#55ffff] font-bold"
+                    />
+                    <select
+                      value={playerPos.dimension}
+                      onChange={(e) =>
+                        setPlayerPos((prev) => ({ ...prev, dimension: e.target.value }))
+                      }
+                      className="mc-slot px-2 py-1 text-xs text-white font-bold"
+                    >
+                      <option value="overworld" className="bg-[#141720]">Overworld</option>
+                      <option value="nether" className="bg-[#141720]">Nether</option>
+                      <option value="end" className="bg-[#141720]">The End</option>
+                    </select>
+                  </div>
+                ) : (
                   <button
                     type="button"
                     onClick={() => setFloatingBubbleVisible(!floatingBubbleVisible)}
@@ -6871,8 +6843,8 @@ export default function App() {
                   >
                     {floatingBubbleVisible ? 'Ẩn nút lưu nhanh ⚡' : 'Hiện nút lưu nhanh ⚡'}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -6889,7 +6861,7 @@ export default function App() {
             MÀN HÌNH THÙNG RÁC (HỖ TRỢ CẢ WORLD VÀ TỌA ĐỘ / THƯ MỤC)
         ========================================== */}
         {viewTrash ? (
-          <div className="mc-panel p-4 sm:p-5">
+          <div className="mc-panel p-3.5 sm:p-5">
             <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b-2 border-black flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
                 <ShieldAlert className="w-5 h-5 text-[#ff5555] shrink-0" />
@@ -6897,34 +6869,33 @@ export default function App() {
                   Thùng Rác ({totalTrashCount})
                 </h2>
 
-                {/* 2 Tab trong Thùng rác: Tọa độ/Thư mục đã xóa & World đã xóa */}
-                <div className="flex items-center gap-1 ml-2">
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => setTrashSubTab('waypoints')}
-                    className={`mc-btn px-2.5 py-1 text-xs font-black cursor-pointer ${
+                    className={`mc-btn px-2 py-1 text-xs font-black cursor-pointer ${
                       trashSubTab === 'waypoints'
                         ? 'mc-btn-gold text-[#1f1300]'
                         : 'mc-btn-stone text-zinc-300'
                     }`}
                   >
-                    Tọa độ & Thư mục ({trashedWaypoints.length})
+                    Tọa độ ({trashedWaypoints.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setTrashSubTab('worlds')}
-                    className={`mc-btn px-2.5 py-1 text-xs font-black cursor-pointer ${
+                    className={`mc-btn px-2 py-1 text-xs font-black cursor-pointer ${
                       trashSubTab === 'worlds'
                         ? 'mc-btn-gold text-[#1f1300]'
                         : 'mc-btn-stone text-zinc-300'
                     }`}
                   >
-                    World đã xóa ({trashedWorlds.length})
+                    World ({trashedWorlds.length})
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 {trashSubTab === 'waypoints' && trashedWaypoints.length > 0 && (
                   <>
                     <button
@@ -6932,7 +6903,7 @@ export default function App() {
                       onClick={handleRestoreAllWaypoints}
                       className="mc-btn mc-btn-emerald px-2.5 py-1.5 text-xs font-black text-[#041a06] cursor-pointer"
                     >
-                      Khôi phục tất cả
+                      Khôi phục hết
                     </button>
                     <button
                       type="button"
@@ -6968,16 +6939,15 @@ export default function App() {
                         key={w.id}
                         className="flex flex-col justify-between gap-2.5 p-3 mc-slot border border-rose-500/40 min-w-0"
                       >
-                        <div className="flex items-center justify-between gap-2 min-w-0">
+                        <div className="flex items-center justify-between gap-2 min-w-0 flex-wrap">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <VoxelBlockIcon type={w.icon || 'grass'} className="w-7 h-7" />
+                            <VoxelBlockIcon type={w.icon || 'grass'} className="w-6 h-6" />
                             <div className="min-w-0">
                               <h4 className="font-extrabold text-white text-sm truncate">
                                 🌍 {w.name}
                               </h4>
                               <p className="text-xs font-mono text-zinc-400 truncate">
-                                Chứa {wpCount} tọa độ / thư mục
-                                {w.seed ? ` • Seed: ${w.seed}` : ''}
+                                {wpCount} mục{w.seed ? ` • Seed: ${w.seed}` : ''}
                               </p>
                             </div>
                           </div>
@@ -6989,7 +6959,7 @@ export default function App() {
                               className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#041a06] cursor-pointer"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
-                              <span>Khôi phục World</span>
+                              <span>Khôi phục</span>
                             </button>
                             <button
                               type="button"
@@ -7002,8 +6972,8 @@ export default function App() {
                         </div>
 
                         {isConfirming && (
-                          <div className="p-2 bg-rose-950/80 border border-rose-500 flex items-center justify-between gap-2 text-xs">
-                            <span className="text-rose-200 font-bold truncate">
+                          <div className="p-2 bg-rose-950/80 border border-rose-500 flex items-center justify-between gap-2 text-xs flex-wrap">
+                            <span className="text-rose-200 font-bold">
                               Xóa vĩnh viễn World này và {wpCount} tọa độ?
                             </span>
                             <div className="flex items-center gap-1.5 shrink-0">
@@ -7040,12 +7010,12 @@ export default function App() {
                     key={wp.id}
                     className="flex items-center justify-between gap-2 p-3 mc-slot min-w-0"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <VoxelBlockIcon
                         type={wp.icon || TAG_CONFIG[wp.tag]?.defaultIcon || 'grass'}
-                        className="w-6 h-6"
+                        className="w-6 h-6 shrink-0"
                       />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <h4 className="font-extrabold text-white text-sm truncate">
                           {wp.isFolder ? '📁 ' : ''}
                           {wp.name}
@@ -7059,7 +7029,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => handleRestore(wp.id)}
-                        className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-black text-[#041a06] cursor-pointer"
+                        className="mc-btn mc-btn-emerald inline-flex items-center gap-1 px-2 py-1.5 text-xs font-black text-[#041a06] cursor-pointer"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
                         <span>Khôi phục</span>
@@ -7067,7 +7037,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => handlePermanentDelete(wp.id)}
-                        className="mc-btn mc-btn-tnt px-2.5 py-1.5 text-xs font-black text-white cursor-pointer"
+                        className="mc-btn mc-btn-tnt px-2 py-1.5 text-xs font-black text-white cursor-pointer"
                       >
                         Xóa hẳn
                       </button>
@@ -7078,7 +7048,6 @@ export default function App() {
             )}
           </div>
         ) : uiStyle === 'win-folder' ? (
-          /* GIAO DIỆN FOLDER GIỐNG WINDOWS (WINDOWS EXPLORER VIEW) */
           <WindowsExplorerView
             currentWorld={currentWorld}
             activeWaypoints={activeWaypoints}
@@ -7088,24 +7057,19 @@ export default function App() {
             currentParentId={currentParentId}
             breadcrumbTrail={breadcrumbTrail}
             copyMode={copyMode}
-            playerPos={playerPos}
             trashedCount={totalTrashCount}
             onSelectFolder={handleEnterFolder}
             onCreateFolder={(parentItem) => openCreateForm(parentItem, true)}
             onCreateWaypoint={(parentItem) => openCreateForm(parentItem, false)}
             onEdit={openEditForm}
             onSoftDelete={handleSoftDelete}
-            onTogglePin={handleTogglePin}
-            onToggleLock={handleToggleLock}
             onQuickChangeIcon={(targetWp) => setQuickIconTargetWp(targetWp)}
-            onSelectForDistance={handleSelectForDistance}
             onNotify={showToast}
             onOpenTrash={() => setViewTrash(true)}
             onOpenWorldManager={() => setIsWorldModalOpen(true)}
             onContextMenuItem={handleOpenContextMenu}
           />
         ) : (
-          /* GIAO DIỆN HIỆN TẠI (THẺ MINECRAFT) */
           <>
             {filteredWaypoints.length === 0 ? (
               <div className="mc-panel p-8 sm:p-12 text-center">
@@ -7137,7 +7101,7 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                 {filteredWaypoints.map((wp) => {
                   const parentWp = wp.parentId
                     ? activeWaypoints.find((p) => p.id === wp.parentId) || null
@@ -7172,8 +7136,8 @@ export default function App() {
         )}
       </main>
 
-      {/* THANH ĐIỀU HƯỚNG ĐÁY MÀN HÌNH DÀNH CHO ANDROID / MOBILE */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#16151e]/95 backdrop-blur-md border-t-2 border-black px-2 py-1.5 grid grid-cols-5 gap-1">
+      {/* THANH ĐIỀU HƯỚNG ĐÁY MÀN HÌNH DÀNH CHO ANDROID / MOBILE (CÓ SAFE-AREA PADDING) */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#16151e]/95 backdrop-blur-md border-t-2 border-black px-2 pt-1.5 mc-safe-bottom-nav grid grid-cols-5 gap-1">
         <button
           type="button"
           onClick={() => {
@@ -7185,7 +7149,7 @@ export default function App() {
           }`}
         >
           <LayoutGrid className="w-4 h-4 mb-0.5" />
-          <span>Thẻ MC</span>
+          <span className="truncate">Thẻ MC</span>
         </button>
 
         <button
@@ -7199,7 +7163,7 @@ export default function App() {
           }`}
         >
           <Folder className="w-4 h-4 mb-0.5" />
-          <span>Folder Win</span>
+          <span className="truncate">Folder Win</span>
         </button>
 
         <button
@@ -7208,7 +7172,7 @@ export default function App() {
           className="flex flex-col items-center justify-center py-1 rounded bg-emerald-500 text-slate-950 text-[10px] font-black cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[3] mb-0.5" />
-          <span>Thêm Mới</span>
+          <span className="truncate">Thêm Mới</span>
         </button>
 
         <button
@@ -7217,7 +7181,7 @@ export default function App() {
           className="flex flex-col items-center justify-center py-1 rounded text-[10px] font-bold text-sky-300 cursor-pointer"
         >
           <Globe className="w-4 h-4 mb-0.5" />
-          <span>World</span>
+          <span className="truncate">World</span>
         </button>
 
         <button
@@ -7228,7 +7192,7 @@ export default function App() {
           }`}
         >
           <Trash2 className="w-4 h-4 mb-0.5" />
-          <span>Rác ({totalTrashCount})</span>
+          <span className="truncate">Rác ({totalTrashCount})</span>
         </button>
       </nav>
 
@@ -7242,7 +7206,7 @@ export default function App() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="mc-panel max-w-lg w-full p-4 max-h-[88vh] overflow-y-auto"
+            className="mc-panel max-w-lg w-full p-4 max-h-[85vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-black">
               <h3 className="text-sm sm:text-base font-black text-[#55ff55] truncate mc-text-shadow">
@@ -7267,7 +7231,7 @@ export default function App() {
               />
             </div>
 
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mc-slot p-2.5 max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mc-slot p-2.5 max-h-80 overflow-y-auto">
               {MC_ICON_CATALOG.filter((ic) => {
                 const q = iconSearchQuery.trim().toLowerCase();
                 return !q || ic.label.toLowerCase().includes(q) || ic.id.toLowerCase().includes(q);
@@ -7306,7 +7270,7 @@ export default function App() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="mc-panel max-w-lg w-full p-4 sm:p-5 my-6 max-h-[90vh] overflow-y-auto"
+            className="mc-panel max-w-lg w-full p-4 sm:p-5 my-6 max-h-[88vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b-2 border-black">
               <div className="flex items-center gap-2.5 min-w-0">
@@ -7389,7 +7353,7 @@ export default function App() {
               ))}
             </div>
 
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mc-slot p-2.5 max-h-80 overflow-y-auto">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mc-slot p-2.5 max-h-72 overflow-y-auto">
               {(appIconCategoryFilter === 'Tất cả'
                 ? MC_ICON_CATALOG
                 : MC_ICON_CATALOG.filter((item) => item.category === appIconCategoryFilter)
@@ -7426,12 +7390,12 @@ export default function App() {
           MODAL 1: THÊM / SỬA TỌA ĐỘ HOẶC THƯ MỤC CON
       ========================================== */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
-          <div className="mc-panel max-w-xl w-full p-4 sm:p-5 my-6 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2.5 sm:p-4 overflow-y-auto">
+          <div className="mc-panel max-w-xl w-full p-3.5 sm:p-5 my-4 max-h-[90vh] overflow-y-auto">
             <div className="absolute top-0 left-0 right-0 h-2.5 mc-turf-overworld" />
-            <div className="flex items-center justify-between gap-2 mb-3.5 pb-2.5 pt-1 border-b-2 border-black">
-              <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2 truncate mc-text-shadow">
-                <VoxelBlockIcon type={formData.icon || 'command'} className="w-6 h-6" />
+            <div className="flex items-center justify-between gap-2 mb-3 pb-2 pt-1 border-b-2 border-black">
+              <h2 className="text-sm sm:text-lg font-black text-white flex items-center gap-2 truncate mc-text-shadow">
+                <VoxelBlockIcon type={formData.icon || 'command'} className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="truncate">
                   {editingId
                     ? 'Sửa Mục / Di Chuyển Thư Mục'
@@ -7449,8 +7413,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* Chuyển đổi Loại mục: Điểm Tọa Độ vs Thư Mục Khu Vực (Giống tạo Folder trên Win) */}
-            <div className="grid grid-cols-2 gap-2 mb-3.5">
+            <div className="grid grid-cols-2 gap-2 mb-3">
               <button
                 type="button"
                 onClick={() =>
@@ -7460,14 +7423,14 @@ export default function App() {
                     tag: prev.tag === 'Folder' ? 'Base' : prev.tag,
                   }))
                 }
-                className={`mc-btn py-2 px-3 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`mc-btn py-2 px-2 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer ${
                   !formData.isFolder
                     ? 'mc-btn-emerald text-[#041a06]'
                     : 'mc-btn-stone text-zinc-300'
                 }`}
               >
-                <Compass className="w-3.5 h-3.5" />
-                <span>📍 Điểm Tọa Độ</span>
+                <Compass className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">📍 Điểm Tọa Độ</span>
               </button>
 
               <button
@@ -7482,19 +7445,18 @@ export default function App() {
                     z: prev.z === '' ? '0' : prev.z,
                   }))
                 }
-                className={`mc-btn py-2 px-3 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`mc-btn py-2 px-2 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer ${
                   formData.isFolder
                     ? 'mc-btn-gold text-[#1f1300]'
                     : 'mc-btn-stone text-zinc-300'
                 }`}
               >
-                <Folder className="w-3.5 h-3.5" />
-                <span>📁 Thư Mục (Chứa mục con)</span>
+                <Folder className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">📁 Thư Mục</span>
               </button>
             </div>
 
-            {/* Quét OCR & Dán lệnh F3+C */}
-            <div className="mb-3.5 p-3 mc-slot space-y-2">
+            <div className="mb-3 p-2.5 mc-slot space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-xs font-extrabold text-[#55ff55] flex items-center gap-1.5">
                   <Camera className="w-3.5 h-3.5 text-[#55ff55] shrink-0" />
@@ -7549,8 +7511,7 @@ export default function App() {
               </div>
             </div>
 
-            <form onSubmit={handleSaveWaypoint} className="space-y-3.5">
-              {/* Chọn Thư mục cha (Hỗ trợ tạo thư mục nhỏ hơn trong thư mục lớn nhiều tầng, chữ được rút gọn thông minh) */}
+            <form onSubmit={handleSaveWaypoint} className="space-y-3">
               <div className="p-2.5 mc-slot border border-[#eab308]/50">
                 <label className="block text-xs font-extrabold text-[#ffff55] mb-1 flex items-center gap-1.5">
                   <FolderOpen className="w-3.5 h-3.5 text-[#ffff55] shrink-0" />
@@ -7639,7 +7600,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-extrabold uppercase text-zinc-200 mb-1">
                     Chiều không gian
@@ -7680,7 +7641,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Bảng chọn 96+ Biểu Tượng */}
               <div className="p-2.5 mc-slot space-y-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span className="text-xs font-extrabold uppercase text-[#55ff55] flex items-center gap-1.5">
@@ -7713,7 +7673,7 @@ export default function App() {
                   className="w-full bg-[#09090d] border border-zinc-700 px-2.5 py-1 text-xs font-mono text-white focus:outline-none"
                 />
 
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-44 overflow-y-auto p-1">
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-40 overflow-y-auto p-1">
                   {filteredIconsForPicker.map((ic) => {
                     const isSelected = formData.icon === ic.id;
                     return (
@@ -8168,7 +8128,7 @@ export default function App() {
       ========================================== */}
       {isWorldModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
-          <div className="mc-panel max-w-lg w-full p-4 sm:p-5 my-6 max-h-[90vh] overflow-y-auto">
+          <div className="mc-panel max-w-lg w-full p-4 sm:p-5 my-6 max-h-[88vh] overflow-y-auto">
             <div className="flex items-center justify-between gap-2 mb-3.5 pb-2 border-b-2 border-black">
               <h3 className="text-sm sm:text-base font-black text-[#55ff55] flex items-center gap-2 mc-text-shadow">
                 <VoxelBlockIcon type="grass" className="w-5 h-5" />
@@ -8183,7 +8143,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* Form tạo World mới */}
             <form onSubmit={handleCreateWorld} className="p-3 mc-slot mb-4 space-y-2.5">
               <div className="text-xs font-extrabold text-[#ffff55] uppercase">
                 + Tạo Thế Giới / Server Mới
@@ -8205,8 +8164,8 @@ export default function App() {
                   className="w-full bg-[#14141d] border border-black px-3 py-1.5 text-xs text-emerald-300 font-mono focus:outline-none"
                 />
               </div>
-              <div className="flex items-center justify-between gap-2 pt-1">
-                <div className="flex items-center gap-1.5 text-xs">
+              <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                <div className="flex items-center gap-1 text-xs">
                   <span className="text-zinc-400 font-bold">Icon:</span>
                   {['grass', 'emerald', 'totem', 'obsidian', 'diamond_ore', 'axolotl'].map(
                     (ic) => (
@@ -8234,10 +8193,9 @@ export default function App() {
               </div>
             </form>
 
-            {/* Danh sách các World đang hoạt động (Có nút xóa vào thùng rác) */}
             <div className="space-y-2 mb-4">
               <div className="text-xs font-extrabold text-white uppercase flex items-center justify-between">
-                <span>Danh sách World đang hoạt động ({activeWorlds.length})</span>
+                <span>World đang hoạt động ({activeWorlds.length})</span>
                 <span className="text-[10px] text-zinc-400 font-mono">
                   Xóa sẽ vào Thùng rác trước
                 </span>
@@ -8297,7 +8255,7 @@ export default function App() {
                               setSelectedWorldId(w.id);
                               setIsWorldModalOpen(false);
                             }}
-                            className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+                            className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
                           >
                             <VoxelBlockIcon type={w.icon || 'grass'} className="w-6 h-6 shrink-0" />
                             <div className="min-w-0 flex-1">
@@ -8361,7 +8319,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Danh sách các World trong Thùng Rác (Cho phép Khôi phục hoặc Xóa hẳn) */}
             <div className="pt-3 border-t-2 border-black space-y-2">
               <div className="text-xs font-extrabold text-rose-400 uppercase flex items-center gap-1.5">
                 <Trash2 className="w-3.5 h-3.5" />
@@ -8479,7 +8436,7 @@ export default function App() {
             <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-black">
               <h3 className="text-sm sm:text-base font-black text-[#55ff55] flex items-center gap-2 mc-text-shadow">
                 <VoxelBlockIcon type="command" className="w-5 h-5" />
-                <span>fu-WAYPOINT v2.2.0</span>
+                <span>fu-WAYPOINT v2.2.1</span>
               </h3>
               <button
                 type="button"
@@ -8493,12 +8450,11 @@ export default function App() {
             <div className="space-y-3 text-xs text-zinc-200 font-mono leading-relaxed">
               <div className="mc-slot p-2.5 space-y-1">
                 <div className="font-extrabold text-[#ffff55] uppercase">
-                  Cập nhật mới v2.2.0:
+                  Tối ưu Android & Windows v2.2.1:
                 </div>
-                <p>• Xóa World an toàn: Đưa World vào Thùng Rác trước, hỗ trợ Khôi phục hoặc Xóa hẳn.</p>
-                <p>• Tích hợp chuyển đổi Giao diện Thẻ Minecraft ⇄ Giao diện Folder giống Windows.</p>
-                <p>• Tạo thư mục con lồng nhau nhiều cấp như trên Windows, chống tràn chữ tuyệt đối.</p>
-                <p>• Bổ sung 96+ Icon Pixel, âm thanh Minecraft & thú cưng Axolotl, Gà đi dạo (có nút bật/tắt).</p>
+                <p>• Bố cục Header 2 hàng gọn gàng trên điện thoại, chống tràn ngang và cắt nút 100%.</p>
+                <p>• Hỗ trợ vùng an toàn (Safe-Area) cho tai thỏ và thanh vuốt đáy trên Android.</p>
+                <p>• Lưới 3 nút Thư mục con cân đối trên thẻ, thu gọn bộ lọc thông minh trên màn hình nhỏ.</p>
               </div>
 
               <div className="mc-slot p-2.5 space-y-1">
