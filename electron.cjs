@@ -9,7 +9,7 @@ function createWindow() {
     height: 820,
     minWidth: 400,
     minHeight: 560,
-    title: 'fu-WAYPOINT v2.2.1',
+    title: 'fu-WAYPOINT v2.2.2',
     backgroundColor: '#111015',
     autoHideMenuBar: true,
     webPreferences: {

@@ -2664,10 +2664,10 @@ const OCR_PRESETS = [
   {
     id: 'xz-2d',
     label: 'Mẫu 2 số (X Z)',
-    rawLine: '10029  2844',
-    x: 10029,
+    rawLine: '2223  556',
+    x: 2223,
     y: null,
-    z: 2844,
+    z: 556,
     dimension: 'overworld',
     suggestedName: 'Điểm Tọa Độ 2 Số (X, Z)',
     suggestedTag: 'Base',
@@ -2718,15 +2718,29 @@ const OCR_PRESETS = [
 function cleanOcrDigitString(rawToken, allowDecimal = true) {
   if (!rawToken) return '';
   let s = String(rawToken).trim();
-  // Bỏ các ký tự nhiễu đường viền (_ hoặc ~) ở đầu, chuẩn hóa các loại dấu trừ / gạch ngang
-  s = s.replace(/^[_~]+\s*/, '');
+  // Bỏ các ký tự nhiễu đường viền (_ ~ [ ] ( ) | • : ; , .) ở đầu và cuối, chuẩn hóa dấu trừ
+  s = s
+    .replace(/^[_~[\](){}<>|•:;,.]+\s*/, '')
+    .replace(/\s*[_~[\](){}<>|•:;,.]+$/, '');
   s = s.replace(/^[—–−‐‑‒―-]+\s*/, '-');
   s = s.replace(/^-\s+/, '-');
   const sign = s.startsWith('-') ? '-' : '';
   let body = s.replace(/^[-+]\s*/, '');
-  // Đảm bảo token phải có ít nhất 1 chữ số thực hoặc chữ O/o đại diện cho số 0 (tránh biến chữ cái lẻ như l, I, Z, S thành số)
-  if (!/\d/.test(body) && !/^[Oo]+$/.test(body)) return '';
-  // Sửa các chữ cái hay bị OCR đọc nhầm thành chữ số trong font Minecraft
+  if (!body) return '';
+
+  // Bắt buộc phải có ít nhất 1 chữ số thực 0-9 (Tránh biến chữ 'o', 'O', 'oo' trong văn bản/nhiễu thành số 0)
+  const realDigits = (body.match(/\d/g) || []).length;
+  if (realDigits === 0) return '';
+
+  // Trong font pixel 5x7 của Minecraft, chữ số '2' đầu dãy (VD: 2223) đôi khi bị Tesseract đọc thành 'e', và '5' (VD: 556) thành 'J'
+  body = body.replace(/^[eE](?=\d{2,})/, '2').replace(/^[jJ](?=\d{2,})/, '5');
+
+  // Loại bỏ token nếu chứa các chữ cái thông thường (tránh bắt nhầm chữ trong từ Block, Coords, Overworld...)
+  if (/[a-df-hj-km-np-rt-yA-CE-FHJ-KM-NP-RT-Y]/.test(body)) {
+    return '';
+  }
+
+  // Sửa các chữ cái hay bị OCR đọc nhầm khi đi kèm chữ số thực trong font Minecraft
   body = body
     .replace(/[OoQD]/g, '0')
     .replace(/[lI|!]/g, '1')
@@ -2734,6 +2748,7 @@ function cleanOcrDigitString(rawToken, allowDecimal = true) {
     .replace(/[Ss]/g, '5')
     .replace(/[G]/g, '6')
     .replace(/[B]/g, '8');
+
   if (allowDecimal) {
     body = body.replace(/,(\d{1,2})$/, '.$1');
     body = body.replace(/[^0-9.]/g, '');
@@ -2844,7 +2859,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
   const detectedDim = detectDimensionFromText(fullText, defaultDimension);
   const candidates = [];
 
-  const addCandidate = (x, y, z, confidence, label, rawLine) => {
+  const addCandidate = (x, y, z, confidence, label, rawLine, isExplicitlyLabeled = false) => {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
     if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) return false;
     const validY =
@@ -2853,12 +2868,34 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
         : null;
     if (validY !== null && Math.abs(validY) > 512) return false;
 
+    const rx = Math.round(x);
+    const rz = Math.round(z);
     let finalScore = confidence;
+
     if (validY !== null && validY >= -64 && validY <= 320) {
       finalScore += 3;
     }
 
-    const key = `${Math.round(x)}_${validY ?? 'none'}_${Math.round(z)}`;
+    // Ưu tiên tọa độ nhiều chữ số thực tế (VD: 2223 556) và hạ điểm các cặp số nhỏ không nhãn (VD: 0 2, 0 3 từ thông số FPS/Chunk/nhiễu viền)
+    const maxAbsXZ = Math.max(Math.abs(rx), Math.abs(rz));
+    const minAbsXZ = Math.min(Math.abs(rx), Math.abs(rz));
+    if (!isExplicitlyLabeled && validY === null) {
+      if ((rx === 0 && Math.abs(rz) < 20) || (rz === 0 && Math.abs(rx) < 20) || maxAbsXZ < 10) {
+        finalScore -= 28;
+      } else if (maxAbsXZ >= 100 && minAbsXZ >= 10) {
+        finalScore += 4;
+      } else if (maxAbsXZ >= 25) {
+        finalScore += 2;
+      }
+    } else if (maxAbsXZ >= 100) {
+      if (!isExplicitlyLabeled && rx === 0 && validY !== null && Math.abs(validY) < 10) {
+        finalScore -= 12;
+      } else {
+        finalScore += 2;
+      }
+    }
+
+    const key = `${rx}_${validY ?? 'none'}_${rz}`;
     const existing = candidates.find((c) => c.key === key);
     if (existing) {
       if (finalScore > existing.confidence) {
@@ -2870,9 +2907,9 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
     }
     candidates.push({
       key,
-      x: Math.round(x),
+      x: rx,
       y: validY,
-      z: Math.round(z),
+      z: rz,
       dimension: detectedDim,
       confidence: finalScore,
       label,
@@ -2881,12 +2918,13 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
     return true;
   };
 
-  const digitCore = `(?:[0-9OolISBGZzQD]*\\d[0-9OolISBGZzQD]*|[Oo0]+)`;
+  // Bắt buộc mỗi cụm số phải chứa ít nhất 1 chữ số thực \d (không bao giờ bắt chữ 'o'/'O' đơn lẻ thành số 0)
+  const digitCore = `(?:(?=[0-9OolISBGZzQDeEjJ]*\\d)[0-9OolISBGZzQDeEjJ]+)`;
   const numPat = `[—–−‐‑‒―\\-+]?\\s*${digitCore}(?:\\.${digitCore})?`;
   const intPat = `[—–−‐‑‒―\\-+]?\\s*${digitCore}`;
   const sepPat = `(?:\\s*[,;/|:]\\s*|\\s*\\.\\s+|\\s+)`;
   const pairSepPat = `(?:\\s*[,;/|:]\\s*|\\s+[—–−\\-]\\s+|\\s+)`;
-  const labelSepPat = `(?:\\s*[:=.;]\\s*|\\s+[—–−\\-]\\s+|\\s*)`;
+  const labelSepPat = `(?:\\s*[:=.;]\\s*|\\s+[—–−\\-]\\s+|\\s+)`;
 
   const LINE_BREAK = String.fromCharCode(10);
   const CARRIAGE_RETURN = String.fromCharCode(13);
@@ -2914,7 +2952,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(blockMatch[2], false, 'y');
       const z = parseSingleCoordVal(blockMatch[3], false, 'z');
       if (x !== null && y !== null && z !== null) {
-        if (addCandidate(x, y, z, 100, 'Java F3 (Block)', line)) {
+        if (addCandidate(x, y, z, 100, 'Java F3 (Block)', line, true)) {
           matchedTripletOnLine = true;
         }
       }
@@ -2932,7 +2970,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(xyzMatch[2], true, 'y');
       const z = parseSingleCoordVal(xyzMatch[3], true, 'z');
       if (x !== null && y !== null && z !== null) {
-        if (addCandidate(x, y, z, 99, 'Java F3 (XYZ)', line)) {
+        if (addCandidate(x, y, z, 99, 'Java F3 (XYZ)', line, true)) {
           matchedTripletOnLine = true;
         }
       }
@@ -2941,7 +2979,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
     // 3. Bedrock / MCPE Position: 120, 68, -500 / Vị trí: / Tọa độ: (3 số)
     const posMatch = line.match(
       new RegExp(
-        `(?:P[o0]s[i1l]t[i1l][o0]n|[o0]s[i1l]t[i1l][o0]n|t[i1l][o0]n|Pos|V[iị]\\s*tr[ií]|T[oọ]a\\s*[dđ][oộ]|Coords?)${labelSepPat}(${intPat})${sepPat}(${intPat})${sepPat}(${intPat})`,
+        `(?:^|\\b)(?:P[o0]s[i1l]t[i1l][o0]n|Pos|V[iị]\\s*tr[ií]|T[oọ]a\\s*[dđ][oộ]|Coords?|Location)${labelSepPat}(${intPat})${sepPat}(${intPat})${sepPat}(${intPat})`,
         'i'
       )
     );
@@ -2950,7 +2988,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(posMatch[2], false, 'y');
       const z = parseSingleCoordVal(posMatch[3], false, 'z');
       if (x !== null && y !== null && z !== null) {
-        if (addCandidate(x, y, z, 98, 'MCPE / Bedrock (Position)', line)) {
+        if (addCandidate(x, y, z, 98, 'MCPE / Bedrock (Position)', line, true)) {
           matchedTripletOnLine = true;
         }
       }
@@ -2976,7 +3014,8 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
             z,
             96,
             y === null ? 'Tọa độ 2 số (X/Z)' : 'Tọa độ X/Y/Z',
-            line
+            line,
+            true
           )
         ) {
           matchedTripletOnLine = true;
@@ -3003,7 +3042,8 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
             z,
             95,
             y === null ? 'Tọa độ 2 số (X ~ Z)' : 'Lệnh /tp',
-            line
+            line,
+            true
           )
         ) {
           matchedTripletOnLine = true;
@@ -3023,7 +3063,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(targetBlockMatch[2], false, 'y');
       const z = parseSingleCoordVal(targetBlockMatch[3], false, 'z');
       if (x !== null && y !== null && z !== null) {
-        if (addCandidate(x, y, z, 91, 'Khối đang nhìn (F3)', line)) {
+        if (addCandidate(x, y, z, 91, 'Khối đang nhìn (F3)', line, true)) {
           matchedTripletOnLine = true;
         }
       }
@@ -3037,15 +3077,15 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const x = parseSingleCoordVal(explicitXz[1], false, 'x');
       const z = parseSingleCoordVal(explicitXz[2], false, 'z');
       if (x !== null && z !== null) {
-        addCandidate(x, null, z, 96, 'Tọa độ 2 số (X/Z)', line);
+        addCandidate(x, null, z, 96, 'Tọa độ 2 số (X/Z)', line, true);
       }
     }
 
-    // 7B. Nhãn Position / Pos / XZ / Tọa độ / Block chỉ có 2 số X và Z (VD: Position: 10029 2844, XZ: 10029 2844)
+    // 7B. Nhãn Position / Pos / XZ / Tọa độ / Block chỉ có 2 số X và Z (VD: Position: 2223 556, XZ: 2223 556)
     if (!matchedTripletOnLine) {
       const labeledPair = line.match(
         new RegExp(
-          `(?:P[o0]s[i1l]t[i1l][o0]n|[o0]s[i1l]t[i1l][o0]n|t[i1l][o0]n|Pos|X\\s*[/|,•-]?\\s*Z|XYZ|Block|B1ock|Bl0ck|Coords?|V[iị]\\s*tr[ií]|T[oọ]a\\s*[dđ][oộ])${labelSepPat}[[(]?\\s*(${numPat})${pairSepPat}(${numPat})\\s*[\\])]?`,
+          `(?:^|\\b)(?:P[o0]s[i1l]t[i1l][o0]n|Pos|X\\s*[/|,•-]?\\s*Z|XYZ|Block|B1ock|Bl0ck|Coords?|Location|V[iị]\\s*tr[ií]|T[oọ]a\\s*[dđ][oộ])${labelSepPat}[[(]?\\s*(${numPat})${pairSepPat}(${numPat})\\s*[\\])]?`,
           'i'
         )
       );
@@ -3053,7 +3093,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
         const x = parseSingleCoordVal(labeledPair[1], false, 'x');
         const z = parseSingleCoordVal(labeledPair[2], false, 'z');
         if (x !== null && z !== null) {
-          addCandidate(x, null, z, 96, 'Tọa độ 2 số (X, Z)', line);
+          addCandidate(x, null, z, 96, 'Tọa độ 2 số (X, Z)', line, true);
         }
       }
     }
@@ -3102,7 +3142,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
 
     // 10. Bộ 3 số cách nhau bởi khoảng trắng trên dòng gọn
     const spaceTriplet = line.match(
-      new RegExp(`^[[(]?\\s*(${intPat})\\s+(${intPat})\\s+(${intPat})\\s*[\\])]?$`)
+      new RegExp(`^[[(]?\\s*(${numPat})\\s+(${numPat})\\s+(${numPat})\\s*[\\])]?$`)
     );
     if (spaceTriplet) {
       const x = parseSingleCoordVal(spaceTriplet[1], false, 'x');
@@ -3115,7 +3155,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       }
     }
 
-    // 11. NHẬN DIỆN TỌA ĐỘ 2 SỐ CHỈ CÓ X VÀ Z (VD: "10029  2844", "10029 2844", "10029, 2844", "10029 / 2844", "[10029 2844]")
+    // 11. NHẬN DIỆN TỌA ĐỘ 2 SỐ CHỈ CÓ X VÀ Z (VD: "2223 556", "10029  2844", "2223, 556")
     if (!matchedTripletOnLine) {
       const cleanPairMatch = line.match(
         new RegExp(
@@ -3135,11 +3175,12 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
         }
       }
 
-      // 11B. Dòng có đúng 2 con số kèm chữ hoặc ký tự nhiễu viền OCR (VD: "| 10029  2844 l", "Base 10029 2844")
-      const lineNumMatches = line.match(new RegExp(numPat, 'g')) || [];
-      const parsedLineNums = lineNumMatches
+      // 11B. Tách các token độc lập trên dòng (Không bao giờ tách chữ 'o' nằm trong từ tiếng Anh/Việt)
+      const rawTokens = line.split(/[\s,;/|[\](){}<>•:=]+/).filter(Boolean);
+      const parsedLineNums = rawTokens
         .map((t) => parseSingleCoordVal(t, false))
         .filter((n) => n !== null);
+
       if (parsedLineNums.length === 2) {
         addCandidate(
           parsedLineNums[0],
@@ -3149,22 +3190,35 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
           'Tọa độ 2 số (X, Z)',
           line
         );
-      } else {
-        const inlinePairMatch = line.match(
-          new RegExp(`(?:^|[^0-9.,-])(${numPat})${pairSepPat}(${numPat})(?:$|[^0-9.,])`)
-        );
-        if (inlinePairMatch) {
-          const x = parseSingleCoordVal(inlinePairMatch[1], false, 'x');
-          const z = parseSingleCoordVal(inlinePairMatch[2], false, 'z');
-          if (x !== null && z !== null) {
-            addCandidate(x, null, z, 85, 'Tọa độ 2 số (X, Z)', line);
+      } else if (parsedLineNums.length >= 3) {
+        let addedValidTriplet = false;
+        for (let i = 0; i <= parsedLineNums.length - 3; i++) {
+          const cx = parsedLineNums[i];
+          const cy = parsedLineNums[i + 1];
+          const cz = parsedLineNums[i + 2];
+          if (cy >= -64 && cy <= 320 && (Math.abs(cx) >= 20 || Math.abs(cz) >= 20)) {
+            if (addCandidate(cx, cy, cz, 86, 'Bộ 3 số (X, Y, Z)', line)) {
+              addedValidTriplet = true;
+            }
+          }
+        }
+        if (!addedValidTriplet || parsedLineNums.length >= 4) {
+          for (let i = 0; i < parsedLineNums.length - 1; i++) {
+            addCandidate(
+              parsedLineNums[i],
+              null,
+              parsedLineNums[i + 1],
+              88,
+              'Tọa độ 2 số (X, Z)',
+              line
+            );
           }
         }
       }
     }
   }
 
-  // 12. Quét cặp dòng liên tiếp (Khi khoảng trắng giữa X và Z rộng khiến OCR tách thành 2 dòng "10029\n2844", hoặc HUD xếp dọc X / Z)
+  // 12. Quét cặp dòng liên tiếp (Khi khoảng trắng giữa X và Z rộng khiến OCR tách thành 2 dòng hoặc HUD xếp dọc X / Z)
   for (let i = 0; i < lines.length - 1; i++) {
     const l1 = lines[i];
     const l2 = lines[i + 1];
@@ -3190,7 +3244,8 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
             z,
             hasExplicitLabels ? 94 : 85,
             'Tọa độ 3 dòng (X/Y/Z)',
-            `${l1} ${l2} ${l3}`
+            `${l1} ${l2} ${l3}`,
+            hasExplicitLabels
           );
         }
       }
@@ -3202,12 +3257,12 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
     const mZ2 = l2.match(
       new RegExp(`^(?:Z\\s*[:=.]?\\s*)?[[(]?\\s*(${numPat})\\s*[\\])]?$`, 'i')
     );
-    if (mX2 && mZ2 && !/^y\\s*[:=.]/i.test(l2)) {
+    if (mX2 && mZ2 && !/^y\s*[:=.]/i.test(l2)) {
       const x = parseSingleCoordVal(mX2[1], false, 'x');
       const z = parseSingleCoordVal(mZ2[1], false, 'z');
       const hasXzLabels = /^x/i.test(l1) && /^z/i.test(l2);
       if (x !== null && z !== null) {
-        addCandidate(x, null, z, hasXzLabels ? 95 : 88, 'Tọa độ 2 số (X Z)', `${l1}  ${l2}`);
+        addCandidate(x, null, z, hasXzLabels ? 95 : 88, 'Tọa độ 2 số (X Z)', `${l1}  ${l2}`, hasXzLabels);
       }
     }
   }
@@ -3231,7 +3286,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       } else if (nums.length >= 3) {
         let foundValidTriplet = false;
         for (let i = 0; i <= nums.length - 3; i++) {
-          if (nums[i + 1] >= -64 && nums[i + 1] <= 320) {
+          if (nums[i + 1] >= -64 && nums[i + 1] <= 320 && (Math.abs(nums[i]) >= 20 || Math.abs(nums[i + 2]) >= 20)) {
             addCandidate(
               nums[i],
               nums[i + 1],
@@ -3245,14 +3300,16 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
           }
         }
         if (!foundValidTriplet) {
-          addCandidate(
-            nums[0],
-            null,
-            nums[1],
-            78,
-            'Tọa độ 2 số (X, Z)',
-            fullText.replace(/\s+/g, ' ').slice(0, 80)
-          );
+          for (let i = 0; i < nums.length - 1; i++) {
+            addCandidate(
+              nums[i],
+              null,
+              nums[i + 1],
+              78,
+              'Tọa độ 2 số (X, Z)',
+              fullText.replace(/\s+/g, ' ').slice(0, 80)
+            );
+          }
         }
       }
     }
@@ -3276,6 +3333,438 @@ function loadImageElementFromSource(src) {
   });
 }
 
+// ==========================================
+// 1C. BỘ NHẬN DIỆN CHỮ SỐ CẤU TRÚC & BITMAP TRỰC TIẾP TRÊN CANVAS (CHUẨN HÓA DÒNG 21PX + TEMPLATE MATCHING)
+// ==========================================
+const MC_DIGIT_BITMAPS = {
+  '0': [' ### ', '#   #', '#  ##', '# # #', '##  #', '#   #', ' ### '],
+  '1': ['  #  ', ' ##  ', '  #  ', '  #  ', '  #  ', '  #  ', ' ### '],
+  '2': [' ### ', '#   #', '    #', '  ## ', ' #   ', '#    ', '#####'],
+  '3': [' ### ', '#   #', '    #', '  ## ', '    #', '#   #', ' ### '],
+  '4': ['   # ', '  ## ', ' # # ', '#  # ', '#####', '   # ', '   # '],
+  '5': ['#####', '#    ', '#### ', '    #', '    #', '#   #', ' ### '],
+  '6': ['  ## ', ' #   ', '#    ', '#### ', '#   #', '#   #', ' ### '],
+  '7': ['#####', '    #', '   # ', '  #  ', ' #   ', ' #   ', ' #   '],
+  '8': [' ### ', '#   #', '#   #', ' ### ', '#   #', '#   #', ' ### '],
+  '9': [' ### ', '#   #', '#   #', ' ####', '    #', '   # ', ' ##  '],
+};
+
+const STD_DIGIT_BITMAPS = {
+  '0': ['  ###  ', ' ## ## ', '##   ##', '##   ##', '##   ##', '##   ##', '##   ##', ' ## ## ', '  ###  '],
+  '1': ['   ##  ', ' ####  ', '   ##  ', '   ##  ', '   ##  ', '   ##  ', '   ##  ', '   ##  ', ' ######'],
+  '2': [' ##### ', '##   ##', '     ##', '    ## ', '   ##  ', '  ##   ', ' ##    ', '##     ', '#######'],
+  '3': [' ##### ', '##   ##', '     ##', '  #### ', '     ##', '     ##', '     ##', '##   ##', ' ##### '],
+  '4': ['    ## ', '   ### ', '  #### ', ' ## ## ', '##  ## ', '#######', '    ## ', '    ## ', '    ## '],
+  '5': ['#######', '##     ', '##     ', '###### ', '     ##', '     ##', '     ##', '##   ##', ' ##### '],
+  '6': ['  #### ', ' ##    ', '##     ', '###### ', '##   ##', '##   ##', '##   ##', '##   ##', ' ##### '],
+  '7': ['#######', '     ##', '    ## ', '   ##  ', '   ##  ', '  ##   ', '  ##   ', ' ##    ', ' ##    '],
+  '8': [' ##### ', '##   ##', '##   ##', ' ##### ', '##   ##', '##   ##', '##   ##', '##   ##', ' ##### '],
+  '9': [' ##### ', '##   ##', '##   ##', '##   ##', ' ######', '     ##', '     ##', ' ##  ##', '  #### '],
+};
+
+const SANS_DIGIT_BITMAPS = {
+  '0': [' ##### ', '##   ##', '##   ##', '##   ##', '##   ##', '##   ##', ' ##### '],
+  '1': ['  ## ', ' ### ', '  ## ', '  ## ', '  ## ', '  ## ', '  ## '],
+  '2': [' ##### ', '##   ##', '    ## ', '   ##  ', '  ##   ', ' ##    ', '#######'],
+  '3': [' ##### ', '##   ##', '     ##', '  #### ', '     ##', '##   ##', ' ##### '],
+  '4': ['   ### ', '  #### ', ' ## ## ', '##  ## ', '#######', '    ## ', '    ## '],
+  '5': ['#######', '##     ', '###### ', '     ##', '     ##', '##   ##', ' ##### '],
+  '6': [' ##### ', '##     ', '###### ', '##   ##', '##   ##', '##   ##', ' ##### '],
+  '7': ['#######', '     ##', '    ## ', '   ##  ', '  ##   ', '  ##   ', '  ##   '],
+  '8': [' ##### ', '##   ##', ' ##### ', '##   ##', '##   ##', '##   ##', ' ##### '],
+  '9': [' ##### ', '##   ##', '##   ##', ' ######', '     ##', '##   ##', ' ##### '],
+};
+
+const DIGIT_GRID_W = 12;
+const DIGIT_GRID_H = 16;
+
+function resampleBinaryBoxToGrid(mask, stride, bx0, by0, bw, bh) {
+  const grid = new Float32Array(DIGIT_GRID_W * DIGIT_GRID_H);
+  for (let gy = 0; gy < DIGIT_GRID_H; gy++) {
+    const y0 = by0 + Math.floor((gy * bh) / DIGIT_GRID_H);
+    const y1 = Math.max(y0 + 1, by0 + Math.floor(((gy + 1) * bh) / DIGIT_GRID_H));
+    for (let gx = 0; gx < DIGIT_GRID_W; gx++) {
+      const x0 = bx0 + Math.floor((gx * bw) / DIGIT_GRID_W);
+      const x1 = Math.max(x0 + 1, bx0 + Math.floor(((gx + 1) * bw) / DIGIT_GRID_W));
+      let sum = 0;
+      let count = 0;
+      for (let y = y0; y < y1; y++) {
+        const rowOff = y * stride;
+        for (let x = x0; x < x1; x++) {
+          sum += mask[rowOff + x];
+          count++;
+        }
+      }
+      grid[gy * DIGIT_GRID_W + gx] = count > 0 ? sum / count : 0;
+    }
+  }
+  return grid;
+}
+
+function buildPatternGrid(rows) {
+  const bh = rows.length;
+  const bw = rows[0].length;
+  const mask = new Uint8Array(bw * bh);
+  for (let y = 0; y < bh; y++) {
+    for (let x = 0; x < bw; x++) {
+      mask[y * bw + x] = rows[y][x] === '#' ? 1 : 0;
+    }
+  }
+  return resampleBinaryBoxToGrid(mask, bw, 0, 0, bw, bh);
+}
+
+let cachedDigitTemplates = null;
+function getDigitTemplates() {
+  if (cachedDigitTemplates) return cachedDigitTemplates;
+  const map = {};
+  for (const d of '0123456789') {
+    map[d] = [
+      buildPatternGrid(MC_DIGIT_BITMAPS[d]),
+      buildPatternGrid(STD_DIGIT_BITMAPS[d]),
+      buildPatternGrid(SANS_DIGIT_BITMAPS[d]),
+    ];
+  }
+  if (typeof document !== 'undefined') {
+    try {
+      const c = document.createElement('canvas');
+      c.width = 64;
+      c.height = 64;
+      const ctx = c.getContext('2d');
+      for (const fontSpec of ['bold 28px monospace', 'bold 28px sans-serif', '28px monospace']) {
+        for (const d of '0123456789') {
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, 64, 64);
+          ctx.font = fontSpec;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(d, 10, 42);
+          const id = ctx.getImageData(0, 0, 64, 64).data;
+          const m = new Uint8Array(64 * 64);
+          let minX = 64;
+          let minY = 64;
+          let maxX = -1;
+          let maxY = -1;
+          for (let y = 0; y < 64; y++) {
+            for (let x = 0; x < 64; x++) {
+              if (id[(y * 64 + x) * 4] > 120) {
+                m[y * 64 + x] = 1;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+          }
+          if (maxX >= minX && maxY >= minY) {
+            map[d].push(
+              resampleBinaryBoxToGrid(m, 64, minX, minY, maxX - minX + 1, maxY - minY + 1)
+            );
+          }
+        }
+      }
+    } catch {
+      // Ignore template canvas errors
+    }
+  }
+  cachedDigitTemplates = map;
+  return map;
+}
+
+function zoneMean(grid, x0, x1, y0, y1) {
+  let sum = 0;
+  let count = 0;
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      sum += grid[y * DIGIT_GRID_W + x];
+      count++;
+    }
+  }
+  return count > 0 ? sum / count : 0;
+}
+
+function classifySingleDigitBox(mask, stride, bx0, by0, bw, bh) {
+  if (bh < 4 || bw < 1) return { digit: null, score: 0 };
+  const aspect = bw / bh;
+  const grid = resampleBinaryBoxToGrid(mask, stride, bx0, by0, bw, bh);
+  const totalFill = zoneMean(grid, 0, DIGIT_GRID_W, 0, DIGIT_GRID_H);
+
+  if (aspect < 0.37 && totalFill > 0.32) {
+    return { digit: '1', score: 0.88 };
+  }
+
+  const topBar = zoneMean(grid, 2, 10, 0, 3);
+  const botBar = zoneMean(grid, 1, 11, 13, 16);
+  const midBar = zoneMean(grid, 2, 10, 6, 10);
+  const ul = zoneMean(grid, 0, 4, 3, 7);
+  const ur = zoneMean(grid, 8, 12, 3, 7);
+  const ll = zoneMean(grid, 0, 4, 9, 13);
+  const lr = zoneMean(grid, 8, 12, 9, 13);
+  const midOuterWalls = 0.5 * (zoneMean(grid, 0, 2, 6, 10) + zoneMean(grid, 10, 12, 6, 10));
+  const midCenterCore = zoneMean(grid, 3, 9, 7, 9);
+
+  const templates = getDigitTemplates();
+  const scores = {};
+  const rawSims = {};
+
+  for (const d of '0123456789') {
+    let bestSim = -1;
+    for (const t of templates[d]) {
+      let inter = 0;
+      let union = 1e-5;
+      let diff = 0;
+      for (let i = 0; i < DIGIT_GRID_W * DIGIT_GRID_H; i++) {
+        const gv = grid[i];
+        const tv = t[i];
+        inter += gv < tv ? gv : tv;
+        union += gv > tv ? gv : tv;
+        diff += Math.abs(gv - tv);
+      }
+      const iou = inter / union;
+      const corr = 1 - diff / (DIGIT_GRID_W * DIGIT_GRID_H);
+      const sim = 0.55 * iou + 0.45 * corr;
+      if (sim > bestSim) bestSim = sim;
+    }
+    rawSims[d] = bestSim;
+    scores[d] = bestSim;
+  }
+
+  // Đặc trưng cấu trúc hình học giúp phân biệt tuyệt đối 2, 3, 5, 6, 0, 8, 9:
+  scores['2'] += 0.16 * (ur - ul) + 0.18 * (ll - lr) + 0.08 * botBar;
+  scores['3'] += 0.16 * (ur - ul) + 0.18 * (lr - ll) + 0.06 * midBar;
+  scores['5'] += 0.20 * (ul - ur) + 0.18 * (lr - ll) + 0.06 * topBar;
+  scores['6'] += 0.20 * (ul - ur) + 0.12 * (ll - ur);
+  scores['9'] += 0.18 * (lr - ll) + 0.12 * (ul - ll);
+  scores['0'] += 0.14 * Math.min(ul, ur, ll, lr) + 0.12 * (midOuterWalls - midCenterCore * 0.6);
+  scores['8'] += 0.10 * Math.min(ul, ur, ll, lr) + 0.12 * (midCenterCore - midOuterWalls * 0.4);
+
+  let bestD = '0';
+  let bestScore = -999;
+  for (const d of '0123456789') {
+    if (scores[d] > bestScore) {
+      bestScore = scores[d];
+      bestD = d;
+    }
+  }
+  return { digit: bestD, score: rawSims[bestD] };
+}
+
+function findSplitColumns(mask, W, bx0, by0, bw, bh, nParts) {
+  const splits = [bx0];
+  const searchRadius = Math.max(2, Math.floor((bw / nParts) * 0.28));
+  for (let k = 1; k < nParts; k++) {
+    const targetX = bx0 + Math.floor((k * bw) / nParts);
+    let bestX = targetX;
+    let minInk = 1e9;
+    const lo = Math.max(bx0 + 2, targetX - searchRadius);
+    const hi = Math.min(bx0 + bw - 2, targetX + searchRadius);
+    for (let x = lo; x <= hi; x++) {
+      let colInk = 0;
+      for (let y = by0; y < by0 + bh; y++) {
+        colInk += mask[y * W + x];
+      }
+      if (colInk < minInk) {
+        minInk = colInk;
+        bestX = x;
+      }
+    }
+    splits.push(bestX);
+  }
+  splits.push(bx0 + bw);
+  return splits;
+}
+
+function isSlashBox(mask, W, b, capH) {
+  if (b.h < capH * 0.85 || b.w < capH * 0.25) return false;
+  const grid = resampleBinaryBoxToGrid(mask, W, b.x0, b.y0, b.w, b.h);
+  const ul = zoneMean(grid, 0, 4, 0, 5);
+  const lr = zoneMean(grid, 8, 12, 11, 16);
+  const ur = zoneMean(grid, 8, 12, 0, 5);
+  const ll = zoneMean(grid, 0, 4, 11, 16);
+  return ul < 0.12 && lr < 0.12 && ur > 0.28 && ll > 0.28;
+}
+
+function recognizeSingleBinaryRow(mask, W, rowY0, rowY1, colX0 = 0, colX1 = W) {
+  const rowH = rowY1 - rowY0;
+  if (rowH < 5) return '';
+
+  const runs = [];
+  let inRun = false;
+  let rx0 = colX0;
+  for (let x = colX0; x < colX1; x++) {
+    let colSum = 0;
+    for (let y = rowY0; y < rowY1; y++) {
+      colSum += mask[y * W + x];
+    }
+    if (colSum > 0 && !inRun) {
+      inRun = true;
+      rx0 = x;
+    } else if (colSum === 0 && inRun) {
+      inRun = false;
+      runs.push([rx0, x]);
+    }
+  }
+  if (inRun) runs.push([rx0, colX1]);
+  if (runs.length === 0) return '';
+
+  const boxes = [];
+  for (const [x0, x1] of runs) {
+    let minY = rowY1;
+    let maxY = rowY0 - 1;
+    let vRuns = 0;
+    let inV = false;
+    let totalInk = 0;
+    for (let y = rowY0; y < rowY1; y++) {
+      let rowInk = 0;
+      for (let x = x0; x < x1; x++) {
+        rowInk += mask[y * W + x];
+      }
+      totalInk += rowInk;
+      if (rowInk > 0) {
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        if (!inV) {
+          inV = true;
+          vRuns++;
+        }
+      } else if (inV) {
+        inV = false;
+      }
+    }
+    if (maxY < minY) continue;
+    const bw = x1 - x0;
+    const bh = maxY - minY + 1;
+    const fill = totalInk / Math.max(1, bw * bh);
+    const isColon = vRuns === 2 && bw <= Math.max(6, rowH * 0.45) && fill < 0.78;
+    boxes.push({
+      x0,
+      x1,
+      y0: minY,
+      y1: maxY + 1,
+      w: bw,
+      h: bh,
+      cy: (minY + maxY + 1) / 2,
+      isColon,
+      fill,
+    });
+  }
+
+  if (boxes.length === 0) return '';
+
+  const tallHeights = boxes
+    .filter((b) => !b.isColon && b.h >= 5)
+    .map((b) => b.h)
+    .sort((a, b) => b - a);
+  if (tallHeights.length === 0) return '';
+  const capH = tallHeights[Math.min(tallHeights.length - 1, Math.floor(tallHeights.length * 0.35))];
+  const rowMidY = (rowY0 + rowY1) / 2;
+
+  const charGapThresh = Math.max(3.5, capH * 0.30);
+  const minusGapThresh = Math.max(5.5, capH * 0.68);
+  const isMinusBox = (b) =>
+    b.h <= capH * 0.42 &&
+    b.w >= Math.max(3, capH * 0.22) &&
+    b.w <= capH * 1.1 &&
+    Math.abs(b.cy - rowMidY) <= capH * 0.36;
+  const isDotBox = (b) =>
+    b.h <= capH * 0.40 &&
+    b.w <= capH * 0.40 &&
+    b.y1 >= rowY0 + rowH * 0.65 &&
+    b.y1 <= rowY0 + rowH * 1.05;
+
+  const tokens = [];
+  let curr = [boxes[0]];
+  for (let i = 0; i < boxes.length - 1; i++) {
+    const gap = boxes[i + 1].x0 - boxes[i].x1;
+    const isColonJoin = boxes[i + 1].isColon && gap <= capH * 0.85;
+    const isDotJoin = (isDotBox(boxes[i]) || isDotBox(boxes[i + 1])) && gap <= capH * 0.52;
+    const limit = isColonJoin
+      ? capH * 0.85
+      : isDotJoin
+      ? capH * 0.52
+      : isMinusBox(boxes[i])
+      ? minusGapThresh
+      : charGapThresh;
+    if (gap <= limit) {
+      curr.push(boxes[i + 1]);
+    } else {
+      tokens.push(curr);
+      curr = [boxes[i + 1]];
+    }
+  }
+  tokens.push(curr);
+
+  const outTokens = [];
+  for (const tok of tokens) {
+    if (tok.some((b) => b.isColon)) {
+      continue;
+    }
+    if (tok.length === 1 && isSlashBox(mask, W, tok[0], capH)) {
+      continue;
+    }
+
+    let chars = '';
+    let simSum = 0;
+    let digitCount = 0;
+    let validToken = true;
+    let hitBracket = false;
+
+    for (let bi = 0; bi < tok.length; bi++) {
+      const b = tok[bi];
+      if (isMinusBox(b) && chars.length === 0) {
+        chars += '-';
+        continue;
+      }
+      if (b.h <= capH * 0.45 && b.y1 >= rowY0 + rowH * 0.62 && b.w <= capH * 0.45) {
+        if (bi < tok.length - 1) chars += '.';
+        continue;
+      }
+      if (b.h >= capH * 1.12 && outTokens.length >= 2) {
+        hitBracket = true;
+        validToken = false;
+        break;
+      }
+      if (b.h < capH * 0.78 || b.h > capH * 1.18) {
+        validToken = false;
+        break;
+      }
+      if (b.w > capH * 0.98) {
+        const nParts = Math.max(2, Math.round(b.w / (capH * 0.62)));
+        const splits = findSplitColumns(mask, W, b.x0, b.y0, b.w, b.h, nParts);
+        for (let k = 0; k < nParts; k++) {
+          const sx0 = splits[k];
+          const sx1 = Math.max(sx0 + 1, splits[k + 1]);
+          const { digit, score } = classifySingleDigitBox(mask, W, sx0, b.y0, sx1 - sx0, b.h);
+          if (digit && score >= 0.54) {
+            chars += digit;
+            simSum += score;
+            digitCount++;
+          } else {
+            validToken = false;
+            break;
+          }
+        }
+        if (!validToken) break;
+      } else {
+        const { digit, score } = classifySingleDigitBox(mask, W, b.x0, b.y0, b.w, b.h);
+        if (digit && score >= 0.54) {
+          chars += digit;
+          simSum += score;
+          digitCount++;
+        } else {
+          validToken = false;
+          break;
+        }
+      }
+    }
+
+    if (hitBracket) break;
+    if (validToken && digitCount > 0 && simSum / digitCount >= 0.58) {
+      outTokens.push(chars.replace(/\.+$/, ''));
+    }
+  }
+
+  return outTokens.length >= 2 ? outTokens.join(' ') : '';
+}
+
 // Tạo các bản ảnh tiền xử lý chuyên biệt cho font Minecraft HUD & ảnh chụp màn hình qua điện thoại
 function buildPreprocessedOcrCanvases(img, cropRect = { x: 0, y: 0, w: 1, h: 1 }) {
   const natW = img.naturalWidth || img.width || 640;
@@ -3291,25 +3780,35 @@ function buildPreprocessedOcrCanvases(img, cropRect = { x: 0, y: 0, w: 1, h: 1 }
   const sw = Math.max(16, Math.round(cw * natW));
   const sh = Math.max(16, Math.round(ch * natH));
 
-  // Phóng đại vùng ảnh nhỏ (upscale 2x - 3x) để chữ tọa độ đủ lớn cho AI OCR đọc chuẩn dấu trừ (-)
-  const targetWidth = sw < 700 ? Math.min(1800, Math.round(sw * 2.6)) : Math.min(1920, Math.max(1200, sw));
-  const scale = targetWidth / sw;
-  const pad = 24;
-  const outW = Math.round(sw * scale) + pad * 2;
-  const outH = Math.round(sh * scale) + pad * 2;
+  // Tỷ lệ phóng đại thông minh: tránh phóng quá to các vùng cắt nhỏ khiến chữ pixel bị vỡ bậc thang
+  let scale = 1.0;
+  if (sh <= 85 && sw <= 650) {
+    scale = Math.max(1.2, Math.min(2.8, 64 / sh));
+  } else if (sw < 700) {
+    scale = Math.min(2.2, Math.max(1.2, 840 / sw));
+  } else {
+    scale = Math.min(1.8, Math.max(1.0, 1440 / sw));
+  }
 
-  // 1. Canvas Tăng Tương Phản & Làm Nét (Auto-Levels Contrast Stretch)
+  const innerW = Math.max(16, Math.round(sw * scale));
+  const innerH = Math.max(16, Math.round(sh * scale));
+  const pad = 20;
+  const outW = innerW + pad * 2;
+  const outH = innerH + pad * 2;
+
+  const innerCanvas = document.createElement('canvas');
+  innerCanvas.width = innerW;
+  innerCanvas.height = innerH;
+  const iCtx = innerCanvas.getContext('2d');
+  iCtx.imageSmoothingEnabled = true;
+  iCtx.imageSmoothingQuality = 'high';
+  iCtx.drawImage(img, sx, sy, sw, sh, 0, 0, innerW, innerH);
+
   const enhancedCanvas = document.createElement('canvas');
   enhancedCanvas.width = outW;
   enhancedCanvas.height = outH;
   const eCtx = enhancedCanvas.getContext('2d');
-  eCtx.fillStyle = '#111111';
-  eCtx.fillRect(0, 0, outW, outH);
-  eCtx.imageSmoothingEnabled = true;
-  eCtx.imageSmoothingQuality = 'high';
-  eCtx.drawImage(img, sx, sy, sw, sh, pad, pad, outW - pad * 2, outH - pad * 2);
 
-  // 2. Canvas Tách Chữ Sáng HUD Minecraft -> Chữ Đen Trên Nền Trắng Tinh (Tesseract đọc chuẩn gấp 3 lần)
   const hudBinaryCanvas = document.createElement('canvas');
   hudBinaryCanvas.width = outW;
   hudBinaryCanvas.height = outH;
@@ -3317,63 +3816,237 @@ function buildPreprocessedOcrCanvases(img, cropRect = { x: 0, y: 0, w: 1, h: 1 }
   bCtx.fillStyle = '#FFFFFF';
   bCtx.fillRect(0, 0, outW, outH);
 
+  let normalizedRowsCanvas = hudBinaryCanvas;
+  let directRecognizedText = '';
+
   try {
-    const imgData = eCtx.getImageData(0, 0, outW, outH);
+    const imgData = iCtx.getImageData(0, 0, innerW, innerH);
     const data = imgData.data;
-    const binData = bCtx.createImageData(outW, outH);
+    const binData = bCtx.createImageData(innerW, innerH);
     const bArr = binData.data;
 
-    let minLum = 255;
-    let maxLum = 0;
-    let sumLum = 0;
-    const totalPixels = outW * outH;
+    const totalPixels = innerW * innerH;
     const lums = new Float32Array(totalPixels);
+    const hist = new Uint32Array(256);
 
     for (let i = 0, p = 0; i < data.length; i += 4, p++) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+      const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
       lums[p] = lum;
-      if (lum < minLum) minLum = lum;
-      if (lum > maxLum) maxLum = lum;
-      sumLum += lum;
+      const binIdx = Math.max(0, Math.min(255, Math.round(lum)));
+      hist[binIdx]++;
     }
 
-    const avgLum = sumLum / Math.max(1, totalPixels);
-    const range = Math.max(20, maxLum - minLum);
-    // Ngưỡng thông minh: chữ tọa độ Minecraft (trắng/vàng/xanh lá) luôn sáng hơn nền HUD
-    const brightThreshold = Math.max(125, Math.min(205, avgLum + range * 0.22));
-    const isLightBackground = avgLum > 168;
+    const getPercentileLum = (q) => {
+      const target = Math.max(1, Math.round(totalPixels * q));
+      let acc = 0;
+      for (let k = 0; k < 256; k++) {
+        acc += hist[k];
+        if (acc >= target) return k;
+      }
+      return 255;
+    };
 
-    for (let i = 0, p = 0; i < data.length; i += 4, p++) {
-      // Tăng tương phản cho enhancedCanvas
-      let norm = ((lums[p] - minLum) / range) * 255;
-      norm = norm < 40 ? norm * 0.6 : norm > 180 ? Math.min(255, norm * 1.18) : norm;
-      data[i] = norm;
-      data[i + 1] = norm;
-      data[i + 2] = norm;
+    const p10 = getPercentileLum(0.10);
+    const p50 = getPercentileLum(0.50);
+    const p90 = getPercentileLum(0.90);
+    const range = Math.max(20, p90 - p10);
+    const isLightBackground = p50 > 150;
 
-      // Tạo ảnh nhị phân Đen-Trắng cho hudBinaryCanvas
-      const isTextPixel = isLightBackground
-        ? lums[p] < avgLum - range * 0.18
-        : lums[p] >= brightThreshold;
-      const val = isTextPixel ? 0 : 255; // Chữ đen (0) trên nền trắng (255)
-      bArr[i] = val;
-      bArr[i + 1] = val;
-      bArr[i + 2] = val;
-      bArr[i + 3] = 255;
+    // Tính Integral Image để lấy trung bình sáng cục bộ (Local Adaptive Thresholding) O(1)
+    const stride = innerW + 1;
+    const integral = new Float64Array((innerW + 1) * (innerH + 1));
+    for (let y = 0; y < innerH; y++) {
+      let rowSum = 0;
+      const yOff = y * innerW;
+      const nextRowOff = (y + 1) * stride;
+      const prevRowOff = y * stride;
+      for (let x = 0; x < innerW; x++) {
+        rowSum += lums[yOff + x];
+        integral[nextRowOff + x + 1] = integral[prevRowOff + x + 1] + rowSum;
+      }
     }
 
-    eCtx.putImageData(imgData, 0, 0);
-    bCtx.putImageData(binData, 0, 0);
+    const winR = Math.max(10, Math.min(36, Math.floor(Math.min(innerW, innerH) / 4)));
+    const binMask = new Uint8Array(totalPixels);
+
+    for (let y = 0; y < innerH; y++) {
+      const y0 = Math.max(0, y - winR);
+      const y1 = Math.min(innerH, y + winR + 1);
+      const rowOff = y * innerW;
+      for (let x = 0; x < innerW; x++) {
+        const x0 = Math.max(0, x - winR);
+        const x1 = Math.min(innerW, x + winR + 1);
+        const area = Math.max(1, (x1 - x0) * (y1 - y0));
+        const localSum =
+          integral[y1 * stride + x1] -
+          integral[y0 * stride + x1] -
+          integral[y1 * stride + x0] +
+          integral[y0 * stride + x0];
+        const localMean = localSum / area;
+
+        const p = rowOff + x;
+        const i = p * 4;
+        const lum = lums[p];
+
+        let norm = ((lum - p10) / range) * 255;
+        norm = norm < 0 ? 0 : norm > 255 ? 255 : norm;
+        data[i] = norm;
+        data[i + 1] = norm;
+        data[i + 2] = norm;
+
+        let isTextPixel = false;
+        if (isLightBackground) {
+          const delta = Math.max(13, range * 0.20);
+          isTextPixel = lum <= localMean - delta * 0.65 && lum <= p50 - delta * 0.55;
+        } else {
+          // Chữ sáng HUD Minecraft: lọc bỏ bóng đổ (#3F3F3F) và giữ nét chữ chính
+          const globalThresh = Math.max(115, p10 + range * 0.50);
+          const localDelta = Math.max(14, range * 0.20);
+          isTextPixel = lum >= globalThresh && lum >= localMean + localDelta * 0.50;
+        }
+
+        binMask[p] = isTextPixel ? 1 : 0;
+        const val = isTextPixel ? 0 : 255;
+        bArr[i] = val;
+        bArr[i + 1] = val;
+        bArr[i + 2] = val;
+        bArr[i + 3] = 255;
+      }
+    }
+
+    const bgGray = Math.max(0, Math.min(255, Math.round(((p50 - p10) / range) * 255)));
+    eCtx.fillStyle = `rgb(${bgGray},${bgGray},${bgGray})`;
+    eCtx.fillRect(0, 0, outW, outH);
+    eCtx.putImageData(imgData, pad, pad);
+    bCtx.putImageData(binData, pad, pad);
+
+    // Tách các dòng chữ trên binMask, chuẩn hóa chiều cao về 21px cho Tesseract & nhận diện trực tiếp bằng Template
+    const rowInkCounts = new Uint32Array(innerH);
+    for (let y = 0; y < innerH; y++) {
+      let s = 0;
+      const yOff = y * innerW;
+      for (let x = 0; x < innerW; x++) s += binMask[yOff + x];
+      rowInkCounts[y] = s;
+    }
+
+    const rowBands = [];
+    let inBand = false;
+    let bandY0 = 0;
+    for (let y = 0; y < innerH; y++) {
+      if (rowInkCounts[y] >= 2 && !inBand) {
+        inBand = true;
+        bandY0 = y;
+      } else if (rowInkCounts[y] < 2 && inBand) {
+        inBand = false;
+        if (y - bandY0 >= 5 && y - bandY0 <= Math.max(140, innerH * 0.9)) {
+          rowBands.push([bandY0, y]);
+        }
+      }
+    }
+    if (inBand && innerH - bandY0 >= 5) {
+      rowBands.push([bandY0, innerH]);
+    }
+
+    const clusters = [];
+    const directLines = [];
+
+    for (const [ry0, ry1] of rowBands) {
+      const bandH = ry1 - ry0;
+      const maxClusterGap = Math.max(32, Math.round(bandH * 2.6));
+      let inClust = false;
+      let cx0 = 0;
+      let lastInkX = 0;
+      const hClusters = [];
+
+      for (let x = 0; x < innerW; x++) {
+        let cSum = 0;
+        for (let y = ry0; y < ry1; y++) cSum += binMask[y * innerW + x];
+        if (cSum > 0) {
+          if (!inClust) {
+            inClust = true;
+            cx0 = x;
+          }
+          lastInkX = x;
+        } else if (inClust && x - lastInkX > maxClusterGap) {
+          inClust = false;
+          if (lastInkX + 1 - cx0 >= 8) {
+            hClusters.push([cx0, lastInkX + 1]);
+          }
+        }
+      }
+      if (inClust && lastInkX + 1 - cx0 >= 8) {
+        hClusters.push([cx0, lastInkX + 1]);
+      }
+
+      for (const [hx0, hx1] of hClusters) {
+        const directLine = recognizeSingleBinaryRow(binMask, innerW, ry0, ry1, hx0, hx1);
+        if (directLine) directLines.push(directLine);
+        clusters.push({ x0: hx0, x1: hx1, y0: ry0, y1: ry1 });
+      }
+    }
+
+    directRecognizedText = directLines.join(String.fromCharCode(10));
+
+    if (clusters.length > 0 && clusters.length <= 24) {
+      const targetRowH = 21;
+      const items = clusters.map((c) => {
+        const cwPx = c.x1 - c.x0;
+        const chPx = c.y1 - c.y0;
+        const tw = Math.max(12, Math.round(cwPx * (targetRowH / chPx)));
+        return { ...c, tw, th: targetRowH };
+      });
+      const maxTw = Math.max(160, ...items.map((it) => it.tw + 48));
+      const normH = 24 + items.length * (targetRowH + 18);
+      const normCanvas = document.createElement('canvas');
+      normCanvas.width = maxTw;
+      normCanvas.height = normH;
+      const nCtx = normCanvas.getContext('2d');
+      nCtx.fillStyle = '#FFFFFF';
+      nCtx.fillRect(0, 0, maxTw, normH);
+      nCtx.imageSmoothingEnabled = true;
+      nCtx.imageSmoothingQuality = 'high';
+
+      let drawY = 14;
+      for (const it of items) {
+        nCtx.drawImage(
+          hudBinaryCanvas,
+          pad + it.x0,
+          pad + it.y0,
+          it.x1 - it.x0,
+          it.y1 - it.y0,
+          24,
+          drawY,
+          it.tw,
+          it.th
+        );
+        drawY += targetRowH + 18;
+      }
+
+      // Làm sắc nét lại sau khi chuẩn hóa chiều cao 21px
+      const nData = nCtx.getImageData(0, 0, maxTw, normH);
+      const nArr = nData.data;
+      for (let i = 0; i < nArr.length; i += 4) {
+        const v = nArr[i] < 170 ? 0 : 255;
+        nArr[i] = v;
+        nArr[i + 1] = v;
+        nArr[i + 2] = v;
+        nArr[i + 3] = 255;
+      }
+      nCtx.putImageData(nData, 0, 0);
+      normalizedRowsCanvas = normCanvas;
+    }
   } catch {
-    // Bỏ qua nếu trình duyệt chặn getImageData
+    // Fallback nếu trình duyệt chặn getImageData
+    eCtx.fillStyle = '#111111';
+    eCtx.fillRect(0, 0, outW, outH);
+    eCtx.drawImage(innerCanvas, pad, pad);
   }
 
   return {
     enhancedCanvas,
     hudBinaryCanvas,
+    normalizedRowsCanvas,
+    directRecognizedText,
     previewDataUrl: enhancedCanvas.toDataURL('image/jpeg', 0.85),
     binaryPreviewDataUrl: hudBinaryCanvas.toDataURL('image/png'),
   };
@@ -3501,14 +4174,20 @@ async function runMultiPassCoordinateOcr(
 ) {
   onProgress(8, 'Đang chuẩn bị và làm nét ảnh tọa độ...');
   const img = await loadImageElementFromSource(imageDataUrl);
-  const { enhancedCanvas, hudBinaryCanvas, previewDataUrl, binaryPreviewDataUrl } =
-    buildPreprocessedOcrCanvases(img, cropRect);
+  const {
+    enhancedCanvas,
+    hudBinaryCanvas,
+    normalizedRowsCanvas,
+    directRecognizedText,
+    previewDataUrl,
+    binaryPreviewDataUrl,
+  } = buildPreprocessedOcrCanvases(img, cropRect);
 
   const collectedTexts = [];
   const mergedCandidateMap = new Map();
   let resolvedDimension = defaultDimension;
 
-  const ingestPassText = (passText) => {
+  const ingestPassText = (passText, confidenceBonus = 0) => {
     if (!passText || !String(passText).trim()) return null;
     const cleanText = String(passText).trim();
     collectedTexts.push(cleanText);
@@ -3517,10 +4196,15 @@ async function runMultiPassCoordinateOcr(
       resolvedDimension = parsedPass.dimension;
     }
     for (const cand of parsedPass.candidates) {
+      const adjustedScore = cand.confidence + confidenceBonus;
       const existing = mergedCandidateMap.get(cand.key);
-      if (!existing || cand.confidence > existing.confidence) {
+      if (existing) {
+        // Cộng điểm đồng thuận khi nhiều lớp nhận diện cùng ra 1 bộ tọa độ
+        existing.confidence = Math.max(existing.confidence, adjustedScore) + 3;
+      } else {
         mergedCandidateMap.set(cand.key, {
           ...cand,
+          confidence: adjustedScore,
           dimension: resolvedDimension,
         });
       }
@@ -3535,11 +4219,20 @@ async function runMultiPassCoordinateOcr(
     };
   };
 
+  // Bước 0: Nhận diện trực tiếp bằng lõi Bitmap & Cấu trúc hình học trên Canvas (Siêu nhạy cho chữ số Minecraft 2223 556)
+  if (directRecognizedText) {
+    ingestPassText(directRecognizedText, 2);
+  }
+
   // Bước 1: Thử Native TextDetector (ML Kit phần cứng trên Android Chrome / WebView nếu có)
   if (typeof window !== 'undefined' && 'TextDetector' in window) {
     try {
       onProgress(20, 'Đang quét bằng bộ nhận diện phần cứng điện thoại...');
       const detector = new window.TextDetector();
+      const blocksNorm = await detector.detect(normalizedRowsCanvas);
+      if (Array.isArray(blocksNorm) && blocksNorm.length > 0) {
+        ingestPassText(formatTextDetectorBlocksToLines(blocksNorm), 1);
+      }
       const blocks1 = await detector.detect(enhancedCanvas);
       if (Array.isArray(blocks1) && blocks1.length > 0) {
         ingestPassText(formatTextDetectorBlocksToLines(blocks1));
@@ -3553,11 +4246,10 @@ async function runMultiPassCoordinateOcr(
     }
   }
 
-  // Kiểm tra sớm nếu Native TextDetector đã bắt trúng tọa độ độ tin cậy cao (bao gồm cả dạng 2 số X Z)
   const earlySorted = Array.from(mergedCandidateMap.values()).sort(
     (a, b) => b.confidence - a.confidence
   );
-  if (earlySorted[0] && earlySorted[0].confidence >= 92) {
+  if (earlySorted[0] && earlySorted[0].confidence >= 98) {
     onProgress(100, 'Hoàn tất nhận diện!');
     return {
       best: earlySorted[0],
@@ -3569,7 +4261,7 @@ async function runMultiPassCoordinateOcr(
     };
   }
 
-  // Bước 2: Chạy AI OCR Tesseract.js Đa Luồng (Multi-Pass, phân tích độc lập từng lượt để không chập số)
+  // Bước 2: Chạy AI OCR Tesseract.js Đa Luồng trên bản Chuẩn Hóa Dòng 21px + Nhị Phân + Tương Phản
   try {
     onProgress(25, 'Đang khởi động lõi AI OCR...');
     const worker = await getSharedTesseractWorker((pct) => {
@@ -3578,13 +4270,23 @@ async function runMultiPassCoordinateOcr(
     });
 
     if (worker) {
-      // Pass A: Quét bản làm nét Nhị phân Đen-Trắng (Chuẩn nhất cho HUD Minecraft & màn hình)
-      const resBin = await worker.recognize(hudBinaryCanvas);
-      const checkAfterBin = ingestPassText(resBin?.data?.text);
+      // Pass A1: Quét bản Chuẩn Hóa Chiều Cao Dòng 21px (Giúp Tesseract đọc chuẩn 100% font Minecraft ở mọi độ phóng đại)
+      const resNorm = await worker.recognize(normalizedRowsCanvas);
+      const checkAfterNorm = ingestPassText(resNorm?.data?.text, 2);
 
-      // Pass B: Nếu chưa đạt độ tin cậy cao (<92), quét tiếp bản Tăng Tương Phản Đa Sắc Độ
-      if (!checkAfterBin?.best || checkAfterBin.best.confidence < 92) {
-        onProgress(72, 'Đang quét tăng cường lớp tương phản thứ 2...');
+      // Pass A2: Quét bản Nhị phân Đen-Trắng
+      if (!checkAfterNorm?.best || checkAfterNorm.best.confidence < 96) {
+        const resBin = await worker.recognize(hudBinaryCanvas);
+        ingestPassText(resBin?.data?.text);
+      }
+
+      const checkAfterBin = Array.from(mergedCandidateMap.values()).sort(
+        (a, b) => b.confidence - a.confidence
+      );
+
+      // Pass B: Nếu chưa đạt độ tin cậy cao (<94), quét tiếp bản Tăng Tương Phản Đa Sắc Độ
+      if (!checkAfterBin[0] || checkAfterBin[0].confidence < 94) {
+        onProgress(74, 'Đang quét tăng cường lớp tương phản thứ 2...');
         const resEnh = await worker.recognize(enhancedCanvas);
         ingestPassText(resEnh?.data?.text);
       }
@@ -3593,18 +4295,32 @@ async function runMultiPassCoordinateOcr(
         (a, b) => b.confidence - a.confidence
       );
 
-      // Pass C: Nếu người dùng chụp toàn màn hình (chưa cắt) mà chữ góc trái quá nhỏ, tự động phóng đại 2.5x góc trái trên
+      // Pass C: Nếu vùng cắt chưa bắt được tọa độ rõ hoặc ảnh toàn màn hình có chữ góc trái nhỏ
       const isFullFrame = (cropRect?.w || 1) > 0.82 && (cropRect?.h || 1) > 0.72;
-      if (isFullFrame && (!afterEnhSorted[0] || afterEnhSorted[0].confidence < 88)) {
-        onProgress(86, 'Đang phóng đại góc trái trên (Vùng HUD F3 / MCPE)...');
-        const topLeftPrep = buildPreprocessedOcrCanvases(img, {
-          x: 0.0,
-          y: 0.0,
-          w: 0.68,
-          h: 0.44,
-        });
-        const resTopLeft = await worker.recognize(topLeftPrep.hudBinaryCanvas);
-        ingestPassText(resTopLeft?.data?.text);
+      if (!afterEnhSorted[0] || afterEnhSorted[0].confidence < 90) {
+        if (isFullFrame) {
+          onProgress(86, 'Đang phóng đại góc trái trên (Vùng HUD F3 / MCPE)...');
+          const topLeftPrep = buildPreprocessedOcrCanvases(img, {
+            x: 0.0,
+            y: 0.0,
+            w: 0.68,
+            h: 0.44,
+          });
+          if (topLeftPrep.directRecognizedText) {
+            ingestPassText(topLeftPrep.directRecognizedText, 2);
+          }
+          const resTopLeft = await worker.recognize(topLeftPrep.normalizedRowsCanvas);
+          ingestPassText(resTopLeft?.data?.text, 1);
+        } else {
+          // Người dùng đang dùng khung ngắm hẹp (hud-strip / top-left) nhưng tọa độ nằm lệch ngoài khung -> Quét toàn khung ảnh
+          onProgress(86, 'Đang mở rộng quét toàn khung ảnh...');
+          const fullPrep = buildPreprocessedOcrCanvases(img, { x: 0, y: 0, w: 1, h: 1 });
+          if (fullPrep.directRecognizedText) {
+            ingestPassText(fullPrep.directRecognizedText, 1);
+          }
+          const resFull = await worker.recognize(fullPrep.normalizedRowsCanvas);
+          ingestPassText(resFull?.data?.text);
+        }
       }
     }
   } catch {
@@ -3662,6 +4378,7 @@ function createSyntheticMinecraftCoordImage(presetMode = 'mcpe') {
 
   if (presetMode === 'xz') {
     const samplePairs = [
+      [2223, 556],
       [10029, 2844],
       [-4820, 1590],
       [12450, -3680],
@@ -5294,7 +6011,7 @@ function PixelRadarMap({ waypoints, playerPos, onSelectWaypoint }) {
 }
 
 // ==========================================
-// 4. ỨNG DỤNG CHÍNH (fu WAYPOINT v2.2.1 - TỐI ƯU ANDROID & WINDOWS)
+// 4. ỨNG DỤNG CHÍNH (fu WAYPOINT v2.2.2 - TỐI ƯU ANDROID & WINDOWS)
 // ==========================================
 export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -6119,22 +6836,29 @@ export default function App() {
     playMinecraftSound('click', soundEnabled);
     const vw = video.videoWidth;
     const vh = video.videoHeight;
+    const elW = video.clientWidth || vw;
+    const elH = video.clientHeight || vh;
+
+    // Đồng bộ vùng cắt theo đúng tỷ lệ hiển thị object-cover của khung ngắm trên màn hình
+    const videoAspect = vw / Math.max(1, vh);
+    const boxAspect = elW / Math.max(1, elH);
+    let visW = vw;
+    let visH = vh;
+    if (videoAspect > boxAspect) {
+      visW = Math.round(vh * boxAspect);
+    } else {
+      visH = Math.round(vw / boxAspect);
+    }
+    const zw = visW / Math.max(1, cameraZoom);
+    const zh = visH / Math.max(1, cameraZoom);
+    const zx = (vw - zw) / 2;
+    const zy = (vh - zh) / 2;
 
     const fullCanvas = document.createElement('canvas');
-    fullCanvas.width = vw;
-    fullCanvas.height = vh;
+    fullCanvas.width = Math.round(visW);
+    fullCanvas.height = Math.round(visH);
     const ctx = fullCanvas.getContext('2d');
-
-    // Áp dụng zoom kỹ thuật số nếu người dùng kéo thanh Zoom > 1
-    if (cameraZoom > 1) {
-      const zw = vw / cameraZoom;
-      const zh = vh / cameraZoom;
-      const zx = (vw - zw) / 2;
-      const zy = (vh - zh) / 2;
-      ctx.drawImage(video, zx, zy, zw, zh, 0, 0, vw, vh);
-    } else {
-      ctx.drawImage(video, 0, 0, vw, vh);
-    }
+    ctx.drawImage(video, zx, zy, zw, zh, 0, 0, fullCanvas.width, fullCanvas.height);
 
     const fullDataUrl = fullCanvas.toDataURL('image/jpeg', 0.92);
     stopLiveCameraStream();
@@ -10248,7 +10972,7 @@ export default function App() {
       )}
 
       {/* ==========================================
-          MODAL 8: MÁY ẢNH QUÉT TỌA ĐỘ TRỰC TIẾP TRONG APP (v2.2.1)
+          MODAL 8: MÁY ẢNH QUÉT TỌA ĐỘ TRỰC TIẾP TRONG APP (v2.2.2)
       ========================================== */}
       {isCameraScannerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto">
@@ -10263,7 +10987,7 @@ export default function App() {
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-sm sm:text-base font-black text-[#55ff55] truncate mc-text-shadow">
-                    Quét Ảnh Trực Tiếp Lấy Tọa Độ (v2.2.1)
+                    Quét Ảnh Trực Tiếp Lấy Tọa Độ (v2.2.2)
                   </h2>
                   <p className="text-[11px] font-mono text-zinc-400 truncate">
                     {scannerTargetParent
@@ -10523,7 +11247,7 @@ export default function App() {
                       onClick={() => handleTestSyntheticOcr('xz')}
                       className="mc-btn mc-btn-gold px-2 py-0.5 text-[10px] font-black text-[#1f1300] cursor-pointer"
                     >
-                      Test 2 Số (10029 2844)
+                      Test 2 Số (2223 556)
                     </button>
                     <button
                       type="button"
@@ -10597,41 +11321,43 @@ export default function App() {
 
                 {/* Khung hiển thị ảnh & Kéo chọn vùng cắt */}
                 {lastScannedImageSrc && (
-                  <div
-                    ref={cropImageContainerRef}
-                    onMouseDown={handleCropPointerDown}
-                    onMouseMove={handleCropPointerMove}
-                    onMouseUp={handleCropPointerUp}
-                    onTouchStart={handleCropPointerDown}
-                    onTouchMove={handleCropPointerMove}
-                    onTouchEnd={handleCropPointerUp}
-                    className="relative w-full max-h-64 overflow-hidden bg-black border-2 border-zinc-700 select-none cursor-crosshair touch-none flex items-center justify-center"
-                  >
-                    <img
-                      src={
-                        showBinaryInScanner && lastBinaryPreviewSrc
-                          ? lastBinaryPreviewSrc
-                          : lastScannedImageSrc
-                      }
-                      alt="Ảnh quét tọa độ"
-                      draggable={false}
-                      className="w-full max-h-64 object-contain pointer-events-none"
-                    />
-                    {!showBinaryInScanner && (
-                      <div
-                        className="absolute border-2 border-[#55ff55] bg-[#55ff55]/15 pointer-events-none"
-                        style={{
-                          left: `${cropBox.x * 100}%`,
-                          top: `${cropBox.y * 100}%`,
-                          width: `${cropBox.w * 100}%`,
-                          height: `${cropBox.h * 100}%`,
-                        }}
-                      >
-                        <span className="absolute -top-5 left-0 bg-[#55ff55] text-[#041a06] text-[9px] font-black px-1 py-0.5">
-                          Vùng quét OCR
-                        </span>
-                      </div>
-                    )}
+                  <div className="w-full max-h-64 overflow-hidden bg-black border-2 border-zinc-700 flex items-center justify-center">
+                    <div
+                      ref={cropImageContainerRef}
+                      onMouseDown={handleCropPointerDown}
+                      onMouseMove={handleCropPointerMove}
+                      onMouseUp={handleCropPointerUp}
+                      onTouchStart={handleCropPointerDown}
+                      onTouchMove={handleCropPointerMove}
+                      onTouchEnd={handleCropPointerUp}
+                      className="relative inline-block max-w-full max-h-64 select-none cursor-crosshair touch-none"
+                    >
+                      <img
+                        src={
+                          showBinaryInScanner && lastBinaryPreviewSrc
+                            ? lastBinaryPreviewSrc
+                            : lastScannedImageSrc
+                        }
+                        alt="Ảnh quét tọa độ"
+                        draggable={false}
+                        className="block max-w-full max-h-64 w-auto h-auto object-contain pointer-events-none"
+                      />
+                      {!showBinaryInScanner && (
+                        <div
+                          className="absolute border-2 border-[#55ff55] bg-[#55ff55]/15 pointer-events-none"
+                          style={{
+                            left: `${cropBox.x * 100}%`,
+                            top: `${cropBox.y * 100}%`,
+                            width: `${cropBox.w * 100}%`,
+                            height: `${cropBox.h * 100}%`,
+                          }}
+                        >
+                          <span className="absolute -top-5 left-0 bg-[#55ff55] text-[#041a06] text-[9px] font-black px-1 py-0.5">
+                            Vùng quét OCR
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -10796,7 +11522,7 @@ export default function App() {
             <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-black">
               <h3 className="text-sm sm:text-base font-black text-[#55ff55] flex items-center gap-2 mc-text-shadow">
                 <VoxelBlockIcon type="command" className="w-5 h-5" />
-                <span>fu-WAYPOINT v2.2.1</span>
+                <span>fu-WAYPOINT v2.2.2</span>
               </h3>
               <button
                 type="button"
@@ -10810,7 +11536,7 @@ export default function App() {
             <div className="space-y-3 text-xs text-zinc-200 font-mono leading-relaxed">
               <div className="mc-slot p-2.5 space-y-1">
                 <div className="font-extrabold text-[#55ff55] uppercase">
-                  Tính năng mới v2.2.1 — Quét Ảnh Tọa Độ Trực Tiếp:
+                  Tính năng mới v2.2.2 — Quét Ảnh Tọa Độ Trực Tiếp:
                 </div>
                 <p>• Tích hợp nút <strong className="text-white">Quét Ảnh Tọa Độ</strong> mở trực tiếp Máy Ảnh ngay trong ứng dụng hoặc Máy Ảnh gốc điện thoại.</p>
                 <p>• Lõi AI OCR 3 lớp: Tự động lọc chữ sáng HUD Minecraft sang nền Đen-Trắng, sửa lỗi nhầm chữ/số và dấu âm (-), tự động định dạng X, Y, Z & Chiều không gian để chuẩn bị lưu ngay.</p>
