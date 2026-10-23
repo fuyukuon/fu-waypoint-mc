@@ -2662,6 +2662,18 @@ const INITIAL_WAYPOINTS = [
 
 const OCR_PRESETS = [
   {
+    id: 'xz-2d',
+    label: 'Mẫu 2 số (X Z)',
+    rawLine: '10029  2844',
+    x: 10029,
+    y: null,
+    z: 2844,
+    dimension: 'overworld',
+    suggestedName: 'Điểm Tọa Độ 2 Số (X, Z)',
+    suggestedTag: 'Base',
+    suggestedIcon: 'grass',
+  },
+  {
     id: 'pc-f3',
     label: 'Mẫu F3 (PC)',
     rawLine: 'XYZ: -428.350 / 12.00000 / 795.612 [minecraft:overworld]',
@@ -2701,16 +2713,19 @@ const OCR_PRESETS = [
 
 // ==========================================
 // ==========================================
-// 1B. HỆ THỐNG NHẬN DIỆN TỌA ĐỘ TỪ ẢNH (MULTI-PASS OCR + TIỀN XỬ LÝ ẢNH ĐỘ CHÍNH XÁC CAO v2.2.1)
+// 1B. HỆ THỐNG NHẬN DIỆN TỌA ĐỘ TỪ ẢNH (MULTI-PASS OCR + HỖ TRỢ ĐẦY ĐỦ CẢ 2 SỐ X/Z & 3 SỐ X/Y/Z)
 // ==========================================
 function cleanOcrDigitString(rawToken, allowDecimal = true) {
   if (!rawToken) return '';
   let s = String(rawToken).trim();
-  // Chuẩn hóa các loại dấu trừ / gạch ngang bị OCR đọc nhầm
-  s = s.replace(/^[—–−~_‐‑‒―]+\s*/, '-');
+  // Bỏ các ký tự nhiễu đường viền (_ hoặc ~) ở đầu, chuẩn hóa các loại dấu trừ / gạch ngang
+  s = s.replace(/^[_~]+\s*/, '');
+  s = s.replace(/^[—–−‐‑‒―-]+\s*/, '-');
   s = s.replace(/^-\s+/, '-');
   const sign = s.startsWith('-') ? '-' : '';
   let body = s.replace(/^[-+]\s*/, '');
+  // Đảm bảo token phải có ít nhất 1 chữ số thực hoặc chữ O/o đại diện cho số 0 (tránh biến chữ cái lẻ như l, I, Z, S thành số)
+  if (!/\d/.test(body) && !/^[Oo]+$/.test(body)) return '';
   // Sửa các chữ cái hay bị OCR đọc nhầm thành chữ số trong font Minecraft
   body = body
     .replace(/[OoQD]/g, '0')
@@ -2720,7 +2735,7 @@ function cleanOcrDigitString(rawToken, allowDecimal = true) {
     .replace(/[G]/g, '6')
     .replace(/[B]/g, '8');
   if (allowDecimal) {
-    body = body.replace(/,(\d+)$/, '.$1');
+    body = body.replace(/,(\d{1,2})$/, '.$1');
     body = body.replace(/[^0-9.]/g, '');
     const parts = body.split('.');
     if (parts.length > 2) {
@@ -2830,17 +2845,17 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
   const candidates = [];
 
   const addCandidate = (x, y, z, confidence, label, rawLine) => {
-    if (!Number.isFinite(x) || !Number.isFinite(z)) return;
-    if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) return;
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
+    if (Math.abs(x) > 30000000 || Math.abs(z) > 30000000) return false;
     const validY =
       y !== null && y !== undefined && y !== '' && Number.isFinite(Number(y))
         ? Math.round(Number(y))
         : null;
-    if (validY !== null && Math.abs(validY) > 4096) return;
+    if (validY !== null && Math.abs(validY) > 512) return false;
 
     let finalScore = confidence;
     if (validY !== null && validY >= -64 && validY <= 320) {
-      finalScore += 4;
+      finalScore += 3;
     }
 
     const key = `${Math.round(x)}_${validY ?? 'none'}_${Math.round(z)}`;
@@ -2851,7 +2866,7 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
         existing.label = label;
         existing.rawLine = String(rawLine || '').trim().slice(0, 96);
       }
-      return;
+      return true;
     }
     candidates.push({
       key,
@@ -2863,28 +2878,34 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       label,
       rawLine: String(rawLine || '').trim().slice(0, 96),
     });
+    return true;
   };
 
-  const numPat = `[—–−~_\\-+]?\\s*[0-9OolISBGZz]+(?:[.,][0-9OolISBGZz]+)?`;
-  const intPat = `[—–−~_\\-+]?\\s*[0-9OolISBGZz]+`;
-  const sepPat = `(?:\\s*[,;/|]\\s*|\\s*\\.\\s+|\\s+)`;
+  const digitCore = `(?:[0-9OolISBGZzQD]*\\d[0-9OolISBGZzQD]*|[Oo0]+)`;
+  const numPat = `[—–−‐‑‒―\\-+]?\\s*${digitCore}(?:\\.${digitCore})?`;
+  const intPat = `[—–−‐‑‒―\\-+]?\\s*${digitCore}`;
+  const sepPat = `(?:\\s*[,;/|:]\\s*|\\s*\\.\\s+|\\s+)`;
+  const pairSepPat = `(?:\\s*[,;/|:]\\s*|\\s+[—–−\\-]\\s+|\\s+)`;
+  const labelSepPat = `(?:\\s*[:=.;]\\s*|\\s+[—–−\\-]\\s+|\\s*)`;
 
   const LINE_BREAK = String.fromCharCode(10);
   const CARRIAGE_RETURN = String.fromCharCode(13);
-  const lines = fullText
+  const rawLines = fullText
     .split(CARRIAGE_RETURN)
     .join('')
     .split(LINE_BREAK)
     .map((l) => l.trim())
     .filter(Boolean);
+  const lines = Array.from(new Set(rawLines));
 
   for (const line of lines) {
     const lowerLine = line.toLowerCase();
+    let matchedTripletOnLine = false;
 
     // 1. Java F3 Block: -429 12 795 [3 12 11] (Số nguyên chính xác tuyệt đối)
     const blockMatch = line.match(
       new RegExp(
-        `(?:^|\\b)(?:Block|B1ock|Bl0ck|Biock)\\s*[:=.;-]?\\s*(${intPat})${sepPat}(${intPat})${sepPat}(${intPat})`,
+        `(?:^|\\b)(?:Block|B1ock|Bl0ck|Biock)${labelSepPat}(${intPat})${sepPat}(${intPat})${sepPat}(${intPat})`,
         'i'
       )
     );
@@ -2893,14 +2914,16 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(blockMatch[2], false, 'y');
       const z = parseSingleCoordVal(blockMatch[3], false, 'z');
       if (x !== null && y !== null && z !== null) {
-        addCandidate(x, y, z, 100, 'Java F3 (Block)', line);
+        if (addCandidate(x, y, z, 100, 'Java F3 (Block)', line)) {
+          matchedTripletOnLine = true;
+        }
       }
     }
 
     // 2. Java F3 XYZ: -428.350 / 12.00000 / 795.612
     const xyzMatch = line.match(
       new RegExp(
-        `(?:X\\s*Y\\s*Z|XY2|XYZ)\\s*[:=.;-]?\\s*(${numPat})\\s*[/|\\\\]+\\s*(${numPat})\\s*[/|\\\\]+\\s*(${numPat})`,
+        `(?:X\\s*Y\\s*Z|XY2|XYZ)${labelSepPat}(${numPat})\\s*[/|\\\\]+\\s*(${numPat})\\s*[/|\\\\]+\\s*(${numPat})`,
         'i'
       )
     );
@@ -2909,14 +2932,16 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(xyzMatch[2], true, 'y');
       const z = parseSingleCoordVal(xyzMatch[3], true, 'z');
       if (x !== null && y !== null && z !== null) {
-        addCandidate(x, y, z, 99, 'Java F3 (XYZ)', line);
+        if (addCandidate(x, y, z, 99, 'Java F3 (XYZ)', line)) {
+          matchedTripletOnLine = true;
+        }
       }
     }
 
-    // 3. Bedrock / MCPE Position: 120, 68, -500 / Vị trí: / Tọa độ:
+    // 3. Bedrock / MCPE Position: 120, 68, -500 / Vị trí: / Tọa độ: (3 số)
     const posMatch = line.match(
       new RegExp(
-        `(?:P[o0]s[i1l]t[i1l][o0]n|[o0]s[i1l]t[i1l][o0]n|t[i1l][o0]n|Pos|V[iị]\\s*tr[ií]|T[oọ]a\\s*[dđ][oộ])\\s*[:=.;-]?\\s*(${intPat})${sepPat}(${intPat})${sepPat}(${intPat})`,
+        `(?:P[o0]s[i1l]t[i1l][o0]n|[o0]s[i1l]t[i1l][o0]n|t[i1l][o0]n|Pos|V[iị]\\s*tr[ií]|T[oọ]a\\s*[dđ][oộ]|Coords?)${labelSepPat}(${intPat})${sepPat}(${intPat})${sepPat}(${intPat})`,
         'i'
       )
     );
@@ -2925,46 +2950,71 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(posMatch[2], false, 'y');
       const z = parseSingleCoordVal(posMatch[3], false, 'z');
       if (x !== null && y !== null && z !== null) {
-        addCandidate(x, y, z, 98, 'MCPE / Bedrock (Position)', line);
+        if (addCandidate(x, y, z, 98, 'MCPE / Bedrock (Position)', line)) {
+          matchedTripletOnLine = true;
+        }
       }
     }
 
-    // 4. Nhãn tường minh X: ... Y: ... Z: ... (Minimap, Waypoint Mod, Chat)
+    // 4. Nhãn tường minh X: ... Y: ... Z: ... (Minimap, Waypoint Mod, Chat — hỗ trợ cả Y: ~)
     const explicitXyz = line.match(
       new RegExp(
-        `X\\s*[:=.]?\\s*(${numPat})\\s*[,;/|\\s•-]+\\s*Y\\s*[:=.]?\\s*(${numPat})\\s*[,;/|\\s•-]+\\s*Z\\s*[:=.]?\\s*(${numPat})`,
+        `X\\s*[:=.]?\\s*(${numPat})\\s*[,;/|\\s•-]+\\s*Y\\s*[:=.]?\\s*(~|${numPat})\\s*[,;/|\\s•-]+\\s*Z\\s*[:=.]?\\s*(${numPat})`,
         'i'
       )
     );
     if (explicitXyz) {
       const x = parseSingleCoordVal(explicitXyz[1], false, 'x');
-      const y = parseSingleCoordVal(explicitXyz[2], false, 'y');
+      const y =
+        explicitXyz[2].trim() === '~' ? null : parseSingleCoordVal(explicitXyz[2], false, 'y');
       const z = parseSingleCoordVal(explicitXyz[3], false, 'z');
-      if (x !== null && y !== null && z !== null) {
-        addCandidate(x, y, z, 96, 'Tọa độ X/Y/Z', line);
+      if (x !== null && z !== null) {
+        if (
+          addCandidate(
+            x,
+            y,
+            z,
+            96,
+            y === null ? 'Tọa độ 2 số (X/Z)' : 'Tọa độ X/Y/Z',
+            line
+          )
+        ) {
+          matchedTripletOnLine = true;
+        }
       }
     }
 
-    // 5. Lệnh /tp hoặc /execute
+    // 5. Lệnh /tp, /teleport, /locate hoặc dạng X ~ Z ([10029, ~, 2844] / 10029 ~ 2844)
     const tpMatch = line.match(
       new RegExp(
-        `(?:tp|teleport)\\s+(?:@[spaer]\\s+|[A-Za-z0-9_]+\\s+)?(${numPat})\\s+(${numPat}|~)\\s+(${numPat})`,
+        `(?:(?:tp|teleport)\\s+(?:@[spaer]\\s+|[A-Za-z0-9_]+\\s+)?)?(${numPat})\\s*[,;/|\\s]+\\s*(~|${numPat})\\s*[,;/|\\s]+\\s*(${numPat})`,
         'i'
       )
     );
-    if (tpMatch) {
+    if (tpMatch && (/\b(?:tp|teleport)\b/i.test(line) || tpMatch[2].trim() === '~')) {
       const x = parseSingleCoordVal(tpMatch[1], false, 'x');
-      const y = tpMatch[2].trim() === '~' ? 64 : parseSingleCoordVal(tpMatch[2], false, 'y');
+      const y = tpMatch[2].trim() === '~' ? null : parseSingleCoordVal(tpMatch[2], false, 'y');
       const z = parseSingleCoordVal(tpMatch[3], false, 'z');
       if (x !== null && z !== null) {
-        addCandidate(x, y ?? 64, z, 95, 'Lệnh /tp', line);
+        if (
+          addCandidate(
+            x,
+            y,
+            z,
+            95,
+            y === null ? 'Tọa độ 2 số (X ~ Z)' : 'Lệnh /tp',
+            line
+          )
+        ) {
+          matchedTripletOnLine = true;
+        }
       }
     }
 
     // 6. Targeted Block / Looking at block (Java F3)
     const targetBlockMatch = line.match(
       new RegExp(
-        `(?:Targeted\\s*Block|Looking\\s*at\\s*block)\\s*[:=.;-]?\\s*(${intPat})${sepPat}(${intPat})${sepPat}(${intPat})`,
+        `(?:Targeted\\s*Block|Looking\\s*at\\s*block)${labelSepPat}(${intPat})${sepPat}(${intPat})${sepPat}(${intPat})`,
         'i'
       )
     );
@@ -2973,11 +3023,13 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(targetBlockMatch[2], false, 'y');
       const z = parseSingleCoordVal(targetBlockMatch[3], false, 'z');
       if (x !== null && y !== null && z !== null) {
-        addCandidate(x, y, z, 91, 'Khối đang nhìn (F3)', line);
+        if (addCandidate(x, y, z, 91, 'Khối đang nhìn (F3)', line)) {
+          matchedTripletOnLine = true;
+        }
       }
     }
 
-    // 7. Nhãn 2 chiều X: ... Z: ...
+    // 7A. Nhãn 2 chiều X: ... Z: ... (Chỉ có X và Z, không có Y)
     const explicitXz = line.match(
       new RegExp(`X\\s*[:=.]?\\s*(${numPat})\\s*[,;/|\\s•-]+\\s*Z\\s*[:=.]?\\s*(${numPat})`, 'i')
     );
@@ -2985,7 +3037,24 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const x = parseSingleCoordVal(explicitXz[1], false, 'x');
       const z = parseSingleCoordVal(explicitXz[2], false, 'z');
       if (x !== null && z !== null) {
-        addCandidate(x, 64, z, 88, 'Tọa độ X/Z', line);
+        addCandidate(x, null, z, 96, 'Tọa độ 2 số (X/Z)', line);
+      }
+    }
+
+    // 7B. Nhãn Position / Pos / XZ / Tọa độ / Block chỉ có 2 số X và Z (VD: Position: 10029 2844, XZ: 10029 2844)
+    if (!matchedTripletOnLine) {
+      const labeledPair = line.match(
+        new RegExp(
+          `(?:P[o0]s[i1l]t[i1l][o0]n|[o0]s[i1l]t[i1l][o0]n|t[i1l][o0]n|Pos|X\\s*[/|,•-]?\\s*Z|XYZ|Block|B1ock|Bl0ck|Coords?|V[iị]\\s*tr[ií]|T[oọ]a\\s*[dđ][oộ])${labelSepPat}[[(]?\\s*(${numPat})${pairSepPat}(${numPat})\\s*[\\])]?`,
+          'i'
+        )
+      );
+      if (labeledPair) {
+        const x = parseSingleCoordVal(labeledPair[1], false, 'x');
+        const z = parseSingleCoordVal(labeledPair[2], false, 'z');
+        if (x !== null && z !== null) {
+          addCandidate(x, null, z, 96, 'Tọa độ 2 số (X, Z)', line);
+        }
       }
     }
 
@@ -3010,7 +3079,9 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const isDate =
         x >= 1 && x <= 31 && y >= 1 && y <= 12 && z >= 1990 && z <= 2100;
       if (x !== null && y !== null && z !== null && !isDate) {
-        addCandidate(x, y, z, 84, 'Bộ 3 số (X / Y / Z)', line);
+        if (addCandidate(x, y, z, 88, 'Bộ 3 số (X / Y / Z)', line)) {
+          matchedTripletOnLine = true;
+        }
       }
     }
 
@@ -3023,7 +3094,9 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(commaTriplet[2], false, 'y');
       const z = parseSingleCoordVal(commaTriplet[3], false, 'z');
       if (x !== null && y !== null && z !== null) {
-        addCandidate(x, y, z, 83, 'Bộ 3 số (X, Y, Z)', line);
+        if (addCandidate(x, y, z, 87, 'Bộ 3 số (X, Y, Z)', line)) {
+          matchedTripletOnLine = true;
+        }
       }
     }
 
@@ -3036,43 +3109,151 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
       const y = parseSingleCoordVal(spaceTriplet[2], false, 'y');
       const z = parseSingleCoordVal(spaceTriplet[3], false, 'z');
       if (x !== null && y !== null && z !== null) {
-        addCandidate(x, y, z, 76, 'Bộ 3 số (X Y Z)', line);
+        if (addCandidate(x, y, z, 84, 'Bộ 3 số (X Y Z)', line)) {
+          matchedTripletOnLine = true;
+        }
+      }
+    }
+
+    // 11. NHẬN DIỆN TỌA ĐỘ 2 SỐ CHỈ CÓ X VÀ Z (VD: "10029  2844", "10029 2844", "10029, 2844", "10029 / 2844", "[10029 2844]")
+    if (!matchedTripletOnLine) {
+      const cleanPairMatch = line.match(
+        new RegExp(
+          `^[\\s[\\]({<|•:;=.,~_*]*(${numPat})${pairSepPat}(${numPat})[\\s[\\])}>|•:;=.,~_*-]*$`
+        )
+      );
+      if (cleanPairMatch) {
+        const x = parseSingleCoordVal(cleanPairMatch[1], false, 'x');
+        const z = parseSingleCoordVal(cleanPairMatch[2], false, 'z');
+        if (x !== null && z !== null) {
+          const isCommonRes =
+            (x === 1920 && z === 1080) ||
+            (x === 1280 && z === 720) ||
+            (x === 2560 && z === 1440);
+          addCandidate(x, null, z, isCommonRes ? 64 : 93, 'Tọa độ 2 số (X Z)', line);
+          continue;
+        }
+      }
+
+      // 11B. Dòng có đúng 2 con số kèm chữ hoặc ký tự nhiễu viền OCR (VD: "| 10029  2844 l", "Base 10029 2844")
+      const lineNumMatches = line.match(new RegExp(numPat, 'g')) || [];
+      const parsedLineNums = lineNumMatches
+        .map((t) => parseSingleCoordVal(t, false))
+        .filter((n) => n !== null);
+      if (parsedLineNums.length === 2) {
+        addCandidate(
+          parsedLineNums[0],
+          null,
+          parsedLineNums[1],
+          90,
+          'Tọa độ 2 số (X, Z)',
+          line
+        );
+      } else {
+        const inlinePairMatch = line.match(
+          new RegExp(`(?:^|[^0-9.,-])(${numPat})${pairSepPat}(${numPat})(?:$|[^0-9.,])`)
+        );
+        if (inlinePairMatch) {
+          const x = parseSingleCoordVal(inlinePairMatch[1], false, 'x');
+          const z = parseSingleCoordVal(inlinePairMatch[2], false, 'z');
+          if (x !== null && z !== null) {
+            addCandidate(x, null, z, 85, 'Tọa độ 2 số (X, Z)', line);
+          }
+        }
       }
     }
   }
 
-  // Fallback quét toàn chuỗi nếu ảnh bị xuống dòng giữa chừng
+  // 12. Quét cặp dòng liên tiếp (Khi khoảng trắng giữa X và Z rộng khiến OCR tách thành 2 dòng "10029\n2844", hoặc HUD xếp dọc X / Z)
+  for (let i = 0; i < lines.length - 1; i++) {
+    const l1 = lines[i];
+    const l2 = lines[i + 1];
+    const l3 = i + 2 < lines.length ? lines[i + 2] : '';
+
+    if (l3) {
+      const mX3 = l1.match(new RegExp(`^(?:X\\s*[:=.]?\\s*)?(${numPat})$`, 'i'));
+      const mY3 = l2.match(new RegExp(`^(?:Y\\s*[:=.]?\\s*)?(~|${numPat})$`, 'i'));
+      const mZ3 = l3.match(new RegExp(`^(?:Z\\s*[:=.]?\\s*)?(${numPat})$`, 'i'));
+      if (mX3 && mY3 && mZ3) {
+        const x = parseSingleCoordVal(mX3[1], false, 'x');
+        const y = mY3[1].trim() === '~' ? null : parseSingleCoordVal(mY3[1], false, 'y');
+        const z = parseSingleCoordVal(mZ3[1], false, 'z');
+        const hasExplicitLabels = /^x/i.test(l1) || /^y/i.test(l2) || /^z/i.test(l3);
+        if (
+          x !== null &&
+          z !== null &&
+          (hasExplicitLabels || (y !== null && y >= -64 && y <= 320))
+        ) {
+          addCandidate(
+            x,
+            y,
+            z,
+            hasExplicitLabels ? 94 : 85,
+            'Tọa độ 3 dòng (X/Y/Z)',
+            `${l1} ${l2} ${l3}`
+          );
+        }
+      }
+    }
+
+    const mX2 = l1.match(
+      new RegExp(`^(?:X\\s*[:=.]?\\s*)?[[(]?\\s*(${numPat})\\s*[\\])]?$`, 'i')
+    );
+    const mZ2 = l2.match(
+      new RegExp(`^(?:Z\\s*[:=.]?\\s*)?[[(]?\\s*(${numPat})\\s*[\\])]?$`, 'i')
+    );
+    if (mX2 && mZ2 && !/^y\\s*[:=.]/i.test(l2)) {
+      const x = parseSingleCoordVal(mX2[1], false, 'x');
+      const z = parseSingleCoordVal(mZ2[1], false, 'z');
+      const hasXzLabels = /^x/i.test(l1) && /^z/i.test(l2);
+      if (x !== null && z !== null) {
+        addCandidate(x, null, z, hasXzLabels ? 95 : 88, 'Tọa độ 2 số (X Z)', `${l1}  ${l2}`);
+      }
+    }
+  }
+
+  // Fallback quét toàn chuỗi nếu ảnh bị xuống dòng phức tạp
   if (candidates.length === 0) {
-    const rawNums = fullText.match(/[—–−~_-]?\s*\d+(?:\.\d+)?/g);
+    const rawNums = fullText.match(/[—–−‐‑‒―-]?\s*\d+(?:\.\d+)?/g);
     if (rawNums && rawNums.length >= 2) {
       const nums = rawNums
         .map((n) => parseSingleCoordVal(n, false))
         .filter((n) => n !== null);
-      if (nums.length >= 3) {
-        let bestStart = 0;
+      if (nums.length === 2) {
+        addCandidate(
+          nums[0],
+          null,
+          nums[1],
+          82,
+          'Tọa độ 2 số (X, Z)',
+          fullText.replace(/\s+/g, ' ').slice(0, 80)
+        );
+      } else if (nums.length >= 3) {
+        let foundValidTriplet = false;
         for (let i = 0; i <= nums.length - 3; i++) {
           if (nums[i + 1] >= -64 && nums[i + 1] <= 320) {
-            bestStart = i;
+            addCandidate(
+              nums[i],
+              nums[i + 1],
+              nums[i + 2],
+              72,
+              'Tách 3 số (X, Y, Z)',
+              fullText.replace(/\s+/g, ' ').slice(0, 80)
+            );
+            foundValidTriplet = true;
             break;
           }
         }
-        addCandidate(
-          nums[bestStart],
-          nums[bestStart + 1],
-          nums[bestStart + 2],
-          62,
-          'Tách số thông minh',
-          fullText.replace(/\s+/g, ' ').slice(0, 80)
-        );
-      } else if (nums.length === 2) {
-        addCandidate(
-          nums[0],
-          64,
-          nums[1],
-          52,
-          'Tách 2 số (X, Z)',
-          fullText.replace(/\s+/g, ' ').slice(0, 80)
-        );
+        if (!foundValidTriplet) {
+          addCandidate(
+            nums[0],
+            null,
+            nums[1],
+            78,
+            'Tọa độ 2 số (X, Z)',
+            fullText.replace(/\s+/g, ' ').slice(0, 80)
+          );
+        }
       }
     }
   }
@@ -3263,6 +3444,53 @@ async function getSharedTesseractWorker(onProgress) {
   return sharedTesseractWorkerPromise;
 }
 
+function formatTextDetectorBlocksToLines(blocks) {
+  if (!Array.isArray(blocks) || blocks.length === 0) return '';
+  const items = blocks
+    .filter((b) => b && b.rawValue && String(b.rawValue).trim())
+    .map((b) => {
+      const box = b.boundingBox || {};
+      const top = Number(box.top ?? box.y ?? 0);
+      const left = Number(box.left ?? box.x ?? 0);
+      const height = Number(box.height ?? 24) || 24;
+      return {
+        text: String(b.rawValue).trim(),
+        cy: top + height / 2,
+        left,
+        height,
+      };
+    });
+  if (items.length === 0) return '';
+  items.sort((a, b) => a.cy - b.cy || a.left - b.left);
+
+  const rows = [];
+  for (const item of items) {
+    const lastRow = rows[rows.length - 1];
+    if (
+      lastRow &&
+      Math.abs(item.cy - lastRow.avgCy) <= Math.max(item.height, lastRow.avgHeight) * 0.65
+    ) {
+      lastRow.items.push(item);
+      lastRow.avgCy =
+        lastRow.items.reduce((acc, it) => acc + it.cy, 0) / lastRow.items.length;
+      lastRow.avgHeight = Math.max(lastRow.avgHeight, item.height);
+    } else {
+      rows.push({
+        avgCy: item.cy,
+        avgHeight: item.height,
+        items: [item],
+      });
+    }
+  }
+
+  return rows
+    .map((r) => {
+      r.items.sort((a, b) => a.left - b.left);
+      return r.items.map((it) => it.text).join('  ');
+    })
+    .join(String.fromCharCode(10));
+}
+
 async function runMultiPassCoordinateOcr(
   imageDataUrl,
   {
@@ -3277,6 +3505,35 @@ async function runMultiPassCoordinateOcr(
     buildPreprocessedOcrCanvases(img, cropRect);
 
   const collectedTexts = [];
+  const mergedCandidateMap = new Map();
+  let resolvedDimension = defaultDimension;
+
+  const ingestPassText = (passText) => {
+    if (!passText || !String(passText).trim()) return null;
+    const cleanText = String(passText).trim();
+    collectedTexts.push(cleanText);
+    const parsedPass = parseMinecraftCoordinatesFromText(cleanText, resolvedDimension);
+    if (parsedPass.dimension && parsedPass.dimension !== defaultDimension) {
+      resolvedDimension = parsedPass.dimension;
+    }
+    for (const cand of parsedPass.candidates) {
+      const existing = mergedCandidateMap.get(cand.key);
+      if (!existing || cand.confidence > existing.confidence) {
+        mergedCandidateMap.set(cand.key, {
+          ...cand,
+          dimension: resolvedDimension,
+        });
+      }
+    }
+    const allSorted = Array.from(mergedCandidateMap.values()).sort(
+      (a, b) => b.confidence - a.confidence
+    );
+    return {
+      best: allSorted[0] || null,
+      candidates: allSorted,
+      dimension: resolvedDimension,
+    };
+  };
 
   // Bước 1: Thử Native TextDetector (ML Kit phần cứng trên Android Chrome / WebView nếu có)
   if (typeof window !== 'undefined' && 'TextDetector' in window) {
@@ -3285,35 +3542,34 @@ async function runMultiPassCoordinateOcr(
       const detector = new window.TextDetector();
       const blocks1 = await detector.detect(enhancedCanvas);
       if (Array.isArray(blocks1) && blocks1.length > 0) {
-        collectedTexts.push(blocks1.map((b) => b.rawValue).join(String.fromCharCode(10)));
+        ingestPassText(formatTextDetectorBlocksToLines(blocks1));
       }
       const blocks2 = await detector.detect(hudBinaryCanvas);
       if (Array.isArray(blocks2) && blocks2.length > 0) {
-        collectedTexts.push(blocks2.map((b) => b.rawValue).join(String.fromCharCode(10)));
+        ingestPassText(formatTextDetectorBlocksToLines(blocks2));
       }
     } catch {
       // Chuyển sang Tesseract AI
     }
   }
 
-  // Kiểm tra sớm nếu Native TextDetector đã bắt trúng tọa độ độ tin cậy cao
-  if (collectedTexts.length > 0) {
-    const earlyCheck = parseMinecraftCoordinatesFromText(
-      collectedTexts.join(String.fromCharCode(10)),
-      defaultDimension
-    );
-    if (earlyCheck.best && earlyCheck.best.confidence >= 95) {
-      onProgress(100, 'Hoàn tất nhận diện!');
-      return {
-        ...earlyCheck,
-        rawText: collectedTexts.join(String.fromCharCode(10)),
-        previewDataUrl,
-        binaryPreviewDataUrl,
-      };
-    }
+  // Kiểm tra sớm nếu Native TextDetector đã bắt trúng tọa độ độ tin cậy cao (bao gồm cả dạng 2 số X Z)
+  const earlySorted = Array.from(mergedCandidateMap.values()).sort(
+    (a, b) => b.confidence - a.confidence
+  );
+  if (earlySorted[0] && earlySorted[0].confidence >= 92) {
+    onProgress(100, 'Hoàn tất nhận diện!');
+    return {
+      best: earlySorted[0],
+      candidates: earlySorted,
+      dimension: resolvedDimension,
+      rawText: collectedTexts.join(String.fromCharCode(10)),
+      previewDataUrl,
+      binaryPreviewDataUrl,
+    };
   }
 
-  // Bước 2: Chạy AI OCR Tesseract.js Đa Luồng (Multi-Pass)
+  // Bước 2: Chạy AI OCR Tesseract.js Đa Luồng (Multi-Pass, phân tích độc lập từng lượt để không chập số)
   try {
     onProgress(25, 'Đang khởi động lõi AI OCR...');
     const worker = await getSharedTesseractWorker((pct) => {
@@ -3324,32 +3580,22 @@ async function runMultiPassCoordinateOcr(
     if (worker) {
       // Pass A: Quét bản làm nét Nhị phân Đen-Trắng (Chuẩn nhất cho HUD Minecraft & màn hình)
       const resBin = await worker.recognize(hudBinaryCanvas);
-      if (resBin?.data?.text) {
-        collectedTexts.push(resBin.data.text);
-      }
+      const checkAfterBin = ingestPassText(resBin?.data?.text);
 
-      const checkAfterBin = parseMinecraftCoordinatesFromText(
-        collectedTexts.join(String.fromCharCode(10)),
-        defaultDimension
-      );
-
-      // Pass B: Nếu chưa đạt độ tin cậy tuyệt đối (<94), quét tiếp bản Tăng Tương Phản Đa Sắc Độ
-      if (!checkAfterBin.best || checkAfterBin.best.confidence < 94) {
+      // Pass B: Nếu chưa đạt độ tin cậy cao (<92), quét tiếp bản Tăng Tương Phản Đa Sắc Độ
+      if (!checkAfterBin?.best || checkAfterBin.best.confidence < 92) {
         onProgress(72, 'Đang quét tăng cường lớp tương phản thứ 2...');
         const resEnh = await worker.recognize(enhancedCanvas);
-        if (resEnh?.data?.text) {
-          collectedTexts.push(resEnh.data.text);
-        }
+        ingestPassText(resEnh?.data?.text);
       }
 
-      const checkAfterEnh = parseMinecraftCoordinatesFromText(
-        collectedTexts.join(String.fromCharCode(10)),
-        defaultDimension
+      const afterEnhSorted = Array.from(mergedCandidateMap.values()).sort(
+        (a, b) => b.confidence - a.confidence
       );
 
-      // Pass C: Nếu người dùng chụp toàn màn hình (chưa cắt) mà chữ góc trái quá nhỏ, tự động phóng đại 2.5x góc trái trên (nơi chứa F3 / Position MCPE)
+      // Pass C: Nếu người dùng chụp toàn màn hình (chưa cắt) mà chữ góc trái quá nhỏ, tự động phóng đại 2.5x góc trái trên
       const isFullFrame = (cropRect?.w || 1) > 0.82 && (cropRect?.h || 1) > 0.72;
-      if (isFullFrame && (!checkAfterEnh.best || checkAfterEnh.best.confidence < 90)) {
+      if (isFullFrame && (!afterEnhSorted[0] || afterEnhSorted[0].confidence < 88)) {
         onProgress(86, 'Đang phóng đại góc trái trên (Vùng HUD F3 / MCPE)...');
         const topLeftPrep = buildPreprocessedOcrCanvases(img, {
           x: 0.0,
@@ -3358,24 +3604,36 @@ async function runMultiPassCoordinateOcr(
           h: 0.44,
         });
         const resTopLeft = await worker.recognize(topLeftPrep.hudBinaryCanvas);
-        if (resTopLeft?.data?.text) {
-          collectedTexts.push(resTopLeft.data.text);
-        }
+        ingestPassText(resTopLeft?.data?.text);
       }
     }
   } catch {
     // Fallback nếu không kết nối được worker
   }
 
-  if (collectedTexts.length === 0 && syntheticImageTextMap.has(imageDataUrl)) {
-    collectedTexts.push(syntheticImageTextMap.get(imageDataUrl));
+  if (mergedCandidateMap.size === 0 && syntheticImageTextMap.has(imageDataUrl)) {
+    ingestPassText(syntheticImageTextMap.get(imageDataUrl));
   }
   onProgress(100, 'Đã phân tích xong!');
   const combinedRawText = collectedTexts.join(String.fromCharCode(10)).trim();
-  const parsed = parseMinecraftCoordinatesFromText(combinedRawText, defaultDimension);
+  const finalCandidates = Array.from(mergedCandidateMap.values()).sort(
+    (a, b) => b.confidence - a.confidence
+  );
 
+  if (finalCandidates.length > 0) {
+    return {
+      best: finalCandidates[0],
+      candidates: finalCandidates,
+      dimension: resolvedDimension,
+      rawText: combinedRawText,
+      previewDataUrl,
+      binaryPreviewDataUrl,
+    };
+  }
+
+  const fallbackParsed = parseMinecraftCoordinatesFromText(combinedRawText, defaultDimension);
   return {
-    ...parsed,
+    ...fallbackParsed,
     rawText: combinedRawText,
     previewDataUrl,
     binaryPreviewDataUrl,
@@ -3402,7 +3660,21 @@ function createSyntheticMinecraftCoordImage(presetMode = 'mcpe') {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 960, 420);
 
-  if (presetMode === 'f3') {
+  if (presetMode === 'xz') {
+    const samplePairs = [
+      [10029, 2844],
+      [-4820, 1590],
+      [12450, -3680],
+    ];
+    const [rx, rz] = samplePairs[Math.floor(Math.random() * samplePairs.length)];
+    const rawStr = `${rx}  ${rz}`;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.fillRect(36, 48, 420, 70);
+    ctx.font = 'bold 38px monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(rawStr, 58, 96);
+    syntheticImageTextMap.set('last', rawStr);
+  } else if (presetMode === 'f3') {
     const rx = Math.round((Math.random() - 0.5) * 2800);
     const ry = Math.round(12 + Math.random() * 80);
     const rz = Math.round((Math.random() - 0.5) * 2800);
@@ -3582,6 +3854,8 @@ function WaypointCard({
   onSoftDelete,
   onNotify,
   onOpenLightbox,
+  onDeleteScreenshot,
+  onReplaceScreenshot,
   onSelectForDistance,
   onEnterFolder,
   onCreateChildWaypoint,
@@ -4013,10 +4287,9 @@ function WaypointCard({
         {screenshots.length > 0 && (
           <div className="mt-2.5 grid grid-cols-2 gap-2">
             {screenshots.slice(0, 2).map((src, idx) => (
-              <button
+              <div
                 key={idx}
-                type="button"
-                onClick={() => onOpenLightbox(src, waypoint.name)}
+                onClick={() => onOpenLightbox(src, waypoint.name, waypoint.id, idx)}
                 className="relative group/img overflow-hidden mc-slot h-20 cursor-pointer"
               >
                 <img
@@ -4024,11 +4297,37 @@ function WaypointCard({
                   alt={`${waypoint.name} ${idx + 1}`}
                   className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200 max-w-full"
                 />
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute top-1 right-1 flex items-center gap-1 z-10"
+                >
+                  {onReplaceScreenshot && (
+                    <button
+                      type="button"
+                      onClick={() => onReplaceScreenshot(waypoint.id, idx)}
+                      title="Thay ảnh đính kèm này"
+                      className="mc-btn mc-btn-gold px-1.5 py-0.5 text-[9px] font-black text-[#1f1300] cursor-pointer shadow"
+                    >
+                      Đổi
+                    </button>
+                  )}
+                  {onDeleteScreenshot && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteScreenshot(waypoint.id, idx)}
+                      title="Xóa ảnh đính kèm này"
+                      className="mc-btn mc-btn-tnt px-1.5 py-0.5 text-[9px] font-black text-white cursor-pointer flex items-center gap-0.5 shadow"
+                    >
+                      <X className="w-2.5 h-2.5 stroke-[3]" />
+                      <span>Xóa</span>
+                    </button>
+                  )}
+                </div>
                 <span className="absolute bottom-1 right-1 bg-black/85 border border-zinc-600 text-[10px] text-[#55ffff] px-1.5 py-0.5 font-mono font-bold flex items-center gap-1">
                   <ImageIcon className="w-2.5 h-2.5" />
                   Ảnh {idx + 1}
                 </span>
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -5306,13 +5605,14 @@ export default function App() {
   const [cameraAimMode, setCameraAimMode] = useState('hud-strip'); // 'hud-strip' | 'top-left' | 'full'
   const [cameraErrorMsg, setCameraErrorMsg] = useState('');
   const [autoPrepareOnScan, setAutoPrepareOnScan] = useState(true);
+  const [autoAttachScannedPhoto, setAutoAttachScannedPhoto] = useState(true);
   const [cropBox, setCropBox] = useState({ x: 0.04, y: 0.24, w: 0.92, h: 0.38 });
   const [isDraggingCrop, setIsDraggingCrop] = useState(false);
   const [cropDragStart, setCropDragStart] = useState(null);
   const [scannerDraftCoord, setScannerDraftCoord] = useState({
     name: '',
     x: '',
-    y: '64',
+    y: '',
     z: '',
     dimension: 'overworld',
     tag: 'Base',
@@ -5323,6 +5623,9 @@ export default function App() {
   });
 
   const screenshotInputRef = useRef(null);
+  const replaceScreenshotInputRef = useRef(null);
+  const lastAutoAttachedOcrPhotoRef = useRef(null);
+  const [replaceTargetInfo, setReplaceTargetInfo] = useState(null);
   const ocrFileInputRef = useRef(null);
   const nativeCameraInputRef = useRef(null);
   const scannerGalleryInputRef = useRef(null);
@@ -5637,46 +5940,77 @@ export default function App() {
         meta.suggestedName ||
         `Điểm quét (X:${coordObj.x}, Z:${coordObj.z})`;
 
+      const hasY =
+        coordObj.y !== null &&
+        coordObj.y !== undefined &&
+        String(coordObj.y).trim() !== '';
+      const resolvedYStr = hasY ? String(coordObj.y).trim() : '';
+
       setEditingId(null);
       setOcrCandidates(candidatesList);
-      setSmartPasteInput(coordObj.rawLine || rawTextStr || `${coordObj.x} ${coordObj.y ?? 64} ${coordObj.z}`);
+      setSmartPasteInput(
+        coordObj.rawLine ||
+          rawTextStr ||
+          (hasY ? `${coordObj.x} ${resolvedYStr} ${coordObj.z}` : `${coordObj.x} ${coordObj.z}`)
+      );
       setOcrStatusText(
-        `✅ Đã định dạng chính xác [${coordObj.label || 'OCR'}]: X = ${coordObj.x}, Y = ${
-          coordObj.y ?? 64
-        }, Z = ${coordObj.z}`
+        hasY
+          ? `✅ Đã định dạng chính xác [${coordObj.label || 'OCR'}]: X = ${coordObj.x}, Y = ${resolvedYStr}, Z = ${coordObj.z}`
+          : `✅ Đã định dạng tọa độ 2 số [${coordObj.label || 'X Z'}]: X = ${coordObj.x}, Z = ${coordObj.z} (Chỉ X & Z — Y: ~)`
       );
 
-      setFormData((prev) => ({
-        name: isFormOpen && prev.name ? prev.name : autoName,
-        x: String(coordObj.x),
-        y: coordObj.y !== null && coordObj.y !== undefined ? String(coordObj.y) : '64',
-        z: String(coordObj.z),
-        dimension: resolvedDim,
-        tag: isFormOpen && prev.tag ? prev.tag : meta.tag,
-        icon: isFormOpen && prev.icon ? prev.icon : meta.icon,
-        parentId: isFormOpen ? prev.parentId : targetParent ? targetParent.id : '',
-        isFolder: false,
-        notes:
-          isFormOpen && prev.notes
-            ? prev.notes
-            : coordObj.rawLine
-            ? `Quét từ ảnh: ${coordObj.rawLine}`
-            : '',
-        screenshots: attachedPhotoUrl
-          ? [attachedPhotoUrl, ...(prev.screenshots || []).filter((s) => s !== attachedPhotoUrl)].slice(0, 2)
-          : prev.screenshots || [],
-        locked: true,
-        pinned: false,
-      }));
+      setFormData((prev) => {
+        const prevPhotos = (prev.screenshots || []).filter(
+          (s) => s !== attachedPhotoUrl && s !== lastAutoAttachedOcrPhotoRef.current
+        );
+        const nextScreenshots =
+          autoAttachScannedPhoto && attachedPhotoUrl
+            ? [attachedPhotoUrl, ...prevPhotos].slice(0, 2)
+            : prev.screenshots || [];
+        if (autoAttachScannedPhoto && attachedPhotoUrl) {
+          lastAutoAttachedOcrPhotoRef.current = attachedPhotoUrl;
+        }
+        return {
+          name: isFormOpen && prev.name ? prev.name : autoName,
+          x: String(coordObj.x),
+          y: resolvedYStr,
+          z: String(coordObj.z),
+          dimension: resolvedDim,
+          tag: isFormOpen && prev.tag ? prev.tag : meta.tag,
+          icon: isFormOpen && prev.icon ? prev.icon : meta.icon,
+          parentId: isFormOpen ? prev.parentId : targetParent ? targetParent.id : '',
+          isFolder: false,
+          notes:
+            isFormOpen && prev.notes
+              ? prev.notes
+              : coordObj.rawLine
+              ? `Quét từ ảnh: ${coordObj.rawLine}`
+              : '',
+          screenshots: nextScreenshots,
+          locked: true,
+          pinned: false,
+        };
+      });
 
       setIsCameraScannerOpen(false);
       setIsFormOpen(true);
       showToast(
-        `Đã lấy tọa độ: X:${coordObj.x} Y:${coordObj.y ?? 64} Z:${coordObj.z} — Sẵn sàng lưu!`,
+        hasY
+          ? `Đã lấy tọa độ: X:${coordObj.x} Y:${resolvedYStr} Z:${coordObj.z} — Sẵn sàng lưu!`
+          : `Đã lấy tọa độ 2 số: X:${coordObj.x} Z:${coordObj.z} (Y:~) — Sẵn sàng lưu!`,
         'levelup'
       );
     },
-    [scannerTargetParent, currentParentId, activeWaypoints, activeDimension, activeTag, isFormOpen, showToast]
+    [
+      scannerTargetParent,
+      currentParentId,
+      activeWaypoints,
+      activeDimension,
+      activeTag,
+      isFormOpen,
+      autoAttachScannedPhoto,
+      showToast,
+    ]
   );
 
   const executeOcrOnImageDataUrl = useCallback(
@@ -5717,11 +6051,12 @@ export default function App() {
 
         if (ocrRes.best) {
           const best = ocrRes.best;
+          const hasBestY = best.y !== null && best.y !== undefined && String(best.y).trim() !== '';
           const meta = detectSuggestedMetaFromText(ocrRes.rawText, 'Base', 'grass');
           const draft = {
             name: meta.suggestedName || `Điểm quét (X:${best.x}, Z:${best.z})`,
             x: String(best.x),
-            y: best.y !== null && best.y !== undefined ? String(best.y) : '64',
+            y: hasBestY ? String(best.y) : '',
             z: String(best.z),
             dimension: ocrRes.dimension || fallbackDim,
             tag: meta.tag,
@@ -5732,7 +6067,9 @@ export default function App() {
           };
           setScannerDraftCoord(draft);
           setOcrStatusText(
-            `✅ Đã nhận diện [${draft.label}]: X = ${best.x}, Y = ${best.y ?? 64}, Z = ${best.z}`
+            hasBestY
+              ? `✅ Đã nhận diện [${draft.label}]: X = ${best.x}, Y = ${best.y}, Z = ${best.z}`
+              : `✅ Đã nhận diện [${draft.label}]: X = ${best.x}, Z = ${best.z} (Dạng 2 số X/Z — Y để trống ~)`
           );
 
           if (shouldAutoPrepare) {
@@ -5744,7 +6081,12 @@ export default function App() {
             );
           } else {
             setScannerStep('crop-review');
-            showToast(`Đã tìm thấy: X:${best.x} Y:${best.y ?? 64} Z:${best.z}`, 'orb');
+            showToast(
+              hasBestY
+                ? `Đã tìm thấy: X:${best.x} Y:${best.y} Z:${best.z}`
+                : `Đã tìm thấy tọa độ 2 số: X:${best.x} Z:${best.z}`,
+              'orb'
+            );
           }
         } else {
           // Chưa thấy số rõ ràng -> Mở chế độ Kéo Khung Cắt Vùng Tọa Độ để người dùng khoanh đúng dòng chữ
@@ -5842,15 +6184,16 @@ export default function App() {
     const parsed = parseMinecraftCoordinatesFromText(rawStr, formData.dimension);
     if (parsed.best) {
       const { x, y, z } = parsed.best;
+      const hasY = y !== null && y !== undefined && String(y).trim() !== '';
       setFormData((prev) => ({
         ...prev,
         x: String(x),
-        y: y !== null && y !== undefined ? String(y) : prev.y,
+        y: hasY ? String(y) : '',
         z: String(z),
         dimension: parsed.dimension || prev.dimension,
       }));
       showToast(
-        `Đã tách tọa độ [${parsed.best.label}]: X=${x}${y !== null ? `, Y=${y}` : ''}, Z=${z}`,
+        `Đã tách tọa độ [${parsed.best.label}]: X=${x}${hasY ? `, Y=${y}` : ' (Chỉ X & Z)'}, Z=${z}`,
         'orb'
       );
     }
@@ -5921,11 +6264,12 @@ export default function App() {
     setIsScanningOcr(true);
     setOcrStatusText(`Đang đọc "${preset.rawLine}"...`);
     setTimeout(() => {
+      const hasPresetY = preset.y !== null && preset.y !== undefined && preset.y !== '';
       setFormData((prev) => ({
         ...prev,
         name: prev.name || preset.suggestedName,
         x: String(preset.x),
-        y: String(preset.y),
+        y: hasPresetY ? String(preset.y) : '',
         z: String(preset.z),
         dimension: preset.dimension,
         tag: preset.suggestedTag,
@@ -5940,11 +6284,12 @@ export default function App() {
 
   const handleAddScreenshot = async (e) => {
     const files = Array.from(e.target.files || []);
+    e.target.value = '';
     if (files.length === 0) return;
 
     const currentPhotos = formData.screenshots || [];
     if (currentPhotos.length >= 2) {
-      showToast('Tối đa 2 ảnh cho mỗi địa điểm.');
+      showToast('Đã đủ 2/2 ảnh. Hãy bấm "Đổi ảnh" hoặc "Xóa" trên ảnh cũ để thay thế!');
       return;
     }
 
@@ -5964,10 +6309,104 @@ export default function App() {
   };
 
   const handleRemoveScreenshot = (idx) => {
+    setFormData((prev) => {
+      const removed = (prev.screenshots || [])[idx];
+      if (removed && removed === lastAutoAttachedOcrPhotoRef.current) {
+        lastAutoAttachedOcrPhotoRef.current = null;
+      }
+      return {
+        ...prev,
+        screenshots: (prev.screenshots || []).filter((_, i) => i !== idx),
+      };
+    });
+    showToast('Đã xóa ảnh đính kèm', 'click');
+  };
+
+  const handleClearAllFormScreenshots = () => {
+    lastAutoAttachedOcrPhotoRef.current = null;
     setFormData((prev) => ({
       ...prev,
-      screenshots: (prev.screenshots || []).filter((_, i) => i !== idx),
+      screenshots: [],
     }));
+    showToast('Đã xóa toàn bộ ảnh đính kèm', 'click');
+  };
+
+  const handleDeleteWaypointScreenshotDirect = useCallback(
+    (waypointId, imgIdx) => {
+      setWaypoints((prev) =>
+        prev.map((wp) => {
+          if (wp.id !== waypointId) return wp;
+          const nextShots = (Array.isArray(wp.screenshots) ? wp.screenshots : []).filter(
+            (_, i) => i !== imgIdx
+          );
+          return { ...wp, screenshots: nextShots };
+        })
+      );
+      setLightboxData((prev) =>
+        prev && prev.waypointId === waypointId && prev.imageIndex === imgIdx ? null : prev
+      );
+      showToast('Đã xóa ảnh đính kèm khỏi tọa độ!', 'click');
+    },
+    [showToast]
+  );
+
+  const triggerReplaceScreenshot = useCallback((mode, idx, waypointId = null) => {
+    setReplaceTargetInfo({ mode, idx, waypointId });
+    setTimeout(() => {
+      replaceScreenshotInputRef.current?.click();
+    }, 20);
+  }, []);
+
+  const handleReplaceScreenshotFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !replaceTargetInfo) return;
+
+    try {
+      const compressed = await compressImageFile(file);
+      if (replaceTargetInfo.mode === 'form') {
+        setFormData((prev) => {
+          const list = [...(prev.screenshots || [])];
+          if (replaceTargetInfo.idx >= 0 && replaceTargetInfo.idx < list.length) {
+            list[replaceTargetInfo.idx] = compressed;
+          } else {
+            list.push(compressed);
+          }
+          return { ...prev, screenshots: list.slice(0, 2) };
+        });
+        setLightboxData((prev) =>
+          prev && prev.isFormPreview && prev.imageIndex === replaceTargetInfo.idx
+            ? { ...prev, src: compressed }
+            : prev
+        );
+        showToast('Đã thay ảnh đính kèm mới!', 'orb');
+      } else if (replaceTargetInfo.mode === 'waypoint' && replaceTargetInfo.waypointId) {
+        const targetId = replaceTargetInfo.waypointId;
+        const targetIdx = replaceTargetInfo.idx;
+        setWaypoints((prev) =>
+          prev.map((wp) => {
+            if (wp.id !== targetId) return wp;
+            const list = [...(Array.isArray(wp.screenshots) ? wp.screenshots : [])];
+            if (targetIdx >= 0 && targetIdx < list.length) {
+              list[targetIdx] = compressed;
+            } else {
+              list.push(compressed);
+            }
+            return { ...wp, screenshots: list.slice(0, 2) };
+          })
+        );
+        setLightboxData((prev) =>
+          prev && prev.waypointId === targetId && prev.imageIndex === targetIdx
+            ? { ...prev, src: compressed }
+            : prev
+        );
+        showToast('Đã thay ảnh đính kèm mới!', 'orb');
+      }
+    } catch {
+      showToast('Không thể tải ảnh thay thế.');
+    } finally {
+      setReplaceTargetInfo(null);
+    }
   };
 
   const openCreateForm = useCallback(
@@ -5979,6 +6418,7 @@ export default function App() {
       setEditingId(null);
       setSmartPasteInput('');
       setOcrStatusText('');
+      lastAutoAttachedOcrPhotoRef.current = null;
       const targetParent =
         validParent ||
         (currentParentId ? activeWaypoints.find((w) => w.id === currentParentId) : null);
@@ -6046,6 +6486,7 @@ export default function App() {
     setEditingId(wp.id);
     setSmartPasteInput('');
     setOcrStatusText('');
+    lastAutoAttachedOcrPhotoRef.current = null;
     setFormData({
       name: wp.name,
       x: String(wp.x ?? 0),
@@ -8262,7 +8703,13 @@ export default function App() {
                       onEdit={openEditForm}
                       onSoftDelete={handleSoftDelete}
                       onNotify={showToast}
-                      onOpenLightbox={(src, title) => setLightboxData({ src, title })}
+                      onOpenLightbox={(src, title, waypointId = wp.id, imageIndex = 0) =>
+                        setLightboxData({ src, title, waypointId, imageIndex, isFormPreview: false })
+                      }
+                      onDeleteScreenshot={handleDeleteWaypointScreenshotDirect}
+                      onReplaceScreenshot={(waypointId, imgIdx) =>
+                        triggerReplaceScreenshot('waypoint', imgIdx, waypointId)
+                      }
                       onSelectForDistance={handleSelectForDistance}
                       onEnterFolder={handleEnterFolder}
                       onCreateChildWaypoint={(parentItem) => openCreateForm(parentItem, false)}
@@ -8292,6 +8739,13 @@ export default function App() {
         type="file"
         accept="image/*"
         onChange={handleOcrImageUpload}
+        className="hidden"
+      />
+      <input
+        ref={replaceScreenshotInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleReplaceScreenshotFileChange}
         className="hidden"
       />
 
@@ -8712,15 +9166,24 @@ export default function App() {
                         key={cand.key}
                         type="button"
                         onClick={() => {
+                          const hasCandY = cand.y !== null && cand.y !== undefined && cand.y !== '';
                           setFormData((prev) => ({
                             ...prev,
                             x: String(cand.x),
-                            y: cand.y !== null ? String(cand.y) : prev.y,
+                            y: hasCandY ? String(cand.y) : '',
                             z: String(cand.z),
                             dimension: cand.dimension || prev.dimension,
                           }));
-                          setSmartPasteInput(cand.rawLine || `${cand.x} ${cand.y ?? 64} ${cand.z}`);
-                          showToast(`Đã chọn: X:${cand.x} Y:${cand.y ?? 64} Z:${cand.z}`, 'orb');
+                          setSmartPasteInput(
+                            cand.rawLine ||
+                              (hasCandY ? `${cand.x} ${cand.y} ${cand.z}` : `${cand.x} ${cand.z}`)
+                          );
+                          showToast(
+                            hasCandY
+                              ? `Đã chọn: X:${cand.x} Y:${cand.y} Z:${cand.z}`
+                              : `Đã chọn tọa độ 2 số: X:${cand.x} Z:${cand.z} (Y:~)`,
+                            'orb'
+                          );
                         }}
                         className="mc-btn mc-btn-stone px-2 py-0.5 text-[10px] font-mono text-[#55ffff] cursor-pointer"
                       >
@@ -8749,7 +9212,7 @@ export default function App() {
                   type="text"
                   value={smartPasteInput}
                   onChange={(e) => handleSmartPaste(e.target.value)}
-                  placeholder="Dán nhanh dòng F3+C, Position: X, Y, Z hoặc chuỗi tọa độ bất kỳ..."
+                  placeholder="Dán nhanh tọa độ 2 số (VD: 10029 2844), Position: X, Y, Z hoặc dòng F3+C..."
                   className="w-full bg-[#09090d] border border-[#6b21a8] px-2.5 py-1.5 text-xs font-mono text-white placeholder-zinc-500 focus:outline-none"
                 />
               </div>
@@ -8954,8 +9417,8 @@ export default function App() {
                 />
               </div>
 
-              <div className="p-2.5 mc-slot">
-                <div className="flex items-center justify-between gap-2">
+              <div className="p-2.5 mc-slot space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span className="text-xs font-extrabold text-zinc-200 flex items-center gap-1.5">
                     <ImageIcon className="w-3.5 h-3.5 text-[#55ffff]" />
                     <span>Ảnh đính kèm ({(formData.screenshots || []).length}/2)</span>
@@ -8968,39 +9431,103 @@ export default function App() {
                     onChange={handleAddScreenshot}
                     className="hidden"
                   />
-                  {(formData.screenshots || []).length < 2 && (
-                    <button
-                      type="button"
-                      onClick={() => screenshotInputRef.current?.click()}
-                      className="mc-btn mc-btn-diamond px-2.5 py-1 text-xs font-black text-[#041924] cursor-pointer"
-                    >
-                      + Tải ảnh
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {(formData.screenshots || []).length < 2 && (
+                      <button
+                        type="button"
+                        onClick={() => screenshotInputRef.current?.click()}
+                        className="mc-btn mc-btn-diamond px-2.5 py-1 text-xs font-black text-[#041924] cursor-pointer"
+                      >
+                        + Thêm ảnh
+                      </button>
+                    )}
+                    {(formData.screenshots || []).length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllFormScreenshots}
+                        className="mc-btn mc-btn-tnt px-2.5 py-1 text-xs font-black text-white cursor-pointer flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Xóa hết ảnh</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {(formData.screenshots || []).length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
+                <label className="inline-flex items-center gap-1.5 text-[11px] font-mono text-zinc-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoAttachScannedPhoto}
+                    onChange={(e) => setAutoAttachScannedPhoto(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-[#55ff55]"
+                  />
+                  <span>Tự động đính kèm (hoặc thay ảnh cũ) khi quét tọa độ bằng Camera</span>
+                </label>
+
+                {(formData.screenshots || []).length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2.5 pt-1">
                     {formData.screenshots.map((src, idx) => (
                       <div
                         key={idx}
-                        className="relative overflow-hidden border-2 border-black h-20"
+                        className="flex flex-col border-2 border-black bg-[#0d0d14] overflow-hidden"
                       >
-                        <img
-                          src={src}
-                          alt="Preview"
-                          className="w-full h-full object-cover max-w-full"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveScreenshot(idx)}
-                          className="mc-btn mc-btn-tnt absolute top-1 right-1 text-white p-1 cursor-pointer"
+                        <div
+                          onClick={() =>
+                            setLightboxData({
+                              src,
+                              title: `${formData.name || 'Ảnh đính kèm'} (Ảnh ${idx + 1})`,
+                              imageIndex: idx,
+                              isFormPreview: true,
+                            })
+                          }
+                          className="relative h-24 overflow-hidden cursor-pointer group/preview"
                         >
-                          <X className="w-3 h-3" />
-                        </button>
+                          <img
+                            src={src}
+                            alt={`Ảnh đính kèm ${idx + 1}`}
+                            className="w-full h-full object-cover max-w-full group-hover/preview:scale-105 transition-transform"
+                          />
+                          <span className="absolute bottom-1 left-1 bg-black/80 text-[10px] font-mono font-bold text-[#55ffff] px-1.5 py-0.5 border border-zinc-700">
+                            Ảnh {idx + 1} • Bấm để phóng to
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveScreenshot(idx);
+                            }}
+                            title="Xóa ảnh này"
+                            className="mc-btn mc-btn-tnt absolute top-1 right-1 text-white p-1 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5 stroke-[3]" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-1 p-1.5 bg-[#14141d] border-t border-black">
+                          <button
+                            type="button"
+                            onClick={() => triggerReplaceScreenshot('form', idx)}
+                            className="mc-btn mc-btn-gold py-1 px-1.5 text-[10px] font-black text-[#1f1300] cursor-pointer flex items-center justify-center gap-1"
+                          >
+                            <RotateCcw className="w-3 h-3 shrink-0" />
+                            <span>Thay ảnh</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveScreenshot(idx)}
+                            className="mc-btn mc-btn-tnt py-1 px-1.5 text-[10px] font-black text-white cursor-pointer flex items-center justify-center gap-1"
+                          >
+                            <Trash2 className="w-3 h-3 shrink-0" />
+                            <span>Xóa ảnh</span>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <p className="text-[11px] font-mono text-zinc-500">
+                    Chưa có ảnh đính kèm. Bạn có thể bấm "+ Thêm ảnh" hoặc quét tọa độ để đính kèm.
+                  </p>
                 )}
               </div>
 
@@ -9640,24 +10167,24 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 6: XEM ẢNH LIGHTBOX */}
+      {/* MODAL 6: XEM ẢNH LIGHTBOX (HỖ TRỢ THAY ẢNH HOẶC XÓA ẢNH ĐÍNH KÈM TRỰC TIẾP) */}
       {lightboxData && (
         <div
           onClick={() => setLightboxData(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-3 sm:p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm p-3 sm:p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="mc-panel max-w-2xl w-full p-3.5 sm:p-4"
+            className="mc-panel max-w-2xl w-full p-3.5 sm:p-4 space-y-3"
           >
-            <div className="flex items-center justify-between gap-2 mb-2.5">
+            <div className="flex items-center justify-between gap-2">
               <h4 className="text-xs sm:text-sm font-black text-white truncate mc-text-shadow">
                 {lightboxData.title}
               </h4>
               <button
                 type="button"
                 onClick={() => setLightboxData(null)}
-                className="mc-btn mc-btn-tnt p-1.5 text-white cursor-pointer shrink-0"
+                className="mc-btn mc-btn-stone p-1.5 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4 stroke-[3]" />
               </button>
@@ -9665,8 +10192,57 @@ export default function App() {
             <img
               src={lightboxData.src}
               alt={lightboxData.title}
-              className="w-full max-h-[70vh] object-contain mc-slot max-w-full"
+              className="w-full max-h-[65vh] object-contain mc-slot max-w-full"
             />
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-black/80 flex-wrap">
+              {(lightboxData.isFormPreview || lightboxData.waypointId) && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (lightboxData.isFormPreview) {
+                        triggerReplaceScreenshot('form', lightboxData.imageIndex ?? 0);
+                      } else if (lightboxData.waypointId) {
+                        triggerReplaceScreenshot(
+                          'waypoint',
+                          lightboxData.imageIndex ?? 0,
+                          lightboxData.waypointId
+                        );
+                      }
+                    }}
+                    className="mc-btn mc-btn-gold px-3 py-1.5 text-xs font-black text-[#1f1300] cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Thay ảnh khác</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (lightboxData.isFormPreview) {
+                        handleRemoveScreenshot(lightboxData.imageIndex ?? 0);
+                        setLightboxData(null);
+                      } else if (lightboxData.waypointId) {
+                        handleDeleteWaypointScreenshotDirect(
+                          lightboxData.waypointId,
+                          lightboxData.imageIndex ?? 0
+                        );
+                      }
+                    }}
+                    className="mc-btn mc-btn-tnt px-3 py-1.5 text-xs font-black text-white cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Xóa ảnh đính kèm này</span>
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => setLightboxData(null)}
+                className="mc-btn mc-btn-stone px-3 py-1.5 text-xs font-bold text-white cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -9944,6 +10520,13 @@ export default function App() {
                   <div className="flex items-center gap-1 flex-wrap">
                     <button
                       type="button"
+                      onClick={() => handleTestSyntheticOcr('xz')}
+                      className="mc-btn mc-btn-gold px-2 py-0.5 text-[10px] font-black text-[#1f1300] cursor-pointer"
+                    >
+                      Test 2 Số (10029 2844)
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleTestSyntheticOcr('mcpe')}
                       className="mc-btn mc-btn-stone px-2 py-0.5 text-[10px] font-bold text-[#55ff55] cursor-pointer"
                     >
@@ -10122,7 +10705,7 @@ export default function App() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-[#55ff55] mb-0.5">
-                        TỌA ĐỘ Y
+                        TỌA ĐỘ Y <span className="text-zinc-400 font-normal">(Tùy)</span>
                       </label>
                       <input
                         type="number"
@@ -10130,7 +10713,7 @@ export default function App() {
                         onChange={(e) =>
                           setScannerDraftCoord({ ...scannerDraftCoord, y: e.target.value })
                         }
-                        placeholder="64"
+                        placeholder="~ (Chỉ X & Z)"
                         className="w-full mc-slot px-2.5 py-1.5 text-sm font-black text-white"
                       />
                     </div>
@@ -10161,7 +10744,7 @@ export default function App() {
                             setScannerDraftCoord((prev) => ({
                               ...prev,
                               x: String(cand.x),
-                              y: cand.y !== null ? String(cand.y) : '64',
+                              y: cand.y !== null && cand.y !== undefined ? String(cand.y) : '',
                               z: String(cand.z),
                               dimension: cand.dimension || prev.dimension,
                               label: cand.label,
