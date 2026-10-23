@@ -2869,8 +2869,12 @@ function parseMinecraftCoordinatesFromText(rawText, defaultDimension = 'overworl
   const intPat = `[—–−~_\\-+]?\\s*[0-9OolISBGZz]+`;
   const sepPat = `(?:\\s*[,;/|]\\s*|\\s*\\.\\s+|\\s+)`;
 
+  const LINE_BREAK = String.fromCharCode(10);
+  const CARRIAGE_RETURN = String.fromCharCode(13);
   const lines = fullText
-    .split(/\r?\n/)
+    .split(CARRIAGE_RETURN)
+    .join('')
+    .split(LINE_BREAK)
     .map((l) => l.trim())
     .filter(Boolean);
 
@@ -3281,11 +3285,11 @@ async function runMultiPassCoordinateOcr(
       const detector = new window.TextDetector();
       const blocks1 = await detector.detect(enhancedCanvas);
       if (Array.isArray(blocks1) && blocks1.length > 0) {
-        collectedTexts.push(blocks1.map((b) => b.rawValue).join('\n'));
+        collectedTexts.push(blocks1.map((b) => b.rawValue).join(String.fromCharCode(10)));
       }
       const blocks2 = await detector.detect(hudBinaryCanvas);
       if (Array.isArray(blocks2) && blocks2.length > 0) {
-        collectedTexts.push(blocks2.map((b) => b.rawValue).join('\n'));
+        collectedTexts.push(blocks2.map((b) => b.rawValue).join(String.fromCharCode(10)));
       }
     } catch {
       // Chuyển sang Tesseract AI
@@ -3295,14 +3299,14 @@ async function runMultiPassCoordinateOcr(
   // Kiểm tra sớm nếu Native TextDetector đã bắt trúng tọa độ độ tin cậy cao
   if (collectedTexts.length > 0) {
     const earlyCheck = parseMinecraftCoordinatesFromText(
-      collectedTexts.join('\n'),
+      collectedTexts.join(String.fromCharCode(10)),
       defaultDimension
     );
     if (earlyCheck.best && earlyCheck.best.confidence >= 95) {
       onProgress(100, 'Hoàn tất nhận diện!');
       return {
         ...earlyCheck,
-        rawText: collectedTexts.join('\n'),
+        rawText: collectedTexts.join(String.fromCharCode(10)),
         previewDataUrl,
         binaryPreviewDataUrl,
       };
@@ -3325,7 +3329,7 @@ async function runMultiPassCoordinateOcr(
       }
 
       const checkAfterBin = parseMinecraftCoordinatesFromText(
-        collectedTexts.join('\n'),
+        collectedTexts.join(String.fromCharCode(10)),
         defaultDimension
       );
 
@@ -3339,7 +3343,7 @@ async function runMultiPassCoordinateOcr(
       }
 
       const checkAfterEnh = parseMinecraftCoordinatesFromText(
-        collectedTexts.join('\n'),
+        collectedTexts.join(String.fromCharCode(10)),
         defaultDimension
       );
 
@@ -3367,7 +3371,7 @@ async function runMultiPassCoordinateOcr(
     collectedTexts.push(syntheticImageTextMap.get(imageDataUrl));
   }
   onProgress(100, 'Đã phân tích xong!');
-  const combinedRawText = collectedTexts.join('\n').trim();
+  const combinedRawText = collectedTexts.join(String.fromCharCode(10)).trim();
   const parsed = parseMinecraftCoordinatesFromText(combinedRawText, defaultDimension);
 
   return {
@@ -3410,7 +3414,7 @@ function createSyntheticMinecraftCoordImage(presetMode = 'mcpe') {
       `Block: ${rx} ${ry} ${rz} [4 12 8]`,
       'Facing: north (Towards negative Z)',
     ];
-    syntheticImageTextMap.set('last', lines.join('\n'));
+    syntheticImageTextMap.set('last', lines.join(String.fromCharCode(10)));
     ctx.font = 'bold 24px monospace';
     lines.forEach((line, idx) => {
       const y = 46 + idx * 38;
@@ -3432,7 +3436,7 @@ function createSyntheticMinecraftCoordImage(presetMode = 'mcpe') {
     ctx.font = 'bold 22px monospace';
     ctx.fillStyle = '#fb923c';
     ctx.fillText('Biome: minecraft:the_nether (fortress)', 44, 114);
-    syntheticImageTextMap.set('last', `Position: ${rx}, ${ry}, ${rz}\nBiome: minecraft:the_nether (fortress)`);
+    syntheticImageTextMap.set('last', `Position: ${rx}, ${ry}, ${rz}` + String.fromCharCode(10) + `Biome: minecraft:the_nether (fortress)`);
   } else {
     const rx = Math.round((Math.random() - 0.5) * 3200);
     const ry = Math.round(63 + Math.random() * 40);
@@ -6516,7 +6520,7 @@ export default function App() {
       `"${(wp.notes || '').replace(/"/g, '""')}"`,
     ]);
     const csvContent =
-      '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join(String.fromCharCode(10));
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
