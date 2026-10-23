@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, nativeImage } = require('electron');
+const { app, BrowserWindow, shell, nativeImage, session } = require('electron');
 const path = require('path');
 
 let mainWindow;
@@ -9,7 +9,7 @@ function createWindow() {
     height: 820,
     minWidth: 400,
     minHeight: 560,
-    title: 'fu-WAYPOINT v2.2.0',
+    title: 'fu-WAYPOINT v2.2.1',
     backgroundColor: '#111015',
     autoHideMenuBar: true,
     webPreferences: {
@@ -45,6 +45,15 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  if (session && session.defaultSession) {
+    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+      if (permission === 'media' || permission === 'camera' || permission === 'clipboard-read' || permission === 'clipboard-sanitized-write') {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    });
+  }
   createWindow();
 
   app.on('activate', () => {
