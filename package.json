@@ -1,7 +1,7 @@
 {
   "name": "fu-waypoint",
   "private": true,
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "fu-WAYPOINT v2.2.1 - Minecraft Waypoint Manager (with Camera Coordinate OCR)",
   "author": "fu WAYPOINT",
   "type": "module",
